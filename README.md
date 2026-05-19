@@ -2,10 +2,10 @@
 - learn backend concepts
 - develop fronted skills
 # 2.Tech Stack:
- ## Frontend:
+   ## Frontend:
    - React
    - ailwind
-## Backned:
+   ## Backned:
    - Express.js
    - Redis
    - PosgreSQL

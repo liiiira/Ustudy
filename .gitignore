@@ -1,0 +1,90 @@
+# ==========================
+# Dependencies
+# ==========================
+node_modules/
+
+# pnpm
+.pnpm-store/
+
+# ==========================
+# Build outputs
+# ==========================
+dist/
+build/
+coverage/
+
+# Vite
+.vite/
+
+# ==========================
+# Environment variables
+# ==========================
+.env
+.env.*
+!.env.example
+
+# ==========================
+# Logs
+# ==========================
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ==========================
+# TypeScript
+# ==========================
+*.tsbuildinfo
+
+# ==========================
+# IDEs
+# ==========================
+.vscode/
+.idea/
+
+# Keep shared workspace settings if desired
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# ==========================
+# OS files
+# ==========================
+.DS_Store
+Thumbs.db
+
+# ==========================
+# Testing
+# ==========================
+coverage/
+.nyc_output/
+
+# ==========================
+# Cache
+# ==========================
+.cache/
+.eslintcache
+
+# ==========================
+# Turbo / Nx (if used later)
+# ==========================
+.turbo/
+.nx/
+
+# ==========================
+# Prisma
+# ==========================
+prisma/dev.db
+prisma/dev.db-journal
+
+# ==========================
+# Docker
+# ==========================
+docker-compose.override.yml
+
+# ==========================
+# Misc
+# ==========================
+*.pid
+*.seed

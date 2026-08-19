@@ -5,8 +5,6 @@ import connectWithRetries from '../utils/connectWithRetries.ts';
 
 const PORT: number = parseInt(process.env.PORT!);
 
-
-
 async function  startServer(){
   try{
     await connectWithRetries("postgres", connectPostgres);

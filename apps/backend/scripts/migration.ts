@@ -11,10 +11,14 @@ const __dirname = path.dirname(__filename);
 const MIGRATION_DIR = path.join(__dirname, "../migrations");
 
 async function migrate(){
+
   let client;
+
   try{
-     await connectWithRetries("postgres", connectPostgres);
+    
+    await connectWithRetries("postgres", connectPostgres);
     client = await pool.connect();
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS schema_migrations (
         version TEXT PRIMARY KEY,
@@ -27,7 +31,7 @@ async function migrate(){
     );
       
     const files = readdirSync(MIGRATION_DIR).filter((f: string) : boolean => f.endsWith(".sql"));
-
+  
     for (const file of files){
       // Migration already applied
       if (applied.has(file)) continue;
@@ -36,21 +40,29 @@ async function migrate(){
       const sqlScript = readFileSync(filePath, {encoding: "utf8"});
       
       try{
+
         await client.query("BEGIN");
         await client.query(sqlScript);
         await client.query("INSERT INTO schema_migrations(version) VALUES ($1)", [file]);
         await client.query("COMMIT");
         await client.query('END');
+        
       }catch(err){
+
         await client.query('ROLLBACK');
         console.error("Transaction failed on ", file, err);
         process.exit(1);
       }   
+      console.log(`${file} migration completed`);
     }
+
     console.log("Migration Done");
+
   }finally{
+
     if(client)
       client.release();
+
     pool.end();
       
   }

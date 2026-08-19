@@ -8,4 +8,4 @@ CREATE TABLE users(
   CONSTRAINT pk_users PRIMARY KEY(id),
   CONSTRAINT unq_users_email UNIQUE(email),
   CONSTRAINT unq_users_username UNIQUE(username)
-)
+);

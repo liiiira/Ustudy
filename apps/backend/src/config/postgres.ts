@@ -16,9 +16,10 @@ const pool = new Pool({
 });
 
 export async function connectPostgres(){
+  console.log(postgresUrl)
   await pool.query("SELECT 1");
   console.log("Connected db")
 }
 export default pool;
- 
-
+ console.log(postgresUrl);
+console.log(process.cwd());

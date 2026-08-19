@@ -88,3 +88,8 @@ docker-compose.override.yml
 # ==========================
 *.pid
 *.seed
+
+# DB volumes
+pgdata
+redisdata
+

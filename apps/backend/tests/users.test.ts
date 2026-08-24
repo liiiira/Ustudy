@@ -1,6 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect , beforeEach, afterAll} from 'vitest';
 import  request  from 'supertest';
 import app from '../src/app';
+import pool from '../src/config/postgres';
+
+// To guarantee independence of tests
+beforeEach(async() => {
+  pool.query('TRUNCATE TABLE users CASCADE');
+})
 
 describe("POST /users/", () => {
   it("should register a user with JSON", async () =>{
@@ -125,3 +131,63 @@ describe("POST /users/", () => {
 
 });
 
+describe("GET /users/", () => {
+
+  it("should return all users", async () => {
+    // Create users first
+    await request(app)
+      .post("/api/v1/users")
+      .send({
+        username: "userone",
+        password: "12345678",
+        email: "userone@gmail.com",
+      });
+
+    await request(app)
+      .post("/api/v1/users")
+      .send({
+        username: "usertwo",
+        password: "12345678",
+        email: "usertwo@gmail.com",
+      });
+
+    const response = await request(app)
+      .get("/api/v1/users");
+
+    expect(response.status).toBe(200);
+    expect(response.headers["content-type"]).toMatch(/json/);
+
+    expect(response.body.status).toBe("success");
+    expect(response.body.users).toHaveLength(2);
+
+    expect(response.body.users).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          username: "userone",
+          email: "userone@gmail.com",
+        }),
+        expect.objectContaining({
+          username: "usertwo",
+          email: "usertwo@gmail.com",
+        }),
+      ])
+    );
+  });
+
+
+  it("should return an empty array when there are no users", async () => {
+    const response = await request(app)
+      .get("/api/v1/users");
+
+    expect(response.status).toBe(200);
+    expect(response.headers["content-type"]).toMatch(/json/);
+
+    expect(response.body.status).toBe("success");
+    expect(response.body.users).toEqual([]);
+  });
+
+});
+
+afterAll(async() => {
+  await pool.end();
+})

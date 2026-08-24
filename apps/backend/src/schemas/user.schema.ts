@@ -7,6 +7,10 @@ export const registerSchema = z.object({
   email: z.email(),
 })
 
+export const idSchema = z.object({
+  id: z.uuid(),
+})
+
 export type CreateUserInput = z.infer<typeof registerSchema>;
 
 export interface CreateUserRepository {
@@ -21,3 +25,5 @@ export interface CreateUserOutput {
   email: string,
   createdAt: Date,
 }
+
+

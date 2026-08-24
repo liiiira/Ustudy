@@ -29,8 +29,8 @@ export async function create(userData: CreateUserInput){
   });
 } 
 
-export async function getAll(){
-  return await userRepository.getAll(); 
+export async function findAll(){
+  return await userRepository.findAll(); 
 }
 
 export async function findByEmail(email: string){
@@ -39,5 +39,12 @@ export async function findByEmail(email: string){
 
 export async function findByUsername(username: string) {
   return await userRepository.findByUsername(username);
+}
+
+export async function findById(id: string){
+  const user = await userRepository.findById(id);
+  if (!user)
+    throw new AppError("User Not Found", 404);
+  return user;
 }
 

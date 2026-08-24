@@ -4,7 +4,6 @@ import { AppError } from '../errors/appError';
 
 const errorMiddleware = (err: Error, _req: Request, res : Response , _next: NextFunction) => {
 
-  
   // Explcitly thrown error by the application
   if (err instanceof AppError && err.isOperational){
     return res.status(err.statusCode).json({

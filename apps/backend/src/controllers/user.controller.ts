@@ -18,12 +18,23 @@ export async function create(req:Request, res: Response){
   })
 }
 
-export async function getAll(_req: Request, res: Response){
+export async function findAll(_req: Request, res: Response){
 
-  const users: CreateUserOutput[] = await userService.getAll();
+  const users: CreateUserOutput[] = await userService.findAll();
 
   res.status(200).json({
     status: "success",
     users: users,
   })
+}
+
+export async function findById(req: Request<{ id: string} >, res: Response) {
+
+  const {id} = req.params;
+  const user = await userService.findById(id);
+
+  res.status(200).json({
+    status: "success",
+    user: user,
+  });
 }

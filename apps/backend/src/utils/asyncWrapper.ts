@@ -1,8 +1,8 @@
-import { type RequestHandler, type Request, type Response, type NextFunction } from "express";
+import { type RequestHandler } from "express";
 
-const asyncWrapper = (handler: RequestHandler): RequestHandler => {
+function asyncWrapper<P extends Record<string, string>>(handler: RequestHandler<P>): RequestHandler<P>  {
 
-  return (req: Request, res: Response, next: NextFunction)=>{
+  return (req, res, next)=>{
     return Promise.resolve(handler(req, res, next)).catch(next);
   }
 }

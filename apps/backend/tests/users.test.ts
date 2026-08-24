@@ -188,6 +188,58 @@ describe("GET /users/", () => {
 
 });
 
+describe("GET /users/:id", () => {
+  it("should return a user by id", async () => {
+    const createResponse = await request(app)
+      .post("/api/v1/users")
+      .send({
+        username: "lyeslyes",
+        password: "12345678",
+        email: "lyes@gmail.com",
+      });
+
+    const userId = createResponse.body.user.id;
+
+    const response = await request(app)
+      .get(`/api/v1/users/${userId}`);
+
+    expect(response.status).toBe(200);
+    expect(response.headers["content-type"]).toMatch(/json/);
+
+    expect(response.body.status).toBe("success");
+    expect(response.body.user).toMatchObject({
+      id: userId,
+      username: "lyeslyes",
+      email: "lyes@gmail.com",
+    });
+  });
+
+
+  it("should return 404 when the user does not exist", async () => {
+    const userId = "e0cb88ea-87cf-4f45-9b86-4171e6a6e729";
+
+    const response = await request(app)
+      .get(`/api/v1/users/${userId}`);
+
+    expect(response.status).toBe(404);
+    expect(response.headers["content-type"]).toMatch(/json/);
+
+    expect(response.body.status).toBe("error");
+  });
+
+
+  it("should return 400 when the id is invalid", async () => {
+    const response = await request(app)
+      .get("/api/v1/users/not-a-valid-uuid");
+
+    expect(response.status).toBe(400);
+    expect(response.headers["content-type"]).toMatch(/json/);
+
+    expect(response.body.status).toBe("error");
+  });
+});
+
 afterAll(async() => {
   await pool.end();
 })
+

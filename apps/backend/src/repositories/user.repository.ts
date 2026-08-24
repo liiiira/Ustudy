@@ -18,7 +18,7 @@ export async function create(userData: CreateUserRepository){
   return result.rows[0]; 
 }  
 
-export async function getAll(){
+export async function findAll(){
   const result = await pool.query(
     `SELECT 
     id, username, email, created_at  AS "createdAt"
@@ -51,4 +51,15 @@ export async function findByUsername(username: string) {
   )
   
   return result.rows[0];
+}
+
+export async function findById(id: string){
+   const result = await pool.query(
+    `SELECT * 
+    FROM users
+    WHERE id = $1`,
+    [id]
+  )
+  
+  return result.rows[0]; 
 }

@@ -1,16 +1,41 @@
-import { createUserRepository } from "../repositories/user.repository";
+import * as userRepository from "../repositories/user.repository";
 import { CreateUserInput } from "../schemas/user.schema";
 import { hashPassword } from "../utils/password";
+import { AppError } from "../errors/appError";
 
-export async function createUserService(userData: CreateUserInput){
+export async function create(userData: CreateUserInput){
 
   const {username, email, password} = userData;
+
+  // Check if email is already used
+  const emailExists = await findByEmail(email);
+
+  if (emailExists)
+    throw new AppError("Email Already Exists", 409); 
+  
+  // Check if username is already used
+  const usernameExists = await findByUsername(username);
+  
+  if (usernameExists)
+      throw new AppError("Username Already Exists", 409);
+
+
   const hashedPassword = await hashPassword(password);
   
-  return await createUserRepository({
+  return await userRepository.create({
     username: username,
     hashedPassword: hashedPassword,
     email: email,
   });
-
 } 
+
+export async function getAll(){
+  return await userRepository.getAll(); 
+}
+
+export async function findByEmail(email: string){
+  return await userRepository.findByEmail(email)
+}
+export async function findByUsername(username: string) {
+  return await userRepository.findByUsername(username);
+}

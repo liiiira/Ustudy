@@ -1,7 +1,7 @@
 import pool from "../config/postgres";
 import {CreateUserRepository} from "../schemas/user.schema.ts";
 
-export async function createUserRepository(userData: CreateUserRepository){
+export async function create(userData: CreateUserRepository){
 
   const {username, hashedPassword, email} = userData;
   
@@ -17,3 +17,38 @@ export async function createUserRepository(userData: CreateUserRepository){
 
   return result.rows[0]; 
 }  
+
+export async function getAll(){
+  const result = await pool.query(
+    `SELECT 
+    id, username, email, created_at  AS "createdAt"
+    FROM users`
+  )
+
+  return result.rows;
+}
+
+export async function findByEmail(email: string ){
+
+  const result = await pool.query(
+    `SELECT * 
+    FROM users
+    WHERE email = $1`,
+    [email], 
+  )
+  
+  return result.rows[0];
+
+}
+ 
+export async function findByUsername(username: string) {
+  
+  const result = await pool.query(
+    `SELECT * 
+    FROM users
+    WHERE username = $1`,
+    [username]
+  )
+  
+  return result.rows[0];
+}

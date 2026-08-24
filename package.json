@@ -3,8 +3,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "concurrently \"pnpm test:db\" \"pnpm --dir apps/backend test\"" ,
-    "test:db": "docker compose up -f docker-compose.test.yml -d",
+    "test": "./test.sh" ,
     "dev": "concurrently \"pnpm dev:db\" \"pnpm dev:backend\" \"pnpm dev:frontend\"",
     "dev:db": "docker compose up -d",
     "dev:frontend": "pnpm --dir apps/web dev",

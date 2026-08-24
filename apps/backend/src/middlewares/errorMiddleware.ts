@@ -11,13 +11,15 @@ const errorMiddleware = (err: Error, _req: Request, res : Response , _next: Next
     return res.status(err.statusCode).json({
       status: "error",
       message: err.message,
+      details: err.details,
     })
   }
   
   // Unexpected error (bug or something similar)
   return res.status(500).json({
     status: "error", 
-    message: "Internal server error"
+    message: "Internal server error",
+    details: err,
   })
 }
 

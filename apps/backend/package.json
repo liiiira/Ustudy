@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "pnpm tsx watch src/server.ts",
-    "migrate": "pnpm exec tsx scripts/migration.ts"
+    "migrate": "pnpm exec tsx scripts/migration.ts",
+    "test": "vitest"
   },
   "keywords": [],
   "author": "",
@@ -33,7 +33,10 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/pg": "^8.23.1",
+    "@types/supertest": "^7.2.1",
     "node-pg-migrate": "^9.0.0",
-    "tsx": "^4.23.12"
+    "supertest": "^7.2.2",
+    "tsx": "^4.23.12",
+    "vitest": "^4.1.11"
   }
 }

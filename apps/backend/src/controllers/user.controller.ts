@@ -4,7 +4,8 @@ import { createUserSchema } from "../schemas/user.schema";
 import {type Request, type Response} from 'express';
 import { AppError } from "../errors/appError";
 
-export async function handleCreateUser(req: Request, res: Response){
+export async function handleCreateUser(req:
+ Request, res: Response){
   
   //validating the format of the userData to create
   const result = createUserSchema.safeParse(req.body);
@@ -18,6 +19,7 @@ export async function handleCreateUser(req: Request, res: Response){
   const user: CreateUserOutput = await createUserService(userData);
   
   return res.status(201).json({
+
     status: "success",
     user: user,
     message: "User Created Successfuly"

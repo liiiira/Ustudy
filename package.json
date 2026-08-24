@@ -3,7 +3,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "concurrently \"pnpm test:db\" \"pnpm --dir apps/backend test\"" ,
+    "test:db": "docker compose up -f docker-compose.test.yml -d",
     "dev": "concurrently \"pnpm dev:db\" \"pnpm dev:backend\" \"pnpm dev:frontend\"",
     "dev:db": "docker compose up -d",
     "dev:frontend": "pnpm --dir apps/web dev",

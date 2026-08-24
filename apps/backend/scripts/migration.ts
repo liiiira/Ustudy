@@ -1,13 +1,18 @@
+/* 
+This file is a migration script to execut new migration files.
+Since we are using a forward migration stratgey
+ */
+
 import pool, { connectPostgres} from '../src/config/postgres.ts';
-import connectWithRetries from '../utils/connectWithRetries.ts';
+import connectWithRetries from '../src/utils/connectWithRetries.ts';
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {readdirSync, readFileSync} from "node:fs";
 
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// get the path of migrations folder
 const MIGRATION_DIR = path.join(__dirname, "../migrations");
 
 async function migrate(){
@@ -19,6 +24,7 @@ async function migrate(){
     await connectWithRetries("postgres", connectPostgres);
     client = await pool.connect();
 
+    // uses migration file name to name "version"
     await client.query(`
       CREATE TABLE IF NOT EXISTS schema_migrations (
         version TEXT PRIMARY KEY,
@@ -26,6 +32,7 @@ async function migrate(){
       );
     `);
 
+    //Finding already applied migrations from the table of migrations
     const applied = new Set(
       (await client.query("SELECT version FROM schema_migrations")).rows.map(r => r.version)
     );

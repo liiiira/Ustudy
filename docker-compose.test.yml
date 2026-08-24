@@ -1,15 +1,4 @@
 services:
-  postgres:
-    image: postgres:18
-    ports:
-      - "${POSTGRES_PORT}:5432"
-    environment:
-      POSTGRES_USER: "${POSTGRES_USER}"
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
-      POSTGRES_DB: "${POSTGRES_DB}"
-    volumes:
-      - ./pgdata:/var/lib/postgresql
-
   redis:
     image: redis:8
     ports:
@@ -25,3 +14,8 @@ services:
       POSTGRES_DB: ustudy_test
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ustudy_test"]
+      interval: 1s
+      timeout: 5s
+      retries: 10

@@ -7,10 +7,11 @@ import { Router } from "express";
 const router = Router({caseSensitive: true});
 
 router.get("/", 
-  validate(UserSchema.registerSchema),
   asyncWrapper(userController.getAll)
 )
-router.post("/", asyncWrapper(userController.create));
+router.post("/",
+  validate(UserSchema.registerSchema),
+  asyncWrapper(userController.create));
 
 
 export default router;

@@ -36,6 +36,8 @@ export async function getAll(){
 export async function findByEmail(email: string){
   return await userRepository.findByEmail(email)
 }
+
 export async function findByUsername(username: string) {
   return await userRepository.findByUsername(username);
 }
+

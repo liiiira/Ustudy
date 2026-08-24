@@ -4,7 +4,7 @@ import {type Request, type Response} from 'express';
 
 export async function create(req:Request, res: Response){
   
-  // body Already validated
+  // body Already validated using the validate middleware
   const userData: CreateUserInput = req.body;
 
   // Getting the created user with his uuid, and time stamp of creation 

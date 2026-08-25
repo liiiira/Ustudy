@@ -1,9 +1,9 @@
 import * as userRepository from "../repositories/user.repository";
-import { CreateUserInput } from "../schemas/user.schema";
+import { UserInput, User } from "../schemas/user.schema";
 import { hashPassword } from "../utils/password";
 import { AppError } from "../errors/appError";
 
-export async function create(userData: CreateUserInput){
+export async function create(userData: UserInput){
 
   const {username, email, password} = userData;
 
@@ -29,22 +29,63 @@ export async function create(userData: CreateUserInput){
   });
 } 
 
-export async function findAll(){
+
+export async function findAll() : Promise<User[]>{
   return await userRepository.findAll(); 
 }
 
-export async function findByEmail(email: string){
+
+export async function findByEmail(email: string) : Promise<User>{
   return await userRepository.findByEmail(email)
 }
 
-export async function findByUsername(username: string) {
+
+export async function findByUsername(username: string) : Promise<User> {
   return await userRepository.findByUsername(username);
 }
 
-export async function findById(id: string){
+
+export async function findById(id: string): Promise<User>{
+
   const user = await userRepository.findById(id);
   if (!user)
     throw new AppError("User Not Found", 404);
   return user;
+}
+
+
+export async function updateById(id: string, userData:UserInput) : Promise<User | null>{
+
+  const {username, password, email} = userData;
+  const user: User  = await findById(id);
+  
+  // check if email changed 
+  if (user.email !== email){
+    // check if the new email is used
+    const emailExists = await findByEmail(email);
+    if (emailExists)
+      throw new AppError("New Email is Already Used", 409);
+  }
+
+  // check if username changed
+  if (user.username !== username){
+    // check if the new usename  is used
+    const usernameExists: User = await findByUsername(username);
+    if (usernameExists)
+      throw new AppError("New Username Is Already Used", 409);
+  }
+
+  const hashedPassword = await hashPassword(password);
+
+  // Check if nothing changed  
+  if (user.username === username && user.email === email && user.hashedPassword === hashedPassword)
+    return null;
+  
+  const updatedUser: User = await userRepository.updateById(id, {username, email, hashedPassword})
+  
+  if (!updatedUser)
+    throw new AppError("User Was Not Updated", 500, "Uknown Failure");
+
+  return updatedUser;
 }
 

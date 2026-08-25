@@ -11,7 +11,7 @@ export const idSchema = z.object({
   id: z.uuid(),
 })
 
-export type CreateUserInput = z.infer<typeof registerSchema>;
+export type UserInput = z.infer<typeof registerSchema>;
 
 export interface CreateUserRepository {
   username: string,
@@ -19,11 +19,12 @@ export interface CreateUserRepository {
   email: string,
 }
 
-export interface CreateUserOutput {
+export interface User {
   id: string,
   username: string,
   email: string,
-  createdAt: Date,
+  createdAt?: Date,
+  hashedPassword?: string, 
 }
 
 

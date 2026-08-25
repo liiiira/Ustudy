@@ -1,7 +1,8 @@
 import pool from "../config/postgres";
+import {User} from '../schemas/user.schema.ts'
 import {CreateUserRepository} from "../schemas/user.schema.ts";
 
-export async function create(userData: CreateUserRepository){
+export async function create(userData: CreateUserRepository) : Promise<User>{
 
   const {username, hashedPassword, email} = userData;
   
@@ -18,7 +19,7 @@ export async function create(userData: CreateUserRepository){
   return result.rows[0]; 
 }  
 
-export async function findAll(){
+export async function findAll() : Promise<User[]>{
   const result = await pool.query(
     `SELECT 
     id, username, email, created_at  AS "createdAt"
@@ -28,7 +29,7 @@ export async function findAll(){
   return result.rows;
 }
 
-export async function findByEmail(email: string ){
+export async function findByEmail(email: string ): Promise<User>{
 
   const result = await pool.query(
     `SELECT * 
@@ -41,7 +42,7 @@ export async function findByEmail(email: string ){
 
 }
  
-export async function findByUsername(username: string) {
+export async function findByUsername(username: string): Promise<User> {
   
   const result = await pool.query(
     `SELECT * 
@@ -53,7 +54,7 @@ export async function findByUsername(username: string) {
   return result.rows[0];
 }
 
-export async function findById(id: string){
+export async function findById(id: string): Promise<User>{
    const result = await pool.query(
     `SELECT * 
     FROM users
@@ -63,3 +64,20 @@ export async function findById(id: string){
   
   return result.rows[0]; 
 }
+
+export async function updateById(id: string, userData: CreateUserRepository): Promise<User>{
+  const {username, email, hashedPassword} = userData;
+
+  const result = await pool.query(
+    `UPDATE users
+    SET email = $1, username = $2, password = $3
+    WHERE id = $4 
+    RETURNING *`,
+    [email, username, hashedPassword, id]
+  )
+
+  return result.rows[0]
+}
+
+
+

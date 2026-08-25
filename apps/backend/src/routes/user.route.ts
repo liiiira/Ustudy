@@ -20,5 +20,9 @@ router.get("/:id/",
   asyncWrapper(userController.findById)
 );
 
+router.patch("/:id/",
+  validateParams(UserSchema.idSchema),
+  asyncWrapper(userController.updateById)
+)
 
 export default router;

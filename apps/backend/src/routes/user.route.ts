@@ -1,6 +1,6 @@
 import * as userController from "../controllers/user.controller";
 import asyncWrapper from "../utils/asyncWrapper";
-import validate from "../middlewares/validate";
+import {validateBody, validateParams } from "../middlewares/validate";
 import * as UserSchema from '../schemas/user.schema'
 import { Router } from "express";
 
@@ -11,13 +11,14 @@ router.get("/",
 );
 
 router.post("/",
-  validate(UserSchema.registerSchema),
+  validateBody(UserSchema.registerSchema),
   asyncWrapper(userController.create)
 );
 
 router.get("/:id/",
-  validate(UserSchema.idSchema, "params"), 
+  validateParams(UserSchema.idSchema, ), 
   asyncWrapper(userController.findById)
 );
+
 
 export default router;

@@ -8,7 +8,14 @@ beforeEach(async() => {
   pool.query('TRUNCATE TABLE users CASCADE');
 })
 
+
+
 describe("POST /users/", () => {
+
+  beforeEach(async() => {
+    pool.query('TRUNCATE TABLE users CASCADE');
+  })
+  
   it("should register a user with JSON", async () =>{
     const response = await request(app)
       .post("/api/v1/users")
@@ -131,6 +138,9 @@ describe("POST /users/", () => {
 
 });
 
+
+
+
 describe("GET /users/", () => {
 
   it("should return all users", async () => {
@@ -189,6 +199,7 @@ describe("GET /users/", () => {
 });
 
 describe("GET /users/:id", () => {
+  
   it("should return a user by id", async () => {
     const createResponse = await request(app)
       .post("/api/v1/users")
@@ -202,7 +213,7 @@ describe("GET /users/:id", () => {
 
     const response = await request(app)
       .get(`/api/v1/users/${userId}`);
-
+  
     expect(response.status).toBe(200);
     expect(response.headers["content-type"]).toMatch(/json/);
 
@@ -238,6 +249,8 @@ describe("GET /users/:id", () => {
     expect(response.body.status).toBe("error");
   });
 });
+
+
 
 
 describe("PATCH /users/:id/", () => {
@@ -382,9 +395,8 @@ describe("PATCH /users/:id/", () => {
   });
 });
 
-afterAll(async() => {
-  await pool.end();
-})
+
+
 
 describe("DELETE /api/v1/users/:id", () => {
   let userId: string;
@@ -447,3 +459,8 @@ describe("DELETE /api/v1/users/:id", () => {
     expect(response.status).toBe(400);
   });
 })
+
+afterAll(async() => {
+  await pool.end();
+})
+

@@ -25,6 +25,7 @@ export async function findAll(_req: Request, res: Response){
   return res.status(200).json({
     status: "success",
     users: users,
+    message: "Users Returned Successfuly",
   })
 }
 
@@ -36,6 +37,7 @@ export async function findById(req: Request<{ id: string} >, res: Response) {
   return res.status(200).json({
     status: "success",
     user: user,
+    message: "User Found Successfuly",
   });
 }
 
@@ -46,15 +48,14 @@ export async function updateById(req: Request<{id: string}>, res: Response){
   const {username, password, email } = req.body;
   const updatedUser: User | null = await userService.updateById(id, {username, password, email})
 
+  // Nothing changed
   if (!updatedUser)
-    return res.status(204).json({
-      status: "success",
-      user: null,
-    })
+    return res.status(204).json({})
 
-  
+ 
   return res.status(200).json({
     status: "success",
     user: updatedUser,
+    message: "User Updated Successfully"
   })
 }

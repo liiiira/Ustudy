@@ -32,7 +32,7 @@ export async function findAll() : Promise<User[]>{
 export async function findByEmail(email: string ): Promise<User>{
 
   const result = await pool.query(
-    `SELECT * 
+    `SELECT  id, email  
     FROM users
     WHERE email = $1`,
     [email], 
@@ -45,7 +45,8 @@ export async function findByEmail(email: string ): Promise<User>{
 export async function findByUsername(username: string): Promise<User> {
   
   const result = await pool.query(
-    `SELECT * 
+    `SELECT  id, email, username, created_at AS createdAt
+
     FROM users
     WHERE username = $1`,
     [username]
@@ -56,7 +57,7 @@ export async function findByUsername(username: string): Promise<User> {
 
 export async function findById(id: string): Promise<User>{
    const result = await pool.query(
-    `SELECT * 
+    `SELECT *
     FROM users
     WHERE id = $1`,
     [id]
@@ -70,7 +71,7 @@ export async function updateById(id: string, userData: UpdateUserRepository): Pr
   const {username, email, hashedPassword} = userData;
   
   // contains the qeury split into strings
-  let updates = [`UPDATE users SET `]
+  let updates = []
   // contains the modfied values
   let values: string[] = []
 
@@ -89,13 +90,13 @@ export async function updateById(id: string, userData: UpdateUserRepository): Pr
     values.push(hashedPassword);
   }
 
-  updates.push(`WHERE id = $${values.length + 1}`);
-  values.push(id);
-
-  updates.push(`RETURNING id, email, username, hashed_password AS hashedPassword, created_at AS createdAt`)
-
   // forming the query
-  const query: string = updates.join(" ");
+  const query: string = `UPDATE users
+    SET ${updates.join(", ")}
+    WHERE id = $${values.length + 1}
+    RETURNING id, email, username, created_at AS createdAt
+  `
+  values.push(id);
 
   const result = await pool.query(query, values)
 

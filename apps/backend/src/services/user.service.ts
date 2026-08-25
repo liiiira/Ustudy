@@ -58,7 +58,9 @@ export async function updateById(id: string, userData:UserUpdate) : Promise<User
 
   const {username, password, email} = userData;
   const user: User  = await findById(id);
- 
+  
+  if(!username && !password && !email)
+    throw new AppError("Body is Empty", 400);
   // check if email changed 
   const modifiedAttributes: Record<string, string> = {}
   if (email && user.email !== email){
@@ -85,7 +87,7 @@ export async function updateById(id: string, userData:UserUpdate) : Promise<User
   }
   
   // Check if nothing changed  
-  if (modifiedAttributes.keys.length === 0)
+  if (Object.keys(modifiedAttributes).length === 0)
     return null;
 
   const updatedUser: User = await userRepository.updateById(id, modifiedAttributes)

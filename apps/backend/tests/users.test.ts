@@ -239,6 +239,149 @@ describe("GET /users/:id", () => {
   });
 });
 
+
+describe("PATCH /users/:id/", () => {
+  let userId: string;
+
+  beforeEach(async () => {
+    const response = await request(app)
+      .post("/api/v1/users")
+      .set("Content-Type", "application/json")
+      .send({
+        username: "kirakira",
+        password: "12345678",
+        email: "kira@gmail.com",
+      });
+
+    expect(response.status).toBe(201);
+
+    userId = response.body.user.id;
+  });
+
+  it("should update a user with JSON", async () => {
+    const response = await request(app)
+      .patch(`/api/v1/users/${userId}`)
+      .set("Content-Type", "application/json")
+      .send({
+        username: "newname",
+      });
+
+    // Updated successfully
+    expect(response.status).toBe(200);
+
+    // Response is JSON
+    expect(response.headers["content-type"]).toMatch(/json/);
+
+    // Response contains expected data
+    expect(response.body.status).toBe("success");
+    expect(response.body.message).toBe("User Updated Successfully");
+
+    expect(response.body.user).toMatchObject({
+      id: userId,
+      username: "newname",
+      email: "kira@gmail.com",
+    });
+  });
+
+  it("should update multiple fields", async () => {
+    const response = await request(app)
+      .patch(`/api/v1/users/${userId}`)
+      .set("Content-Type", "application/json")
+      .send({
+        username: "newname",
+        email: "newemail@gmail.com",
+      });
+
+    expect(response.status).toBe(200);
+
+    expect(response.headers["content-type"]).toMatch(/json/);
+
+    expect(response.body.status).toBe("success");
+
+    expect(response.body.user).toMatchObject({
+      id: userId,
+      username: "newname",
+      email: "newemail@gmail.com",
+    });
+  });
+
+  it("should update only the provided email ", async () => {
+    const response = await request(app)
+      .patch(`/api/v1/users/${userId}`)
+      .set("Content-Type", "application/json")
+      .send({
+        username: "newname",
+      });
+
+    expect(response.status).toBe(200);
+
+    expect(response.body.user).toMatchObject({
+      id: userId,
+      username: "newname",
+      email: "kira@gmail.com",
+    });
+  });
+
+  it("should return 204 when nothing actually changes", async () => {
+    const response = await request(app)
+      .patch(`/api/v1/users/${userId}`)
+      .set("Content-Type", "application/json")
+      .send({
+        username: "kirakira",
+        email: "kira@gmail.com",
+      });
+
+    // Request was valid, but nothing changed
+    expect(response.status).toBe(204);
+
+    // 204 must not contain a response body
+    expect(response.body).toEqual({});
+  });
+
+  it("should return 404 when the user does not exist", async () => {
+    const response = await request(app)
+      .patch("/api/v1/users/00000000-0000-0000-0000-000000000000")
+      .set("Content-Type", "application/json")
+      .send({
+        username: "newname",
+      });
+
+    expect(response.status).toBe(404);
+
+    expect(response.headers["content-type"]).toMatch(/json/);
+
+    expect(response.body.status).toBe("error");
+  });
+
+  it("should return 400 when the request body is invalid", async () => {
+    const response = await request(app)
+      .patch(`/api/v1/users/${userId}`)
+      .set("Content-Type", "application/json")
+      .send({
+        username: "ab",
+      });
+
+    expect(response.status).toBe(400);
+
+    expect(response.headers["content-type"]).toMatch(/json/);
+
+    expect(response.body.status).toBe("error");
+  });
+
+  it("should return 400 when the request body is empty", async () => {
+    const response = await request(app)
+      .patch(`/api/v1/users/${userId}`)
+      .set("Content-Type", "application/json")
+      .send({});
+
+    expect(response.status).toBe(400);
+
+    expect(response.headers["content-type"]).toMatch(/json/);
+
+    expect(response.body.status).toBe("error");
+  });
+});
+
 afterAll(async() => {
   await pool.end();
 })

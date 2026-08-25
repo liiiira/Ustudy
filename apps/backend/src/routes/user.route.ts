@@ -22,6 +22,7 @@ router.get("/:id/",
 
 router.patch("/:id/",
   validateParams(UserSchema.idSchema),
+  validateBody(UserSchema.updateSchema),
   asyncWrapper(userController.updateById)
 )
 

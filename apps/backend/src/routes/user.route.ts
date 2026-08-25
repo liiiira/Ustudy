@@ -26,4 +26,10 @@ router.patch("/:id/",
   asyncWrapper(userController.updateById)
 )
 
+router.delete("/:id/",
+  validateParams(UserSchema.idSchema),
+  asyncWrapper(userController.deleteById)
+);
+
 export default router;
+

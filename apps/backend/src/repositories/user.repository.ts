@@ -103,3 +103,15 @@ export async function updateById(id: string, userData: UpdateUserRepository): Pr
   return result.rows[0]
 }
 
+
+export async function deleteById(id: string): Promise<{id: string} | null>{
+
+  const result = await pool.query(`DELETE FROM users
+    WHERE id = $1
+    RETURNING id`, 
+    [id]
+  );
+  return result.rows[0]
+}
+
+

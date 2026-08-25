@@ -61,13 +61,17 @@ export async function updateById(id: string, userData:UserUpdate) : Promise<User
   
   if(!username && !password && !email)
     throw new AppError("Body is Empty", 400);
-  // check if email changed 
+
   const modifiedAttributes: Record<string, string> = {}
+  
+  // Check if email exists and changed 
   if (email && user.email !== email){
     // check if the new email is used by anotehr user
     const emailExists = await findByEmail(email);
+
     if (emailExists)
       throw new AppError("New Email is Already Used", 409);
+
     modifiedAttributes["email"] = email;
   }
 
@@ -75,15 +79,21 @@ export async function updateById(id: string, userData:UserUpdate) : Promise<User
   if (username && user.username !== username){
     // check if the new usename  is used by another user
     const usernameExists: User = await findByUsername(username);
+
     if (usernameExists)
       throw new AppError("New Username Is Already Used", 409);
+
     modifiedAttributes["username"] = username;
   }
+
+
   if(password){
+
     const hashedPassword = await hashPassword(password);
+
     if(user.hashedPassword !== hashedPassword)
       modifiedAttributes["hashedPassword"] = hashedPassword;
-
+    
   }
   
   // Check if nothing changed  
@@ -98,3 +108,11 @@ export async function updateById(id: string, userData:UserUpdate) : Promise<User
   return updatedUser;
 }
 
+export async function delelteById(id: string){
+  const user: {id: string} | null = await userRepository.deleteById(id);
+
+  if(!user)
+    throw new AppError("User Not Found", 404);
+  
+  return user;
+}

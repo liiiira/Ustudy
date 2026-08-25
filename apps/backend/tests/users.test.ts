@@ -386,3 +386,64 @@ afterAll(async() => {
   await pool.end();
 })
 
+describe("DELETE /api/v1/users/:id", () => {
+  let userId: string;
+
+  beforeEach(async () => {
+    const response = await request(app)
+      .post("/api/v1/users")
+      .send({
+        username: "kirakira",
+        password: "12345678",
+        email: "kira@gmail.com",
+      });
+
+    userId = response.body.user.id;
+  });
+
+  it("should delete an existing user", async () => {
+    const response = await request(app)
+      .delete(`/api/v1/users/${userId}`);
+
+    expect(response.status).toBe(200);
+  });
+
+  it("should return the deleted user's id only", async () => {
+    const response = await request(app)
+      .delete(`/api/v1/users/${userId}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      status: "success",
+      message: "User Deleted Successfully",
+      user: {
+        id: userId,
+        
+      },
+    });
+  });
+
+  it("should actually delete the user", async () => {
+    await request(app)
+      .delete(`/api/v1/users/${userId}`);
+
+    const response = await request(app)
+      .get(`/api/v1/users/${userId}`);
+
+    expect(response.status).toBe(404);
+  });
+
+  it("should return 404 when the user does not exist", async () => {
+    const response = await request(app)
+      .delete("/api/v1/users/00000000-0000-0000-0000-000000000000");
+
+    expect(response.status).toBe(404);
+  });
+
+  it("should return 400 for an invalid user id", async () => {
+    const response = await request(app)
+      .delete("/api/v1/users/not-a-valid-uuid");
+
+    expect(response.status).toBe(400);
+  });
+})

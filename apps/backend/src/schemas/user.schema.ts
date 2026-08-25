@@ -7,17 +7,20 @@ export const registerSchema = z.object({
   email: z.email(),
 })
 
+export type UserInput = z.infer<typeof registerSchema>;
+
 export const idSchema = z.object({
   id: z.uuid(),
 })
 
-export type UserInput = z.infer<typeof registerSchema>;
 
-export interface CreateUserRepository {
-  username: string,
-  hashedPassword: string,
-  email: string,
-}
+export const updateSchema = z.object({
+  username: z.string().min(3).max(25).optional(),
+  password: z.string().min(8).max(24).optional(),
+  email: z.email().optional(),
+})
+
+export type UserUpdate = z.infer<typeof updateSchema>
 
 export interface User {
   id: string,
@@ -25,6 +28,19 @@ export interface User {
   email: string,
   createdAt?: Date,
   hashedPassword?: string, 
+}
+
+
+export interface CreateUserRepository {
+  username: string,
+  hashedPassword: string,
+  email: string,
+}
+
+export interface UpdateUserRepository{
+  username?: string,
+  email?: string,
+  hashedPassword?: string
 }
 
 

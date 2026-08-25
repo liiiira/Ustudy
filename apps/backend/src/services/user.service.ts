@@ -1,5 +1,5 @@
 import * as userRepository from "../repositories/user.repository";
-import { UserInput, User } from "../schemas/user.schema";
+import { UserInput, User, UserUpdate } from "../schemas/user.schema";
 import { hashPassword } from "../utils/password";
 import { AppError } from "../errors/appError";
 
@@ -54,34 +54,41 @@ export async function findById(id: string): Promise<User>{
 }
 
 
-export async function updateById(id: string, userData:UserInput) : Promise<User | null>{
+export async function updateById(id: string, userData:UserUpdate) : Promise<User | null>{
 
   const {username, password, email} = userData;
   const user: User  = await findById(id);
-  
+ 
   // check if email changed 
-  if (user.email !== email){
-    // check if the new email is used
+  const modifiedAttributes: Record<string, string> = {}
+  if (email && user.email !== email){
+    // check if the new email is used by anotehr user
     const emailExists = await findByEmail(email);
     if (emailExists)
       throw new AppError("New Email is Already Used", 409);
+    modifiedAttributes["email"] = email;
   }
 
   // check if username changed
-  if (user.username !== username){
-    // check if the new usename  is used
+  if (username && user.username !== username){
+    // check if the new usename  is used by another user
     const usernameExists: User = await findByUsername(username);
     if (usernameExists)
       throw new AppError("New Username Is Already Used", 409);
+    modifiedAttributes["username"] = username;
   }
+  if(password){
+    const hashedPassword = await hashPassword(password);
+    if(user.hashedPassword !== hashedPassword)
+      modifiedAttributes["hashedPassword"] = hashedPassword;
 
-  const hashedPassword = await hashPassword(password);
-
-  // Check if nothing changed  
-  if (user.username === username && user.email === email && user.hashedPassword === hashedPassword)
-    return null;
+  }
   
-  const updatedUser: User = await userRepository.updateById(id, {username, email, hashedPassword})
+  // Check if nothing changed  
+  if (modifiedAttributes.keys.length === 0)
+    return null;
+
+  const updatedUser: User = await userRepository.updateById(id, modifiedAttributes)
   
   if (!updatedUser)
     throw new AppError("User Was Not Updated", 500, "Uknown Failure");

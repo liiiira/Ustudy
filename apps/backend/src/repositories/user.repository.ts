@@ -1,6 +1,6 @@
 import pool from "../config/postgres";
 import {User} from '../schemas/user.schema.ts'
-import {CreateUserRepository} from "../schemas/user.schema.ts";
+import {CreateUserRepository, UpdateUserRepository} from "../schemas/user.schema.ts";
 
 export async function create(userData: CreateUserRepository) : Promise<User>{
 
@@ -65,19 +65,40 @@ export async function findById(id: string): Promise<User>{
   return result.rows[0]; 
 }
 
-export async function updateById(id: string, userData: CreateUserRepository): Promise<User>{
-  const {username, email, hashedPassword} = userData;
+export async function updateById(id: string, userData: UpdateUserRepository): Promise<User>{
 
-  const result = await pool.query(
-    `UPDATE users
-    SET email = $1, username = $2, password = $3
-    WHERE id = $4 
-    RETURNING *`,
-    [email, username, hashedPassword, id]
-  )
+  const {username, email, hashedPassword} = userData;
+  
+  // contains the qeury split into strings
+  let updates = [`UPDATE users SET `]
+  // contains the modfied values
+  let values: string[] = []
+
+  if (email){
+    updates.push(`email = $${values.length + 1}`);
+    values.push(email);
+  }
+
+  if (username){
+    updates.push(`username = $${values.length + 1}`);
+    values.push(username);
+  }
+
+  if (hashedPassword){
+    updates.push(`hashed_password = $${values.length + 1}`);
+    values.push(hashedPassword);
+  }
+
+  updates.push(`WHERE id = $${values.length + 1}`);
+  values.push(id);
+
+  updates.push(`RETURNING id, email, username, hashed_password AS hashedPassword, created_at AS createdAt`)
+
+  // forming the query
+  const query: string = updates.join(" ");
+
+  const result = await pool.query(query, values)
 
   return result.rows[0]
 }
-
-
 

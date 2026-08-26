@@ -26,20 +26,23 @@ export async function upsertRefreshToken(RefreshToken: {userId: string, hashedTo
   return result.rows[0];
 }
 
-export async function getRefreshToken(userId: string){
+export async function findRefreshToken(userId: string): Promise<{hashedToken: string, userId: string, expiresAt: Date, revokedAt: Date, id: Date}>   {
 
-  const result = await pool.query(
+   const result = await pool.query(
     `SELECT 
       hashed_token AS "hashedToken", 
       user_id AS "userId",  
       expires_at AS expiresAt, 
-      revoked_at as "RevokedAt"
-      id,
-      WHERE userId = $1;`,
+      revoked_at as "RevokedAt",
+      id
+      FROM refresh_tokens
+      WHERE user_id = $1;`,
     [userId]
   );
 
   return result.rows[0];
 }
+
+
 
 

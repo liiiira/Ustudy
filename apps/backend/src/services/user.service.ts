@@ -66,7 +66,8 @@ export async function updateById(id: string, userData:UserUpdate) : Promise<User
   
   // Check if email exists and changed 
   if (email && user.email !== email){
-    // check if the new email is used by anotehr user
+
+    // Check if the new email is used by anotehr user
     const emailExists = await findByEmail(email);
 
     if (emailExists)

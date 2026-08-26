@@ -3,6 +3,7 @@ import 'dotenv/config';
 import cors from 'cors';
 import errorMiddleware from './middlewares/errorMiddleware.ts';
 import apiRouter from './api.ts';
+import cookieParser from 'cookie-parser'
 
 const VITE_PORT: number = parseInt(process.env.VITE_PORT!);
 
@@ -14,6 +15,7 @@ app.use(express.json());
 app.use(cors({
   origin: `http://localhost:${VITE_PORT}`,
 }))
+app.use(cookieParser(process.env.COOKIE_SECRET))
 
 app.use("/api/v1", apiRouter);
 

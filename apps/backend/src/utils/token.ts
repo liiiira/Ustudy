@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { JwtPayload } from 'jsonwebtoken';
+import { type JwtPayload } from 'jsonwebtoken';
 import { AppError } from '../errors/appError';
 import crypto from 'node:crypto'
 
@@ -62,4 +62,11 @@ export function hashRefreshToken(refreshToken: string): string{
     .createHash("sha256")
     .update(refreshToken)
     .digest("hex");
+}
+
+export function compareRefreshToken(refreshToken: string, hashedRefreshToken: string): boolean{
+
+  const incomingHash = Buffer.from(hashRefreshToken(refreshToken), "hex");
+  const storedHash = Buffer.from(hashedRefreshToken, "hex");
+  return crypto.timingSafeEqual(incomingHash, storedHash);
 }

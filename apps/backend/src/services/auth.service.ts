@@ -4,9 +4,10 @@ import * as userService from "../services/user.service.ts"
 import { comparePassword } from "../utils/password.ts";
 import * as tokenUtils from '../utils/token.ts'
 import * as authRepository from '../repositories/auth.repository.ts'
+import { JwtPayload } from "jsonwebtoken";
 
 
-export async function login(userData: UserLogin): Promise<{refreshToken: Promise<string>, accessToken: string}>{
+export async function login(userData: UserLogin): Promise<{refreshToken: string, accessToken: string}>{
 
   const {email, password} = userData;
 
@@ -25,7 +26,7 @@ export async function login(userData: UserLogin): Promise<{refreshToken: Promise
     throw new AppError("Invalid Cridentials", 401);
 
   // create both access and refresh tokens
-  const refreshToken: Promise<string> = updateRefreshToken(id);
+  const refreshToken = await updateRefreshToken(id);
   const accessToken: string = createAccessToken(id);
 
   return {accessToken, refreshToken}
@@ -48,6 +49,28 @@ async function updateRefreshToken(userId: string): Promise<string>{
 }
 
 function createAccessToken(userId: string): string{
+
   return tokenUtils.createAccessToken(userId);
 }
 
+export async function refresh(refreshToken: string): Promise<string>{
+  
+  // verify it's a valid refersh token
+  const payload: JwtPayload = tokenUtils.verifyRefreshToken(refreshToken);
+
+  // fetch the refresh token associated with the user
+  const userRefreshToken: {hashedToken: string, userId: string, expiresAt: Date, revokedAt: Date, id: Date}
+    = await authRepository.findRefreshToken(payload.userId);
+ 
+  // check if the token expired or got revoked
+  if(userRefreshToken.revokedAt || userRefreshToken.expiresAt < new Date())
+    throw new AppError("Invalid refreshToken", 401);
+
+  // check if the token sent is the same one stored in the database
+  const validToken: boolean = tokenUtils.compareRefreshToken(refreshToken, userRefreshToken.hashedToken);
+  
+  if (!validToken)
+     throw new AppError("Invalid refreshToken", 401);  
+  
+  return createAccessToken(userRefreshToken.userId);
+}

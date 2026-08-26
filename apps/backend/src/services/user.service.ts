@@ -1,20 +1,20 @@
 import * as userRepository from "../repositories/user.repository";
-import { UserInput, User, UserUpdate } from "../schemas/user.schema";
+import { UserRegister, User, UserUpdate, UserAuth } from "../schemas/user.schema";
 import { hashPassword } from "../utils/password";
 import { AppError } from "../errors/appError";
 
-export async function create(userData: UserInput){
+export async function create(userData: UserRegister){
 
   const {username, email, password} = userData;
 
   // Check if email is already used
-  const emailExists = await findByEmail(email);
+  const emailExists: User | null = await findByEmail(email);
 
   if (emailExists)
     throw new AppError("Email Already Exists", 409); 
   
   // Check if username is already used
-  const usernameExists = await findByUsername(username);
+  const usernameExists: User | null = await findByUsername(username);
   
   if (usernameExists)
       throw new AppError("Username Already Exists", 409);
@@ -35,17 +35,17 @@ export async function findAll() : Promise<User[]>{
 }
 
 
-export async function findByEmail(email: string) : Promise<User>{
+export async function findByEmail(email: string) : Promise<UserAuth | null>{
   return await userRepository.findByEmail(email)
 }
 
 
-export async function findByUsername(username: string) : Promise<User> {
+export async function findByUsername(username: string) : Promise<UserAuth | null> {
   return await userRepository.findByUsername(username);
 }
 
 
-export async function findById(id: string): Promise<User>{
+export async function findById(id: string): Promise<UserAuth>{
 
   const user = await userRepository.findById(id);
   if (!user)
@@ -78,7 +78,7 @@ export async function updateById(id: string, userData:UserUpdate) : Promise<User
   // check if username changed
   if (username && user.username !== username){
     // check if the new usename  is used by another user
-    const usernameExists: User = await findByUsername(username);
+    const usernameExists: User | null = await findByUsername(username);
 
     if (usernameExists)
       throw new AppError("New Username Is Already Used", 409);
@@ -107,6 +107,7 @@ export async function updateById(id: string, userData:UserUpdate) : Promise<User
 
   return updatedUser;
 }
+
 
 export async function delelteById(id: string){
   const user: {id: string} | null = await userRepository.deleteById(id);

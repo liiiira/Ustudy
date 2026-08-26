@@ -1,6 +1,7 @@
 import {Router, type Request, type Response} from 'express';
 import pool from './config/postgres.ts';
 import userRouter from './routes/user.route.ts'
+import authRouter from './routes/auth.route.ts';
 
 const router = Router();
  
@@ -12,6 +13,7 @@ router.get("/", (_req: Request, res: Response) => {
 })
 
 router.use("/users", userRouter);
+router.use("/auth", authRouter);
 
 router.get("/postgres/tables", async(_req: Request, res: Response) => {
   

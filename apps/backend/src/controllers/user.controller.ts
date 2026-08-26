@@ -1,11 +1,11 @@
-import { type UserInput, User } from "../schemas/user.schema.ts";
+import { type UserRegister, User, UserAuth } from "../schemas/user.schema.ts";
 import * as userService from "../services/user.service.ts";
 import {type Request, type Response} from 'express';
 
 export async function create(req:Request, res: Response){
   
   // body Already validated using the validate middleware
-  const userData: UserInput = req.body;
+  const userData: UserRegister = req.body;
 
   // Getting the created user with his uuid, and time stamp of creation 
   const user: User = await userService.create(userData);

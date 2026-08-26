@@ -17,9 +17,7 @@ export async function login(userData: UserLogin): Promise<{refreshToken: Promise
     throw new AppError("Invalid Cridentials", 401);
   
   const {hashedPassword, id} = user;
-  console.log("user", user);
-  console.log("password: ", password);
-  console.log("hashedPassword", hashedPassword);
+  
   // check if the password is correct
   const validPassword: boolean = await comparePassword(password, hashedPassword);
 
@@ -27,13 +25,13 @@ export async function login(userData: UserLogin): Promise<{refreshToken: Promise
     throw new AppError("Invalid Cridentials", 401);
 
   // create both access and refresh tokens
-  const refreshToken: Promise<string> = createRefreshToken(id);
+  const refreshToken: Promise<string> = updateRefreshToken(id);
   const accessToken: string = createAccessToken(id);
 
   return {accessToken, refreshToken}
 }
 
-async function createRefreshToken(userId: string): Promise<string>{
+async function updateRefreshToken(userId: string): Promise<string>{
 
   const refreshToken = tokenUtils.createRefreshToken(userId);
 
@@ -41,7 +39,7 @@ async function createRefreshToken(userId: string): Promise<string>{
   expiresAt.setDate(expiresAt.getDate() + 7);
 
   const hashedToken = tokenUtils.hashRefreshToken(refreshToken);
-  const token = await  authRepository.createRefreshToken({userId, expiresAt, hashedToken});
+  const token = await  authRepository.upsertRefreshToken({userId, expiresAt, hashedToken});
 
   if(!token)
     throw new AppError("Unexpected Database Error" , 500);

@@ -43,6 +43,20 @@ export async function findRefreshToken(userId: string): Promise<{hashedToken: st
   return result.rows[0];
 }
 
+export async function revokeRefreshToken(hashedToken: string): Promise<{id: string, userId: string}>{
+  
+  const result = await pool.query(
+    `UPDATE refresh_tokens
+    SET revoked_at=NOW()
+    WHERE hashed_token = $1
+    RETURNING
+    user_id AS "userId",
+    id`,
+    [hashedToken]
+  )
+  return result.rows[0];
+}
+
 
 
 

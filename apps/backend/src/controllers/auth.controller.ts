@@ -36,3 +36,20 @@ export async function refresh(req: Request, res: Response) {
     accessToken: accessToken
   })
 }
+
+
+export async function logout(req: Request, res: Response){
+  const refreshToken: string | undefined = req.cookies.refreshToken;
+  
+  if(!refreshToken)
+    throw new AppError("Invalid Refresh Token", 401);
+
+  await authService.revokeRefreshToken(refreshToken);
+
+  res.clearCookie('refreshToken');
+
+  return res.status(204).json({
+    status: "success",
+    message: "Logged out Successfuly"
+  });
+}

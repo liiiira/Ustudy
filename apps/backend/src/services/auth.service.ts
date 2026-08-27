@@ -32,6 +32,7 @@ export async function login(userData: UserLogin): Promise<{refreshToken: string,
   return {accessToken, refreshToken}
 }
 
+
 async function updateRefreshToken(userId: string): Promise<string>{
 
   const refreshToken = tokenUtils.createRefreshToken(userId);
@@ -48,10 +49,12 @@ async function updateRefreshToken(userId: string): Promise<string>{
   return refreshToken;
 }
 
+
 function createAccessToken(userId: string): string{
 
   return tokenUtils.createAccessToken(userId);
 }
+
 
 export async function refresh(refreshToken: string): Promise<string>{
   
@@ -74,3 +77,15 @@ export async function refresh(refreshToken: string): Promise<string>{
   
   return createAccessToken(userRefreshToken.userId);
 }
+
+export async function revokeRefreshToken (refreshToken: string){
+
+  const payload: JwtPayload = tokenUtils.verifyRefreshToken(refreshToken);
+  const hashedRefreshToken: string = tokenUtils.hashRefreshToken(refreshToken);
+  const result: {id: string, userId: string} = await authRepository.revokeRefreshToken(hashedRefreshToken)
+  if (!result)
+    throw new AppError("Token was not found in DB", 500);
+  
+  return result;
+} 
+

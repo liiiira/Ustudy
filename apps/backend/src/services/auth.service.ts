@@ -33,29 +33,6 @@ export async function login(userData: UserLogin): Promise<{refreshToken: string,
 }
 
 
-async function updateRefreshToken(userId: string): Promise<string>{
-
-  const refreshToken = tokenUtils.createRefreshToken(userId);
-
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 7);
-
-  const hashedToken = tokenUtils.hashRefreshToken(refreshToken);
-  const token = await  authRepository.upsertRefreshToken({userId, expiresAt, hashedToken});
-
-  if(!token)
-    throw new AppError("Unexpected Database Error" , 500);
-
-  return refreshToken;
-}
-
-
-function createAccessToken(userId: string): string{
-
-  return tokenUtils.createAccessToken(userId);
-}
-
-
 export async function refresh(refreshToken: string): Promise<string>{
   
   // verify it's a valid refersh token
@@ -78,14 +55,50 @@ export async function refresh(refreshToken: string): Promise<string>{
   return createAccessToken(userRefreshToken.userId);
 }
 
-export async function revokeRefreshToken (refreshToken: string){
 
+export async function revokeRefreshToken (refreshToken: string){
+  
+  // Check if it is a valid refresh token
   const payload: JwtPayload = tokenUtils.verifyRefreshToken(refreshToken);
+
+  // hash it and revoke the refresh token that has the same hash  
   const hashedRefreshToken: string = tokenUtils.hashRefreshToken(refreshToken);
   const result: {id: string, userId: string} = await authRepository.revokeRefreshToken(hashedRefreshToken)
+
   if (!result)
     throw new AppError("Token was not found in DB", 500);
   
+  // Contains token id and user id (not used for now)
   return result;
-} 
+}
+
+
+async function updateRefreshToken(userId: string): Promise<string>{
+  
+  // creating a refresh token associated to a user (for now)
+  const refreshToken = tokenUtils.createRefreshToken(userId);
+
+  // Calculating the expire date of the token
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7);
+
+  // hash the token and store it in db
+  const hashedToken = tokenUtils.hashRefreshToken(refreshToken);
+  const token = await  authRepository.upsertRefreshToken({userId, expiresAt, hashedToken});
+
+  if(!token)
+    throw new AppError("Unexpected Database Error" , 500);
+
+  return refreshToken;
+}
+
+
+function createAccessToken(userId: string): string{
+  return tokenUtils.createAccessToken(userId);
+}
+
+
+
+
+ 
 

@@ -24,7 +24,7 @@ router.patch("/:id/",
   validateParams(UserSchema.idSchema),
   validateBody(UserSchema.updateSchema),
   asyncWrapper(userController.updateById)
-)
+);
 
 router.delete("/:id/",
   validateParams(UserSchema.idSchema),

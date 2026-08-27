@@ -2,6 +2,7 @@ import {type Request, type Response, type NextFunction} from 'express';
 import { AppError } from '../errors/appError';
 import {type ZodType } from 'zod';
 
+// validates body of the http request
 export function validateBody(schema: ZodType) {
   return (req: Request, _res: Response, next: NextFunction) => {
 
@@ -15,6 +16,7 @@ export function validateBody(schema: ZodType) {
   }
 }
 
+// validates the query paramaters of http request
 export function validateParams(schema: ZodType) {
   return (req: Request, _res: Response, next: NextFunction) => {
    

@@ -3,7 +3,7 @@ import { UserRegister, User, UserUpdate, UserAuth } from "../schemas/user.schema
 import { hashPassword } from "../utils/password";
 import { AppError } from "../errors/appError";
 
-export async function create(userData: UserRegister){
+export async function create(userData: UserRegister): Promise<User>{
 
   const {username, email, password} = userData;
 
@@ -23,33 +23,43 @@ export async function create(userData: UserRegister){
   const hashedPassword = await hashPassword(password);
   
   return await userRepository.create({
+
     username: username,
     hashedPassword: hashedPassword,
     email: email,
+
   });
 } 
 
 
 export async function findAll() : Promise<User[]>{
+
   return await userRepository.findAll(); 
+
 }
 
 
 export async function findByEmail(email: string) : Promise<UserAuth | null>{
+  
   return await userRepository.findByEmail(email)
+
 }
 
 
 export async function findByUsername(username: string) : Promise<UserAuth | null> {
+
   return await userRepository.findByUsername(username);
+
 }
 
 
 export async function findById(id: string): Promise<UserAuth>{
 
   const user = await userRepository.findById(id);
+
   if (!user)
     throw new AppError("User Not Found", 404);
+
   return user;
 }
 
@@ -111,6 +121,7 @@ export async function updateById(id: string, userData:UserUpdate) : Promise<User
 
 
 export async function delelteById(id: string){
+  
   const user: {id: string} | null = await userRepository.deleteById(id);
 
   if(!user)

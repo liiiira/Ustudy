@@ -1,7 +1,7 @@
-import * as userRepository from "../repositories/user.repository";
-import { UserRegister, User, UserUpdate, UserAuth } from "../schemas/user.schema";
-import { hashPassword } from "../utils/password";
-import { AppError } from "../errors/appError";
+import * as userRepository from "./user.repository";
+import { UserRegister, User, UserUpdate, UserAuth } from "./user.schema";
+import { hashPassword } from "../../utils/password";
+import { AppError } from "../../errors/appError";
 
 export async function create(userData: UserRegister): Promise<User>{
 

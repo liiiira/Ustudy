@@ -1,7 +1,7 @@
 import {Router, type Request, type Response} from 'express';
 import pool from './config/postgres.ts';
-import userRouter from './routes/user.route.ts'
-import authRouter from './routes/auth.route.ts';
+import userRouter from './features/users/user.route.ts'
+import authRouter from './features/auth/auth.route.ts';
 
 const router = Router();
  

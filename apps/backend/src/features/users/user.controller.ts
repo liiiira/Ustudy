@@ -1,5 +1,5 @@
-import { type UserRegister, User, UserAuth } from "../schemas/user.schema.ts";
-import * as userService from "../services/user.service.ts";
+import { type UserRegister, User, UserAuth } from "./user.schema.ts";
+import * as userService from "./user.service.ts";
 import {type Request, type Response} from 'express';
 
 export async function create(req:Request, res: Response){

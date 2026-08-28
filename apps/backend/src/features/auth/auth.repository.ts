@@ -1,4 +1,4 @@
-import pool from "../config/postgres";
+import pool from "../../config/postgres";
 
 
 // For now one user has only one refresh token (Later we will update for many devices)

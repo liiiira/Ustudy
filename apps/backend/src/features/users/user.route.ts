@@ -1,7 +1,7 @@
-import * as userController from "../controllers/user.controller";
-import asyncWrapper from "../utils/asyncWrapper";
-import {validateBody, validateParams } from "../middlewares/validate";
-import * as UserSchema from '../schemas/user.schema'
+import * as userController from "./user.controller";
+import asyncWrapper from "../../utils/asyncWrapper";
+import {validateBody, validateParams } from "../../middlewares/validate";
+import * as UserSchema from './user.schema'
 import { Router } from "express";
 
 const router = Router({caseSensitive: true});

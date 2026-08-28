@@ -1,6 +1,5 @@
-import pool from "../config/postgres";
-import {User, UserAuth} from '../schemas/user.schema.ts'
-import {CreateUserRepository, UpdateUserRepository} from "../schemas/user.schema.ts";
+import pool from "../../config/postgres";
+import {User, UserAuth, CreateUserRepository, UpdateUserRepository} from './user.schema.ts'
 
 export async function create(userData: CreateUserRepository) : Promise<User>{
 

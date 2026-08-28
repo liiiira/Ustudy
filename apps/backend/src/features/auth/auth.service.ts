@@ -1,9 +1,9 @@
-import { AppError } from "../errors/appError.ts";
-import { UserLogin, UserAuth } from "../schemas/user.schema";
-import * as userService from "../services/user.service.ts"
-import { comparePassword } from "../utils/password.ts";
-import * as tokenUtils from '../utils/token.ts'
-import * as authRepository from '../repositories/auth.repository.ts'
+import { AppError } from "../../errors/appError.ts";
+import { UserLogin, UserAuth } from "../users/user.schema";
+import * as userService from "../users/user.service.ts"
+import { comparePassword } from "../../utils/password.ts";
+import * as tokenUtils from '../../utils/token.ts'
+import * as authRepository from './auth.repository.ts'
 import { JwtPayload } from "jsonwebtoken";
 
 

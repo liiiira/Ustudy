@@ -13,12 +13,12 @@ export async function login(userData: UserLogin): Promise<{refreshToken: string,
 
   // get the user based on the email
   const user: UserAuth | null = await userService.findByEmail(email);
-
+  console.log("User: ", user);
+    
   if(!user)
     throw new AppError("Invalid Cridentials", 401);
   
-  const {hashedPassword, id} = user;
-  
+  const {hashedPassword, id} = user; 
   // check if the password is correct
   const validPassword: boolean = await comparePassword(password, hashedPassword);
 

@@ -6,7 +6,7 @@ export async function login(req: Request, res: Response){
 
 
   const {email, password} = req.body;
-
+  console.log(`email: ${email}, password: ${password}`)
   // Login and get
   // a short life Access token for api requests 
   // and a long life  refreshToken to refresh the access Token

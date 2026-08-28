@@ -1,10 +1,10 @@
 import { useState } from "react";
 import {AuthContext} from './auth.context.ts'
 import * as authApi from '../api/auth.api.ts'
+import { setAccessToken, removeAccessToken } from "../token.ts";
 
 export function AuthProvider({children}: {children: React.ReactNode}){
 
-  const [accessToken, setAccessToken] = useState<string>("");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   const login = async (loginData: {email: string, password: string}) => {
@@ -18,12 +18,12 @@ export function AuthProvider({children}: {children: React.ReactNode}){
   const logout = async() => {
 
     await authApi.logout();
-    setAccessToken("");
+    removeAccessToken();
     setIsAuthenticated(false);
   }
 
   return (
-  <AuthContext.Provider value={{accessToken, isAuthenticated, login, logout}}>
+  <AuthContext.Provider value={{isAuthenticated, login, logout}}>
       {children}
     </AuthContext.Provider>
   )

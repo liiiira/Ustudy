@@ -1,8 +1,7 @@
-import { fetchApi } from "../../../lib/api";
-
+import { publicFetch } from "../../../lib/api";
 
 export async function login(userInfo: {email: string, password: string}): Promise<string>{
-  const data = await fetchApi("/auth/login", 
+  const data = await publicFetch("/auth/login", 
     {
       method: 'POST',
       body: userInfo
@@ -13,7 +12,7 @@ export async function login(userInfo: {email: string, password: string}): Promis
 }
 
 export async function refresh(): Promise<string>{
-  const data = await fetchApi("/auth/refresh",
+  const data = await publicFetch("/auth/refresh",
     {
       method: "POST",
     }
@@ -22,7 +21,7 @@ export async function refresh(): Promise<string>{
 }
 
 export async function logout(): Promise<void>{
-   await fetchApi("/auth/logout", 
+   await publicFetch("/auth/logout", 
     {
       method: "POST",
     }

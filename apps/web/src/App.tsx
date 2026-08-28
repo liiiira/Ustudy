@@ -1,22 +1,19 @@
 import {Route, Routes} from 'react-router';
-import { useState } from 'react';
 import './App.css'
 import Layout from './components/layout/layout';
-import { AuthContext } from './context/authContext';
-import ProfilePage from './pages/profilePage';
-
+import TestPage from './TestPage.tsx'
 function App() {
-  const [user, setUser] = useState<Record<string, string>>({userId: '1'})
+
+
   return (
-    <AuthContext value={user}>
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<p>home</p>} />
-        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile" element={<p>Profile</p>} />
+        <Route path="/test" element={<TestPage/>} />
       </Route>
     
     </Routes>
-    </AuthContext>
   )
 }
 

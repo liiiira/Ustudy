@@ -1,5 +1,6 @@
 import { fetchApi } from "./lib/api"
 import {useState} from 'react';
+import {useAuth} from './features/auth/hooks/useAuth.ts'
 
 type User = {
   username: string;
@@ -11,9 +12,10 @@ type User = {
 
 export default function TestPage(){
   const [users, setUsers] = useState<User[]>([]);
-
+  
+  const {accessToken} = useAuth();
   async function handleClick(){
-    const data = await fetchApi("/users", {method: "GET"});
+    const data = await fetchApi("/users", {method: "GET", accessToken: accessToken});
     setUsers(data.users);
 
   }

@@ -10,7 +10,7 @@ export function createRefreshToken(userId: string): string{
   
   return jwt.sign(
     {
-      userId: userId
+      sub: userId
     },
     REFRESH_SECRET,
     {
@@ -36,7 +36,7 @@ export function createAccessToken(userId: string): string{
   
   return jwt.sign(
     {
-      userId: userId
+      sub: userId
     },
     ACCESS_SECRET,
     {
@@ -46,14 +46,14 @@ export function createAccessToken(userId: string): string{
 }
 export function verifyAccessToken(accessToken: string): JwtPayload{
   try{
-    const payload =  jwt.verify(accessToken, REFRESH_SECRET);
+    const payload =  jwt.verify(accessToken, ACCESS_SECRET);
     if (typeof payload === "string") {
-      throw new AppError("Invalid refresh token", 401);
+      throw new AppError("Invalid Access Token", 401);
     }
     return payload;  
 
   }catch(error){
-    throw new AppError("Invalid Refresh Token", 401);
+    throw new AppError("Invalid Access Token", 401);
   }
 }
 

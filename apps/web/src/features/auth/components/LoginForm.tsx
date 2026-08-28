@@ -33,7 +33,7 @@ export function LoginForm(){
     e.preventDefault();
     try{
       await login(user);
-      navigate("/")
+      navigate("/test")
     }catch{
       setError(true);
     }

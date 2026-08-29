@@ -37,10 +37,11 @@ export async function refresh(refreshToken: string): Promise<string>{
   
   // verify it's a valid refersh token
   const payload: JwtPayload = tokenUtils.verifyRefreshToken(refreshToken);
+  
 
   // fetch the refresh token associated with the user
   const userRefreshToken: {hashedToken: string, userId: string, expiresAt: Date, revokedAt: Date, id: Date}
-    = await authRepository.findRefreshToken(payload.userId);
+    = await authRepository.findRefreshToken(payload.sub!);
  
   // check if the token expired or got revoked
   if(userRefreshToken.revokedAt || userRefreshToken.expiresAt < new Date())

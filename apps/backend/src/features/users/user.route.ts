@@ -17,6 +17,11 @@ router.post("/",
   asyncWrapper(userController.create)
 );
 
+router.get("/me",
+  isAuthenticated,
+  asyncWrapper(userController.getProfile)
+);
+
 router.get("/:id/",
   isAuthenticated,
   validateParams(UserSchema.idSchema, ), 
@@ -35,6 +40,7 @@ router.delete("/:id/",
   validateParams(UserSchema.idSchema),
   asyncWrapper(userController.deleteById)
 );
+
 
 export default router;
 

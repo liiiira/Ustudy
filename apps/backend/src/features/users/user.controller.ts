@@ -1,4 +1,4 @@
-import { type UserRegister, User, UserAuth } from "./user.schema.ts";
+import { type UserRegister, User, UserAuth} from "./user.schema.ts";
 import * as userService from "./user.service.ts";
 import {type Request, type Response} from 'express';
 
@@ -18,6 +18,7 @@ export async function create(req:Request, res: Response){
   })
 }
 
+
 export async function findAll(_req: Request, res: Response){
 
   const users: User[] = await userService.findAll();
@@ -32,7 +33,7 @@ export async function findAll(_req: Request, res: Response){
 export async function findById(req: Request<{ id: string} >, res: Response) {
 
   const {id} = req.params;
-  const user = await userService.findById(id);
+  const user: User = await userService.findById(id);
 
   return res.status(200).json({
     status: "success",
@@ -69,5 +70,17 @@ export async function deleteById (req: Request<{id: string}>, res: Response){
     status: "success",
     message: "User Deleted Successfully",
     user: deletedUser,
+  })
+}
+
+export async function getProfile(req: Request, res: Response){
+
+  const id = req.user!.id;
+  const user: User = await userService.findById(id);
+
+  res.status(200).json({
+    status: "success",
+    message: "Profile fetched Successfully",
+    user: user
   })
 }

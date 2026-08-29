@@ -11,11 +11,11 @@ export default function LogoutForm( {className} : {className?: string}){
     e.preventDefault();
     try{
 
-      await logout();
+      const _data = await logout();
 
-    }catch(error){
-
-      console.error("Failed to logout: ", error);
+    }catch(err){
+      if (err instanceof Error)
+        console.error("Failed to logout: ", err);
     }
     navigate("/login")
   }

@@ -57,8 +57,5 @@ export async function logout(req: Request, res: Response){
 
   res.clearCookie('refreshToken');
 
-  return res.status(204).json({
-    status: "success",
-    message: "Logged out Successfuly"
-  });
+  return res.sendStatus(204);
 }

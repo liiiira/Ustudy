@@ -18,6 +18,7 @@ type ErrorResponse = {
 export async function publicFetch(endPointPath: string, options?: PublicOptionsType){
 
   options = options ?? {}
+  console.log(endPointPath, options)
   const response =  await fetchApi(endPointPath, false,  options)
 
   if(!response.ok){
@@ -25,6 +26,10 @@ export async function publicFetch(endPointPath: string, options?: PublicOptionsT
     throw new Error(errorData.message)
   }
 
+  if(response.status === 204)
+    return ;
+  
+  console.log("Response: ", response)
   return response.json();
 
 }
@@ -34,6 +39,9 @@ export async function authFetch(endPointPath: string, options?: PublicOptionsTyp
   const accessToken: string | null = getAccessToken();
   const response = await fetchApi(endPointPath, true, {...options, accessToken})
   
+  if(response.status === 204)
+    return ;
+
   if(response.ok)
     return response.json();
 
@@ -49,7 +57,10 @@ export async function authFetch(endPointPath: string, options?: PublicOptionsTyp
 
     // retry again 
     const newResponse = await fetchApi(endPointPath, true, {...options, accessToken: data.accessToken})
-  
+    
+    if (newResponse.status === 204)
+      return ;
+
     if(newResponse.ok)
       return response.json();
     

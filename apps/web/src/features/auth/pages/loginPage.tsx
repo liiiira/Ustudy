@@ -1,12 +1,12 @@
 import LoginForm from "../components/LoginForm";
-
+import FormBg from "../../../components/layout/formBg";
 
 
 export default function LoginPage(){
   return (
-    <div className="w-full h-screen flex justify-center items-center bg-gray-100">
+    <FormBg >
       <LoginForm />
-    </div>
+    </FormBg>
   );
 }
 

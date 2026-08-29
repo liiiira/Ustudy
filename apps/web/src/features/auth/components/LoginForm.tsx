@@ -70,7 +70,7 @@ export default function LoginForm(){
   
 
   return (
-  <form className=" p-4 w-1/2 h-1/2 max-w-md flex flex-col content-between border-2 gap-5 border-gray-300 rounded-2xl bg-white" 
+  <form className=" p-4 w-1/2 h-1/2 max-w-md flex flex-col content-between border-2 gap-3 border-gray-300 rounded-2xl bg-white" 
       onSubmit={handleSubmit}>
     
     <div id="form-header" className="flex flex-col gap-0.5">
@@ -81,6 +81,7 @@ export default function LoginForm(){
     </div>
      
     <div id="form-body" className="flex flex-col gap-2">
+
       <div className="flex flex-col gap-1">
         <label className="text-gray-600" htmlFor="email">Email </label>
       
@@ -105,7 +106,7 @@ export default function LoginForm(){
 
     </div>
 
-    <div id="form-footer" className="flex">
+    <div id="form-footer" className="flex justify-center items-center">
       <button className="bg-blue-600 px-6 py-3 text-white font-bold rounded-3xl"
         type="submit">Log In Now</button> 
     </div>

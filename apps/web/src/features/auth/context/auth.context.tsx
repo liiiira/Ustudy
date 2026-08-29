@@ -16,7 +16,7 @@ export function AuthProvider({children}: {children: React.ReactNode}){
       const token: string = await authApi.login(loginData);
       setAccessToken(token);
       setIsAuthenticated(true);
-
+  
     } finally{
 
       setLoading(false);
@@ -33,6 +33,7 @@ export function AuthProvider({children}: {children: React.ReactNode}){
       await authApi.logout();
       removeAccessToken();
       setIsAuthenticated(false);
+      console.log("logout called")
 
     }finally{
       setLoading(false);

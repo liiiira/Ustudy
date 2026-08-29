@@ -15,14 +15,14 @@ export async function login(userData: UserLogin): Promise<{refreshToken: string,
   const user: UserAuth | null = await userService.findByEmail(email);
     
   if(!user)
-    throw new AppError("Invalid Cridentials", 401);
+    throw new AppError("Invalid Email or Password", 401);
   
   const {hashedPassword, id} = user; 
   // check if the password is correct
   const validPassword: boolean = await comparePassword(password, hashedPassword);
 
   if(!validPassword)
-    throw new AppError("Invalid Cridentials", 401);
+    throw new AppError("Invalid Email or Password", 401);
 
   // create both access and refresh tokens
   const refreshToken = await updateRefreshToken(id);

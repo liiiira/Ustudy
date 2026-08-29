@@ -10,13 +10,20 @@ type OptionsType = PublicOptionsType & {
   accessToken?: string | null;
 }
 
+type ErrorResponse = {
+  status: string;
+  message: string;
+}
+
 export async function publicFetch(endPointPath: string, options?: PublicOptionsType){
 
   options = options ?? {}
   const response =  await fetchApi(endPointPath, false,  options)
 
-  if(!response.ok)
-    throw new Error(`Failed to fetch: ${options.method} ${endPointPath}`)
+  if(!response.ok){
+    const errorData = await response.json() as ErrorResponse;
+    throw new Error(errorData.message)
+  }
 
   return response.json();
 
@@ -41,13 +48,19 @@ export async function authFetch(endPointPath: string, options?: PublicOptionsTyp
     setAccessToken(data.accessToken);
 
     // retry again 
-    const response = await fetchApi(endPointPath, true, {...options, accessToken: data.accessToken})
+    const newResponse = await fetchApi(endPointPath, true, {...options, accessToken: data.accessToken})
   
-    if(response.ok)
+    if(newResponse.ok)
       return response.json();
+    
+    const newErrorData = await newResponse.json() as ErrorResponse;
+    
+    throw new Error(newErrorData.message);
   }
+  
+  const errorData = await response.json() as ErrorResponse;
 
-  throw new Error(`Failed to fetch: ${options && options.method} ${endPointPath} `)
+  throw new Error(errorData.message);
 
 }
 

@@ -1,2 +1,6 @@
 @import "tailwindcss";
 
+input:focus {
+  outline: none;
+  --tw-ring-shadow: 0 0 #0000;
+}

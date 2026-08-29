@@ -1,4 +1,4 @@
-import { getAccessToken } from "../features/auth/token";
+import { getAccessToken, setAccessToken } from "../features/auth/token";
 
 type PublicOptionsType = {
   body?: Record<string, string>,
@@ -9,14 +9,45 @@ type OptionsType = PublicOptionsType & {
   accessToken?: string | null;
 }
 
-export async function publicFetch(endPointPath: string, options: PublicOptionsType){
-  return await fetchApi(endPointPath, false,  options)
+export async function publicFetch(endPointPath: string, options?: PublicOptionsType){
+  options = options ?? {}
+  const response =  await fetchApi(endPointPath, false,  options)
+
+  if(!response)
+    throw new Error(`Failed to fetch: ${options.method} ${endPointPath}`)
+
+  return response.json();
+
 }
 
-export async function authFetch(endPointPath: string, options: PublicOptionsType){
+export async function authFetch(endPointPath: string, options?: PublicOptionsType){
+  
 
   const accessToken: string | null = getAccessToken();
-  return await fetchApi(endPointPath, true, {...options, accessToken})
+  const response = await fetchApi(endPointPath, true, {...options, accessToken})
+  
+  if(response.ok)
+    return response.json();
+
+  // if the request was not authorized 
+  if(response.status === 401){
+    
+    // refresh access token 
+    const data: {message: string, status: string, accessToken: string} = await publicFetch("/auth/refresh", {
+      method: "POST",
+    })
+
+    setAccessToken(data.accessToken);
+
+    // retry again 
+    const response = await fetchApi(endPointPath, true, {...options, accessToken: data.accessToken})
+
+    if(response.ok)
+      return response.json();
+  }
+
+  throw new Error(`Failed to fetch: ${options && options.method} ${endPointPath} `)
+
 }
 
 async function fetchApi(endPointPath: string, auth: boolean = false , options: OptionsType){
@@ -48,11 +79,7 @@ async function fetchApi(endPointPath: string, auth: boolean = false , options: O
       }),
     }
   });
-
-  if(!response.ok)
-    throw new Error(`Failed to fetch ${endPointPath}`)
-
-  return response.json();
+  return response;
 }
 
 

@@ -13,7 +13,6 @@ router.get("/",
 );
 
 router.post("/",
-  isAuthenticated,
   validateBody(UserSchema.registerSchema),
   asyncWrapper(userController.create)
 );

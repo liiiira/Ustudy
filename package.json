@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "test": "./test.sh" ,
-    "dev": "concurrently \"pnpm dev:db\" \"pnpm dev:backend\" \"pnpm dev:frontend\"",
+    "dev": "./dev.sh",
+    "dev-script": "concurrently \"pnpm dev:db\" \"pnpm dev:backend\" \"pnpm dev:frontend\"",
     "dev:db": "docker compose up -d",
     "dev:frontend": "pnpm --dir apps/web dev",
     "dev:backend": "pnpm --dir apps/backend dev"

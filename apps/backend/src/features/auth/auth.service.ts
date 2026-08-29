@@ -13,7 +13,6 @@ export async function login(userData: UserLogin): Promise<{refreshToken: string,
 
   // get the user based on the email
   const user: UserAuth | null = await userService.findByEmail(email);
-  console.log("User: ", user);
     
   if(!user)
     throw new AppError("Invalid Cridentials", 401);
@@ -29,7 +28,7 @@ export async function login(userData: UserLogin): Promise<{refreshToken: string,
   const refreshToken = await updateRefreshToken(id);
   const accessToken: string = createAccessToken(id);
 
-  return {accessToken, refreshToken}
+  return {accessToken, refreshToken};
 }
 
 
@@ -40,18 +39,20 @@ export async function refresh(refreshToken: string): Promise<string>{
   
 
   // fetch the refresh token associated with the user
-  const userRefreshToken: {hashedToken: string, userId: string, expiresAt: Date, revokedAt: Date, id: Date}
+  const userRefreshToken: {hashedToken: string, userId: string, expiresAt: Date, revokedAt: Date, id: Date} | undefined
     = await authRepository.findRefreshToken(payload.sub!);
- 
+
+  if(!userRefreshToken)
+    throw new AppError("Invalid Refresh Token", 401);
   // check if the token expired or got revoked
   if(userRefreshToken.revokedAt || userRefreshToken.expiresAt < new Date())
-    throw new AppError("Invalid refreshToken", 401);
+    throw new AppError("Invalid Refresh Token", 401);
 
   // check if the token sent is the same one stored in the database
   const validToken: boolean = tokenUtils.compareRefreshToken(refreshToken, userRefreshToken.hashedToken);
   
   if (!validToken)
-     throw new AppError("Invalid refreshToken", 401);  
+     throw new AppError("Invalid Refresh Token", 401);  
   
   return createAccessToken(userRefreshToken.userId);
 }

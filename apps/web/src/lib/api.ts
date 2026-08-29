@@ -15,7 +15,7 @@ export async function publicFetch(endPointPath: string, options?: PublicOptionsT
   options = options ?? {}
   const response =  await fetchApi(endPointPath, false,  options)
 
-  if(!response)
+  if(!response.ok)
     throw new Error(`Failed to fetch: ${options.method} ${endPointPath}`)
 
   return response.json();
@@ -24,7 +24,6 @@ export async function publicFetch(endPointPath: string, options?: PublicOptionsT
 
 export async function authFetch(endPointPath: string, options?: PublicOptionsType){
   
-  console.log("FETCHING: ", endPointPath)
   const accessToken: string | null = getAccessToken();
   const response = await fetchApi(endPointPath, true, {...options, accessToken})
   
@@ -33,13 +32,12 @@ export async function authFetch(endPointPath: string, options?: PublicOptionsTyp
 
   // if the request was not authorized 
   if(response.status === 401){
-   console.log("UNAVILABLE REFRESH TOKEN, REFRESHING...") 
+
     // refresh access token 
     const data: {message: string, status: string, accessToken: string} = await publicFetch("/auth/refresh", {
       method: "POST",
     })
     
-    console.log("REFRESH TOKEN: ", data.accessToken)
     setAccessToken(data.accessToken);
 
     // retry again 
@@ -47,7 +45,6 @@ export async function authFetch(endPointPath: string, options?: PublicOptionsTyp
   
     if(response.ok)
       return response.json();
-    console.log("FAILED")
   }
 
   throw new Error(`Failed to fetch: ${options && options.method} ${endPointPath} `)

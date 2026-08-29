@@ -6,7 +6,6 @@ export async function login(req: Request, res: Response){
 
 
   const {email, password} = req.body;
-  console.log(`email: ${email}, password: ${password}`)
   // Login and get
   // a short life Access token for api requests 
   // and a long life  refreshToken to refresh the access Token
@@ -17,13 +16,13 @@ export async function login(req: Request, res: Response){
     secure: false, // for developement only
     httpOnly: true,
     sameSite: 'strict',
-  })
+  });
   
   return res.status(200).json({
     status: 'success',
     message: 'Logged In Successfuly',
     accessToken: accessToken,
-  })
+  });
 } 
 
 export async function refresh(req: Request, res: Response) {
@@ -41,7 +40,7 @@ export async function refresh(req: Request, res: Response) {
     status: "success",
     message: "Access Token Refreshed",
     accessToken: accessToken
-  })
+  });
 }
 
 

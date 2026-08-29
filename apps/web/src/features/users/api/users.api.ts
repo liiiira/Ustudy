@@ -28,7 +28,8 @@ export async function getUser(userId: string): Promise<User>{
 }
 
 export async function getProfile(): Promise<User>{
+
   const data = await authFetch("/users/me", {method: "GET"});
-  console.log("Profile: ", data.user)
+
   return data.user;
 }

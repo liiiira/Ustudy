@@ -22,14 +22,14 @@ export default function TestPage(){
 
   return (
   <div className="h-screen w-max">
-    <div className="accent-cyan-300">{
+    <div>{
         users.map((user: User) => (
-        <div className="bg-blue-500 text-black" key={user.id}>
+        <div className=" text-black" key={user.id}>
             username: {user.username}
           </div>
         ))
       }</div> 
-    <button className="bg-red-400 px-4 py-2" onClick={() => handleClick()}>fetch</button>
+    <button className="bg-blue-500 px-4 py-2" onClick={() => handleClick()}>fetch</button>
     </div>
   )
 

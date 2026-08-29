@@ -44,10 +44,10 @@ export function LoginForm(){
   <form className="mx-auto my-auto p-2 w-1/2 h-1/2 flex flex-col border border-blue-400 rounded-2xl" 
       onSubmit={handleSubmit}>
 
-    <input className="bg-white px-4 py-2 border-2 border-blue-300" 
+    <input className="bg-white px-4 py-2 border-2 border-blue-400" 
         type="email" name="email" placeholder="Email" onChange={handleChange} required />
 
-    <input className="bg-white px-4 py-2 border-2 border-blue-300" 
+    <input className="bg-white px-4 py-2 border-2 border-blue-400" 
         type="password" name="password" placeholder="Password" onChange={handleChange} required />  
 
     <div>

@@ -27,8 +27,7 @@ export default function SignupForm(){
     
     try{
 
-      const createdUser = await createUser(user);
-      console.log(createdUser);
+      await createUser(user);
        navigate("/login")
 
     }catch{

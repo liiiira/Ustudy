@@ -3,6 +3,7 @@ import { createUser } from "../api/users.api";
 import {useNavigate } from "react-router";
 import FormField from "../../../components/ui/formField";
 import {validateEmail, validateLength} from '../../../utils/validators.ts'
+import Button from "../../../components/ui/button.tsx";
 
 type SignupUser = {
   username: string,
@@ -60,7 +61,7 @@ export default function SignupForm(){
   }
 
   return (
-  <form className=" p-4 w-1/2 h-max max-w-md flex flex-col content-between border-2 gap-5 border-gray-300 rounded-2xl bg-white" 
+  <form className=" p-6 w-1/2 h-max max-w-md flex flex-col content-between border-2 gap-4 border-gray-300 rounded-2xl bg-white" 
       onSubmit={handleSubmit}>
     
     <div id="form-header" className="flex flex-col gap-1 ">
@@ -82,9 +83,7 @@ export default function SignupForm(){
     </div>
 
     <div id="form-footer" className="flex justify-center items-center">
-      <button className="bg-blue-600 cursor-pointer hover:bg-blue-400 transition-colors disabled:bg-blue-300 disabled:cursor-auto 
-          px-6 py-3 text-white font-bold rounded-3xl"
-        type="submit" disabled={!valid}> Sign Up </button> 
+      <Button variant="Primary" disabled={!valid} type="submit"> Sign Up</Button>
     </div>
   </form>
   );

@@ -1,7 +1,7 @@
 import {type AuthContextType } from "../context/auth.context";
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router";
-
+import Button from "../../../components/ui/button"; 
 
 export default function LogoutForm( {className} : {className?: string}){
   const navigate = useNavigate();
@@ -22,9 +22,7 @@ export default function LogoutForm( {className} : {className?: string}){
   return (
     <form className={`flex items-center justify-center w-max h-max ${className}`} onSubmit={handleLogout}>
 
-      <button className="px-4 py-2 bg-blue-600 text-white font-extrabold border-blue-950 rounded-xl" 
-      type="submit">Log out</button>
-
+      <Button variant="Primary" type="submit">Log Out</Button>
     </form>
   )
 }

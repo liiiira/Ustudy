@@ -1,12 +1,11 @@
 import pool from "../../config/postgres";
-
+import { type InputRefreshToken, type DbRefreshToken, type UserToken } from "./auth.schema";
 
 // For now one user has only one refresh token (Later we will update for many devices)
 
 
-
 // it tries first to insert a refresh token of a user  if it fails it updates the existing refresh token of the user
-export async function upsertRefreshToken(RefreshToken: {userId: string, hashedToken: string, expiresAt: Date}): Promise<{userId: string, id: string, createdAt: Date, expiresAt: Date}>{
+export async function upsertRefreshToken(RefreshToken: InputRefreshToken): Promise<DbRefreshToken>{
 
   const {userId, hashedToken, expiresAt} = RefreshToken; 
   const result = await pool.query(
@@ -26,7 +25,7 @@ export async function upsertRefreshToken(RefreshToken: {userId: string, hashedTo
   return result.rows[0];
 }
 
-export async function findRefreshToken(userId: string): Promise<{hashedToken: string, userId: string, expiresAt: Date, revokedAt: Date, id: Date}>   {
+export async function findRefreshToken(userId: string): Promise<DbRefreshToken | undefined>   {
 
    const result = await pool.query(
     `SELECT 
@@ -43,7 +42,7 @@ export async function findRefreshToken(userId: string): Promise<{hashedToken: st
   return result.rows[0];
 }
 
-export async function revokeRefreshToken(hashedToken: string): Promise<{id: string, userId: string}>{
+export async function revokeRefreshToken(hashedToken: string): Promise<UserToken | undefined>{
   
   const result = await pool.query(
     `UPDATE refresh_tokens

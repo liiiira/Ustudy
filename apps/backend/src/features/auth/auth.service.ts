@@ -5,6 +5,7 @@ import { comparePassword } from "../../utils/password.ts";
 import * as tokenUtils from '../../utils/token.ts'
 import * as authRepository from './auth.repository.ts'
 import { JwtPayload } from "jsonwebtoken";
+import { DbRefreshToken, UserToken } from "./auth.schema.ts";
 
 
 export async function login(userData: UserLogin): Promise<{refreshToken: string, accessToken: string}>{
@@ -39,7 +40,7 @@ export async function refresh(refreshToken: string): Promise<string>{
   
 
   // fetch the refresh token associated with the user
-  const userRefreshToken: {hashedToken: string, userId: string, expiresAt: Date, revokedAt: Date, id: Date} | undefined
+  const userRefreshToken: DbRefreshToken | undefined
     = await authRepository.findRefreshToken(payload.sub!);
 
   if(!userRefreshToken)
@@ -58,14 +59,14 @@ export async function refresh(refreshToken: string): Promise<string>{
 }
 
 
-export async function revokeRefreshToken (refreshToken: string){
+export async function revokeRefreshToken (refreshToken: string): Promise<UserToken>{
   
   // Check if it is a valid refresh token
   const payload: JwtPayload = tokenUtils.verifyRefreshToken(refreshToken);
 
   // hash it and revoke the refresh token that has the same hash  
   const hashedRefreshToken: string = tokenUtils.hashRefreshToken(refreshToken);
-  const result: {id: string, userId: string} = await authRepository.revokeRefreshToken(hashedRefreshToken)
+  const result: UserToken | undefined = await authRepository.revokeRefreshToken(hashedRefreshToken)
 
   if (!result)
     throw new AppError("Token was not found in DB", 500);

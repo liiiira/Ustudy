@@ -103,7 +103,7 @@ The project therefore includes **development logs (devlogs)** covering topics su
 * Docker and development environments
 * Technical design decisions
 
-These devlogs are intended to show not only **what was built**, but also **why it was built that way**.
+These devlogs are intended to show not only **what was built**, but also **why it was built that way** and give a brief **technical overview**.
 
 ## Educational Platform
 

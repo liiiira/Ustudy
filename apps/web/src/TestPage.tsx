@@ -1,35 +1,60 @@
-import {  authFetch } from "./lib/api"
 import {useState} from 'react';
+import FormField from "./components/ui/formField";
 
-type User = {
-  username: string;
-  createdAt: Date;
-  email: string,
-  id: string,
+
+type UserTest = {
+  email: string;
+}
+type UserError = {
+  email: string[];
 }
 
 
 export default function TestPage(){
-  const [users, setUsers] = useState<User[]>([]);
-   
-  async function handleClick(){
-    const data = await authFetch("/users", {method: "GET"});
-    setUsers(data.users);
-
-  }
-
+  const [user, setUser] = useState<UserTest>({email: ""})
+  const [inputError, setInputError] = useState<UserError>({email: []})
   
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>){
 
+    const newUser: UserTest = {...user, [e.target.name]: e.target.value};
+    setUser(newUser)
+    validateUser(newUser);  
+  }
+  
+  function validateUser(user: UserTest): boolean{
+
+    const emailErrors: string[] = [];
+    
+    const emailRegex = /^[^\s@]+@[^\s@.]+\.[^\s@.]+$/;
+    const validEmail: boolean = emailRegex.test(user.email);
+
+    if(!validEmail) 
+      emailErrors.push("Invalid format of email")
+
+    setInputError({email: emailErrors})
+
+    return ![emailErrors].some((error: string[]) => error.length > 0);
+  }
+  
   return (
-  <div className="h-screen w-max">
-    <div>{
-        users.map((user: User) => (
-        <div className=" text-black" key={user.id}>
-            username: {user.username}
-          </div>
-        ))
-      }</div> 
-    <button className="bg-blue-500 px-4 py-2" onClick={() => handleClick()}>fetch</button>
+  <div className="h-screen w-screen flex justify-center items-center ">
+      <form className="h-1/2 w-1/2 flex flex-col gap-4">
+
+        <div >
+          <p>Form</p>
+        </div>
+
+        <div className="flex flex-col gap-2 ">
+        <FormField name="email" placeholder="email" id="email" value={user.email} inputError={inputError.email} handleChange={handleChange} type="email"/>
+        </div>
+
+        <div className="flex flex-row justify-center items-center">
+
+          <button className="bg-blue-300 px-4 py-2 hover:cursor-pointer "
+            type="submit" >Try</button>
+        </div>
+
+      </form>
     </div>
   )
 

@@ -1,8 +1,8 @@
 import { useAuth } from "../hooks/useAuth"
 import {useState} from 'react';
 import { type AuthContextType } from "../context/auth.context.ts"
-import {useNavigate} from 'react-router';
-
+import { useNavigate} from 'react-router';
+import FormField from "../../../components/ui/formField.tsx";
 
 type LoginUser = {
   email: string;
@@ -19,7 +19,6 @@ export default function LoginForm(){
 
   const {login}: AuthContextType = useAuth();
   const [user, setUser] = useState<LoginUser>({email: "", password: ""});
-  const [validInput, setValidInput] = useState<boolean>(false);
   const [inputError, setInputError] = useState<LoginError>({email: [], password: []});
   const [error, setError] = useState<string>("");
 
@@ -28,7 +27,7 @@ export default function LoginForm(){
     
     const newUser: LoginUser = {...user, [e.target.name]: e.target.value};
     setUser(newUser)
-    setValidInput(validateUser(newUser));
+    validateUser(newUser);
   }
 
   function validateUser(user: LoginUser): boolean{
@@ -70,7 +69,7 @@ export default function LoginForm(){
   
 
   return (
-  <form className=" p-4 w-1/2 h-1/2 max-w-md flex flex-col content-between border-2 gap-3 border-gray-300 rounded-2xl bg-white" 
+  <form className=" p-4 w-1/2 h-max max-w-md flex flex-col content-between border-2 gap-3 border-gray-300 rounded-2xl bg-white" 
       onSubmit={handleSubmit}>
     
     <div id="form-header" className="flex flex-col gap-0.5">
@@ -81,28 +80,10 @@ export default function LoginForm(){
     </div>
      
     <div id="form-body" className="flex flex-col gap-2">
-
-      <div className="flex flex-col gap-1">
-        <label className="text-gray-600" htmlFor="email">Email </label>
-      
-        <input className={`bg-white px-4 py-2 border-2 border-gray-200 rounded-md ${ inputError.email.length === 0 && user.email.length > 0? "valid": "" } 
-          ${user.email.length > 0  && inputError.email.length > 0 ? "invalid" : ""} [&.invalid]:border-red-500 [&.invalid]:bg-red-50 [&.valid]:border-green-500 [&.valid]:bg-green-50` }
-            id="email" type="email" name="email" placeholder="Email"  onChange={handleChange} required />
-
-        <div className=" text-red-500 text-xs">{user.email.length > 0 && inputError.email[0]}</div>
-      </div>
     
-    
-          
-      <div className="flex flex-col gap-1">
-        <label className="text-gray-600" htmlFor="password">Password</label>
+      <FormField id="email" name="email" value={user.email} placeholder="Email" type="email" handleChange={handleChange} inputError={inputError.email}/>
 
-        <input className={`bg-white px-4 py-2 border-2 border-gray-200 rounded-md ${ inputError.password.length === 0 && user.password.length > 0? "valid": "" } 
-          ${user.password.length > 0 && inputError.password.length > 0 ? "invalid" : ""} [&.invalid]:border-red-500 [&.valid]:border-green-500 [&.invalid]:bg-red-50 [&.valid]:bg-green-50`}
-            id="password" type="password" name="password" placeholder="Password" onChange={handleChange} required />  
-
-        <div className="text-red-500 text-xs">{user.password.length > 0 && inputError.password[0]}</div>
-      </div>
+      <FormField id="password" name="password" value={user.password} placeholder="Password" type="password" handleChange={handleChange} inputError={inputError.password}/> 
 
     </div>
 

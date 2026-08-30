@@ -17,10 +17,10 @@ export default function AppRoutes(){
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
 
+          <Route path="/test" element={<TestPage/>} />
           {/* protected Routes */}
           <Route element={<ProtectedRoute />} >
 
-            <Route path="/test" element={<TestPage/>} />
             <Route path="/profile" element={<ProfilePage />} />
 
           </Route>

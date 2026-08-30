@@ -4,16 +4,13 @@ import app from '../src/app';
 import pool from '../src/config/postgres';
 
 // To guarantee independence of tests
-beforeEach(async() => {
-  pool.query('TRUNCATE TABLE users CASCADE');
-})
 
 
 
 describe("POST /users/", () => {
 
   beforeEach(async() => {
-    pool.query('TRUNCATE TABLE users CASCADE');
+   await  pool.query('TRUNCATE TABLE users CASCADE');
   })
   
   it("should register a user with JSON", async () =>{
@@ -143,6 +140,10 @@ describe("POST /users/", () => {
 
 describe("GET /users/", () => {
 
+  beforeEach(async() => {
+   await  pool.query('TRUNCATE TABLE users CASCADE');
+  })
+
   it("should return all users", async () => {
     // Create users first
     await request(app)
@@ -186,6 +187,9 @@ describe("GET /users/", () => {
 
 
   it("should return an empty array when there are no users", async () => {
+   beforeEach(async() => {
+      await  pool.query('TRUNCATE TABLE users CASCADE');
+    })
     const response = await request(app)
       .get("/api/v1/users");
 
@@ -257,6 +261,7 @@ describe("PATCH /users/:id/", () => {
   let userId: string;
 
   beforeEach(async () => {
+    await pool.query(`TRUNCATE TABLE users CASCADE`)
     const response = await request(app)
       .post("/api/v1/users")
       .set("Content-Type", "application/json")
@@ -402,6 +407,7 @@ describe("DELETE /api/v1/users/:id", () => {
   let userId: string;
 
   beforeEach(async () => {
+    await pool.query(`TRUNCATE TABLE users CASCADE`)
     const response = await request(app)
       .post("/api/v1/users")
       .send({
@@ -460,7 +466,4 @@ describe("DELETE /api/v1/users/:id", () => {
   });
 })
 
-afterAll(async() => {
-  await pool.end();
-})
 

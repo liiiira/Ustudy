@@ -32,8 +32,8 @@ export async function findRefreshToken(userId: string): Promise<{hashedToken: st
     `SELECT 
       hashed_token AS "hashedToken", 
       user_id AS "userId",  
-      expires_at AS expiresAt, 
-      revoked_at as "RevokedAt",
+      expires_at AS "expiresAt", 
+      revoked_at as "revokedAt",
       id
       FROM refresh_tokens
       WHERE user_id = $1;`,

@@ -8,7 +8,7 @@ import isAuthenticated from "../../middlewares/isAuthenticated";
 const router = Router({caseSensitive: true});
 
 router.get("/", 
-  isAuthenticated,
+ // isAuthenticated,
   asyncWrapper(userController.findAll)
 );
 
@@ -23,20 +23,20 @@ router.get("/me",
 );
 
 router.get("/:id/",
-  isAuthenticated,
+ // isAuthenticated,
   validateParams(UserSchema.idSchema, ), 
   asyncWrapper(userController.findById)
 );
 
 router.patch("/:id/",
-  isAuthenticated,
+  // isAuthenticated,
   validateParams(UserSchema.idSchema),
   validateBody(UserSchema.updateSchema),
   asyncWrapper(userController.updateById)
 );
 
 router.delete("/:id/",
-  isAuthenticated,
+ // isAuthenticated,
   validateParams(UserSchema.idSchema),
   asyncWrapper(userController.deleteById)
 );

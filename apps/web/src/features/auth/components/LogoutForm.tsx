@@ -11,7 +11,7 @@ export default function LogoutForm( {className} : {className?: string}){
     e.preventDefault();
     try{
 
-      const _data = await logout();
+       await logout();
 
     }catch(err){
       if (err instanceof Error)

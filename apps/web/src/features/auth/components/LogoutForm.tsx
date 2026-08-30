@@ -20,9 +20,9 @@ export default function LogoutForm( {className} : {className?: string}){
     navigate("/login")
   }
   return (
-    <form className={`w-max h-max ${className}`} onSubmit={handleLogout}>
+    <form className={`flex items-center justify-center w-max h-max ${className}`} onSubmit={handleLogout}>
 
-      <button className="px-4 py-2 bg-blue-500 text-white font-extrabold border-blue-950 rounded-xl" 
+      <button className="px-4 py-2 bg-blue-600 text-white font-extrabold border-blue-950 rounded-xl" 
       type="submit">Log out</button>
 
     </form>

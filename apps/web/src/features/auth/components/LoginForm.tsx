@@ -3,6 +3,7 @@ import {useState} from 'react';
 import { type AuthContextType } from "../context/auth.context.ts"
 import { useNavigate} from 'react-router';
 import FormField from "../../../components/ui/formField.tsx";
+import { validateEmail, validateLength } from "../../../utils/validators.ts";
 
 type LoginUser = {
   email: string;
@@ -20,31 +21,22 @@ export default function LoginForm(){
   const {login}: AuthContextType = useAuth();
   const [user, setUser] = useState<LoginUser>({email: "", password: ""});
   const [inputError, setInputError] = useState<LoginError>({email: [], password: []});
-  const [error, setError] = useState<string>("");
-
+  const [apiError, setApiError] = useState<string>("");
+  const [valid, setValid] = useState<boolean>(false);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>){
     
     const newUser: LoginUser = {...user, [e.target.name]: e.target.value};
     setUser(newUser)
-    validateUser(newUser);
+    setValid(validateUser(newUser));
   }
 
   function validateUser(user: LoginUser): boolean{
 
-    const passwordErrors: string[] = [];
+    const passwordErrors: string[] = validateLength("Password", user.password, 8, 24);
 
-    if (user.password.length < 8)
-      passwordErrors.push("Password must have at least 8 characters");
+    const emailErrors: string[] = validateEmail(user.email, 200);
     
-    const emailErrors: string[] = [];
-    
-    const emailRegex = /^[^\s@]+@[^\s@.]+\.[^\s@.]+$/;
-    const validEmail: boolean = emailRegex.test(user.email);
-
-    if(!validEmail) 
-      emailErrors.push("Invalid format of email")
-
     setInputError({email: emailErrors, password: passwordErrors})
 
     return ![passwordErrors, emailErrors].some((error: string[]) => error.length > 0);
@@ -62,36 +54,35 @@ export default function LoginForm(){
       navigate("/test")
     }catch(err){
       if(err instanceof Error)
-        setError(err.message);
+        setApiError(err.message);
 
     }
   }
   
 
   return (
-  <form className=" p-4 w-1/2 h-max max-w-md flex flex-col content-between border-2 gap-3 border-gray-300 rounded-2xl bg-white" 
+  <form className=" p-4 w-1/2 h-max max-w-md flex flex-col content-between border-2 gap-5 border-gray-300 rounded-2xl bg-white" 
       onSubmit={handleSubmit}>
-    
-    <div id="form-header" className="flex flex-col gap-0.5">
+
+    <div id="form-header" className="flex flex-col gap-1">
 
       <div className="text-3xl font-extrabold text-shadow-gray-900 text-center w-full "> Welcome Back</div>
-      <div className="text-md font-light text-gray-600 text-center w-full">Sign in to your account</div>
+      <div className="text-md font-light text-gray-600 text-center w-full mb-2">Sign in to your account</div>
+      <div className="min-h-[1.25rem] text-red-500 text-sm text-center">{apiError}</div>
 
     </div>
      
     <div id="form-body" className="flex flex-col gap-2">
     
-      <FormField id="email" name="email" value={user.email} placeholder="Email" type="email" handleChange={handleChange} inputError={inputError.email}/>
+      <FormField id="email" name="email" value={user.email} charLimit={200} placeholder="Email" type="email" handleChange={handleChange} inputError={inputError.email}/>
 
-      <FormField id="password" name="password" value={user.password} placeholder="Password" type="password" handleChange={handleChange} inputError={inputError.password}/> 
+      <FormField id="password" name="password" value={user.password} charLimit={24} placeholder="Password" type="password" handleChange={handleChange} inputError={inputError.password}/> 
 
     </div>
 
-    <div id="form-footer" className="flex justify-center items-center">
-      <button className="bg-blue-600 px-6 py-3 text-white font-bold rounded-3xl"
-        type="submit">Log In Now</button> 
+    <div id="form-footer" className="flex justify-center items-center"><button className="bg-blue-600 cursor-pointer hover:bg-blue-400 transition-colors disabled:bg-blue-300 disabled:cursor-auto 
+          px-6 py-3 text-white font-bold rounded-3xl" type="submit" disabled={!valid}>Log In Now</button>
     </div>
-     <p>{error} </p>
 
   </form>
   );

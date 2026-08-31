@@ -5,16 +5,9 @@ import { useNavigate} from 'react-router';
 import FormField from "../../../components/ui/formField.tsx";
 import { validateEmail, validateLength } from "../../../utils/validators.ts";
 import Button from "../../../components/ui/button.tsx";
+import {type LoginUser, type LoginError} from "../types.ts"
 
-type LoginUser = {
-  email: string;
-  password: string;
-}
 
-type LoginError = {
-  email: string[];
-  password: string[];
-}
 export default function LoginForm(){
 
   const navigate = useNavigate();

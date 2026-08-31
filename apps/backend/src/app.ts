@@ -10,16 +10,15 @@ const VITE_PORT: number = parseInt(process.env.VITE_PORT!);
 
 const app: Express = express();
 
- 
 app.use(express.json());
 app.use(cors({
-  origin: `http://localhost:5173`,
+  origin: `http://localhost:${VITE_PORT}`,
   credentials: true
 }))
+
 app.use(cookieParser(process.env.COOKIE_SECRET))
 
 app.use("/api/v1", apiRouter);
-
 app.use(errorMiddleware);
 
 

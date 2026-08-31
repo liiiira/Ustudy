@@ -8,18 +8,25 @@ export default function LogoutForm( {className} : {className?: string}){
   const {logout}: AuthContextType= useAuth();
 
   async function handleLogout(e: React.SubmitEvent){
+
     e.preventDefault();
+    
     try{
 
        await logout();
 
     }catch(err){
+      
       if (err instanceof Error)
         console.error("Failed to logout: ", err);
+      
     }
+  
     navigate("/login")
+  
   }
   return (
+    
     <form className={`flex items-center justify-center w-max h-max ${className}`} onSubmit={handleLogout}>
 
       <Button variant="Primary" type="submit">Log Out</Button>

@@ -5,6 +5,7 @@ import LoginPage from '../features/auth/pages/loginPage.tsx';
 import SignupPage from "../features/users/pages/signupPage.tsx";
 import ProfilePage from '../features/users/components/profilePage.tsx';
 import ProtectedRoute from "../components/protectedRoute.tsx";
+import CreateCommunityPage from "../features/communities/pages/createCommunityPage.tsx";
 
 export default function AppRoutes(){
   return(
@@ -20,9 +21,8 @@ export default function AppRoutes(){
           <Route path="/test" element={<TestPage/>} />
           {/* protected Routes */}
           <Route element={<ProtectedRoute />} >
-
             <Route path="/profile" element={<ProfilePage />} />
-
+            <Route path="/communities/create" element={<CreateCommunityPage />} />
           </Route>
         </Route>
       </Routes>

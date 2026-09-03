@@ -1,12 +1,13 @@
 import { useNavigate } from "react-router";
-import { useState } from "react";
+import React, { useState } from "react";
 import { type CreateCommunityData, type CreateCommunityError } from "../types";
 import { validateLength } from "../../../utils/validators";
 import { createCommunity } from "../api/communities.api";
 import Button from "../../../components/ui/button";
 import FormField from "../../../components/ui/formField";
+import TextField from "../../../components/ui/textField";
 
-export default function SignupForm(){
+export default function CreateCommunityForm(){
   
   const navigate = useNavigate();
 
@@ -15,7 +16,7 @@ export default function SignupForm(){
   const [inputError, setInputError] = useState<CreateCommunityError>({name: [], descripition: []});
   const [valid, setValid] = useState<boolean>(false);
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>){
+  function handleChange(e: React.ChangeEvent<HTMLTextAreaElement> | React.ChangeEvent<HTMLInputElement>){
     
     const newCommunity: CreateCommunityData = {...community, [e.target.name]: e.target.value};
     setCommunity(newCommunity)
@@ -63,12 +64,14 @@ export default function SignupForm(){
      
     <div id="form-body" className="flex flex-col gap-2">
 
-      <FormField id="name" name="name" value={community.name} charLimit={40} type="text" placeholder="Community Name" inputError={inputError.name} handleChange={handleChange}  />
-
+      <FormField id="name" name="name" value={community.name} charLimit={40} type="text" placeholder="Enter your community name" label="Community Name" inputError={inputError.name} handleChange={handleChange}  />
+      
+      <TextField id="description" name="description" value={community.description} charLimit={100} placeholder="Enter your community description" label="Community description" inputError={inputError.descripition} handleChange={handleChange} rows={4} />
+    
     </div>
 
     <div id="form-footer" className="flex justify-center items-center">
-      <Button variant="Primary" disabled={!valid} type="submit"> Create </Button>
+      <Button variant="Primary" disabled={!valid} type="submit"> Create Community </Button>
     </div>
   </form>
   );

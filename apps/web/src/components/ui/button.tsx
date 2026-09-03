@@ -1,6 +1,6 @@
  
 type ButtonProps = {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   variant?: "Primary" | "Danger";
   disabled?: boolean;
   onClick?: () => Promise<void>;

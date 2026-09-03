@@ -16,11 +16,14 @@ export function Navbar(){
 
         <div id="navbar-links" className="flex flex-row justify-between gap-5">
 
+          <div className="flex flex-row justify-between items-center gap-2">
+            <Link to="/profile">Profile</Link>
+            <Link to="/communities/create">Communities</Link>
+          </div>
+
           <LogoutForm /> 
 
-          <div className="flex justify-center items-center">
-            <Link to="/profile">Profile</Link>
-          </div>
+
 
         </div>
       }

@@ -68,9 +68,9 @@ export default function LoginForm(){
      
     <div id="form-body" className="flex flex-col gap-2">
     
-      <FormField id="email" name="email" value={user.email} charLimit={200} placeholder="Email" type="email" handleChange={handleChange} inputError={inputError.email}/>
+      <FormField id="email" name="email" value={user.email} charLimit={200} placeholder="Email" label="Email" type="email" handleChange={handleChange} inputError={inputError.email}/>
 
-      <FormField id="password" name="password" value={user.password} charLimit={24} placeholder="Password" type="password" handleChange={handleChange} inputError={inputError.password}/> 
+      <FormField id="password" name="password" value={user.password} charLimit={24} placeholder="Password" label="Password" type="password" handleChange={handleChange} inputError={inputError.password}/> 
 
     </div>
 

@@ -7,6 +7,7 @@ import { createCommunitySchema } from "./community.schema.ts";
 
 const router = Router();
 
+
 router.post("/", 
   isAuthenticated,
   validateBody(createCommunitySchema),

@@ -4,18 +4,8 @@ import {useNavigate } from "react-router";
 import FormField from "../../../components/ui/formField";
 import {validateEmail, validateLength} from '../../../utils/validators.ts'
 import Button from "../../../components/ui/button.tsx";
+import { type SignupUser, type SignupError } from "../types.ts";
 
-type SignupUser = {
-  username: string,
-  password: string,
-  email: string,
-}
-
-type SignupError = {
-  username: string[];
-  password: string[];
-  email: string[];
-}
 
 export default function SignupForm(){
   
@@ -74,11 +64,11 @@ export default function SignupForm(){
     <div id="form-body" className="flex flex-col gap-2">
 
      
-      <FormField id="email" name="email" value={user.email} charLimit={200} type="email" placeholder="Email" inputError={inputError.email} handleChange={handleChange}  />
+      <FormField id="email" name="email" value={user.email} charLimit={200} type="email" placeholder="Email" label="Email" inputError={inputError.email} handleChange={handleChange}  />
 
-      <FormField id="username" name="username" value={user.username} charLimit={25} type="text" placeholder="Username" inputError={inputError.username} handleChange={handleChange} />
+      <FormField id="username" name="username" value={user.username} charLimit={25} type="text" placeholder="Username" label="Username" inputError={inputError.username} handleChange={handleChange} />
       
-      <FormField id="password" name="password" value={user.password} charLimit={24} type="password" placeholder="Password" inputError={inputError.password} handleChange={handleChange} />
+      <FormField id="password" name="password" value={user.password} charLimit={24} type="password" placeholder="Password" label="Password" inputError={inputError.password} handleChange={handleChange} />
   
     </div>
 

@@ -1,6 +1,18 @@
 export type User = {
+  id: string;
   username: string;
   createdAt: Date;
   email: string;
-  id: string;
+}
+
+export type SignupUser = {
+  username: string,
+  password: string,
+  email: string,
+}
+
+export type SignupError = {
+  username: string[];
+  password: string[];
+  email: string[];
 }

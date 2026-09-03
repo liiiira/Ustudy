@@ -18,6 +18,7 @@ export async function create( {name, description, ownerId} : CommunityCreate): P
   return result.rows[0]
 }
 
+
 export async function findByName(name: string) : Promise<CommunityDB | null>{
   
   const result = await pool.query(

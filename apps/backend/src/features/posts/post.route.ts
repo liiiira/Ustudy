@@ -1,8 +1,9 @@
 import * as postController from "./post.controller.ts";
 import { Router } from "express";
 import isAuthenticated from "../../middlewares/isAuthenticated.ts";
-import { communityIdSchema, postIdSchema, postInputSchema } from "./post.schema.ts";
+import { communityIdSchema, postIdSchema, postInputSchema, postUpdateSchema} from "./post.schema.ts";
 import {validateBody, validateParams} from "../../middlewares/validate.ts"
+import { is } from "zod/locales";
 
 const router = Router({caseSensitive: true, mergeParams: true});
 
@@ -25,6 +26,17 @@ router.get("/:postId",
   postController.findById
 );
 
+router.patch("/:postId",
+  isAuthenticated,
+  validateParams(postIdSchema),
+  validateBody(postUpdateSchema),
+  postController.updateById
+);
 
+router.delete("/:postId",
+  isAuthenticated,
+  validateParams(postIdSchema),
+  postController.deleteById
+);
 
 export default router;

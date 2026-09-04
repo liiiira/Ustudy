@@ -1,5 +1,5 @@
 import pool from "../../config/postgres.ts";
-import type { PostInput, Post , PostJoined} from "./post.schema.ts";
+import type { PostInput, Post , PostJoined, PostUpdate} from "./post.schema.ts";
 
 export async function create (ownerId: string, communityId: string, {title, textContent}: PostInput): Promise<Post | null>{
 
@@ -77,4 +77,49 @@ export async function findAllCommunity(communityId: string): Promise<Post[]>{
   );
 
   return response.rows;
+}
+
+export async function updateById(id: string, communityData: PostUpdate): Promise<Post | null>{
+
+  const {title, textContent} = communityData;
+  
+  // contains the qeury split into strings
+  let updates = []
+
+  // contains the modfied values
+  let values: string[] = []
+
+  if (title){
+    updates.push(`title = $${values.length + 1}`);
+    values.push(title);
+  }
+
+  if (textContent){
+    updates.push(`text_content = $${values.length + 1}`);
+    values.push(textContent);
+  }
+
+
+  // forming the query
+  const query: string = `UPDATE posts
+    SET ${updates.join(", ")}
+    WHERE id = $${values.length + 1}
+    RETURNING id, title, textContent, owner_id AS "ownerId", created_at AS "createdAt", community_id AS "communityId"
+  `
+  values.push(id);
+
+  const result = await pool.query(query, values)
+
+  return result.rows[0] ?? null
+}
+
+export async function deleteById(postId: string): Promise<{id: string} | null>{
+  
+  const response = await pool.query(`DELETE FROM posts
+      WHERE id = $1 `,
+    [postId]
+  );
+
+  return response.rows[0] ?? null
+
 }

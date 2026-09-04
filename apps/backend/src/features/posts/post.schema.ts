@@ -5,6 +5,11 @@ export type PostInput = {
   textContent: string;
 }
 
+export type PostUpdate = {
+  title?: string;
+  textContent?: string;
+}
+
 export type Post = {
   id: string;
   title: string;
@@ -29,6 +34,11 @@ export const postInputSchema = z.object({
   title: z.string().min(1).max(100),
   textContent: z.string().min(1).max(1000)
 });
+
+export const postUpdateSchema = z.object({
+   title: z.string().min(1).max(100).optional(),
+  textContent: z.string().min(1).max(1000).optional(), 
+})
 
 export const communityIdSchema = z.object({
   communityId: z.uuid()

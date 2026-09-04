@@ -43,7 +43,7 @@ export default function CreateCommunityForm(){
     try{
 
       await createCommunity(community);
-      navigate("")
+      navigate("/communities")
     }catch(err){
       if(err instanceof Error)
         setApiError(err.message);

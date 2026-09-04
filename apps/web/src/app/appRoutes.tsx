@@ -6,6 +6,8 @@ import SignupPage from "../features/users/pages/signupPage.tsx";
 import ProfilePage from '../features/users/components/profilePage.tsx';
 import ProtectedRoute from "../components/protectedRoute.tsx";
 import CreateCommunityPage from "../features/communities/pages/createCommunityPage.tsx";
+import CommunitiesPage from "../features/communities/pages/communitiesPage.tsx";
+import CommunityPage from "../features/communities/pages/communityPage.tsx";
 
 export default function AppRoutes(){
   return(
@@ -22,7 +24,9 @@ export default function AppRoutes(){
           {/* protected Routes */}
           <Route element={<ProtectedRoute />} >
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/communities" element={<CommunitiesPage />} />
             <Route path="/communities/create" element={<CreateCommunityPage />} />
+            <Route path="/communities/:id" element={<CommunityPage />} />
           </Route>
         </Route>
       </Routes>

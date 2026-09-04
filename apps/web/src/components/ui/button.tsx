@@ -3,7 +3,7 @@ type ButtonProps = {
   children?: React.ReactNode;
   variant?: "Primary" | "Danger";
   disabled?: boolean;
-  onClick?: () => Promise<void>;
+  onClick?: () => Promise<void> | void;
   type?: "submit" | "button" | "reset"
 }
 

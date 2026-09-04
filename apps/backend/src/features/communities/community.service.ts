@@ -19,6 +19,7 @@ export async function create(CommunityCreate: CommunityCreate): Promise<Communit
   return createdCommunity;
 }
 
+
 async function findByName(name: string): Promise<CommunityDB | null>{
     return await communityRepository.findByName(name);
 }
@@ -26,6 +27,7 @@ async function findByName(name: string): Promise<CommunityDB | null>{
  async function findById(id: string): Promise<CommunityDB | null>{
   return await communityRepository.findById(id);
 }
+
 
 export async function getById(id: string): Promise<CommunityDB>{
   const foundCommunity: CommunityDB | null = await findById(id)
@@ -35,6 +37,7 @@ export async function getById(id: string): Promise<CommunityDB>{
 
   return foundCommunity;
 }
+
 export async function findAll(): Promise<CommunityDB[]>{
   return await communityRepository.findAll();
 }

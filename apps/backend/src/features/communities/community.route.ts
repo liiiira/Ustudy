@@ -12,6 +12,12 @@ router.get("/",
   asyncWrapper(communityController.findAll)
 );
 
+router.get("/:id", 
+  isAuthenticated,
+  validateParams(idSchema),
+  asyncWrapper(communityController.findById)
+);
+
 router.post("/", 
   isAuthenticated,
   validateBody(createCommunitySchema),

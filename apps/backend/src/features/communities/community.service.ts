@@ -23,10 +23,18 @@ async function findByName(name: string): Promise<CommunityDB | null>{
     return await communityRepository.findByName(name);
 }
 
-async function findById(id: string): Promise<CommunityDB | null>{
+ async function findById(id: string): Promise<CommunityDB | null>{
   return await communityRepository.findById(id);
 }
 
+export async function getById(id: string): Promise<CommunityDB>{
+  const foundCommunity: CommunityDB | null = await findById(id)
+  
+  if(!foundCommunity)
+    throw new AppError("Community was not found", 404);
+
+  return foundCommunity;
+}
 export async function findAll(): Promise<CommunityDB[]>{
   return await communityRepository.findAll();
 }

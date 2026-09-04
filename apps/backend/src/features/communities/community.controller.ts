@@ -1,6 +1,7 @@
 import * as communityService from "./community.service.ts";
 import {type Request, type Response} from "express"
 import { type CommunityDB } from "./community.schema";
+import { AppError } from "../../errors/appError.ts";
 
 export async function create(req: Request, res: Response){
 
@@ -24,6 +25,18 @@ export async function findAll(req: Request, res: Response){
     status: "success",
     message: "Communities Found Successfuly",
     communities: foundCommunities
+  })
+}
+
+export async function findById(req: Request<{id: string}>, res: Response){
+  const {id} = req.params;
+
+  const foundCommunity: CommunityDB = await communityService.getById(id)
+
+  res.status(200).json({
+    status: "success",
+    message: "Community Fetched Successfuly",
+    community: foundCommunity,
   })
 }
 
@@ -58,3 +71,5 @@ export async function deleteById(req: Request<{id: string}>, res: Response){
     community: deletedCommunity,
   })
 }
+
+

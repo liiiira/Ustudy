@@ -544,3 +544,130 @@ describe("DELETE /api/v1/communities/:id", () => {
     expect(res.status).toBe(401);
   });
 });
+
+
+
+
+describe("GET /api/v1/communities/:id", () => {
+  const NON_EXISTENT_ID = "00000000-0000-4000-8000-000000000000";
+
+  beforeAll(async () => {
+    await pool.query("TRUNCATE TABLE users RESTART IDENTITY CASCADE");
+    const signupRes = await request(app).post("/api/v1/users").send(TEST_USER);
+    ownerId = signupRes.body.user.id;
+
+    const loginRes = await request(app)
+      .post("/api/v1/auth/login")
+      .send({ email: TEST_USER.email, password: TEST_USER.password });
+
+    accessToken = loginRes.body.accessToken;
+
+    // Second user with no communities of their own — used to confirm
+    // read access isn't restricted to the owner.
+    const otherSignupRes = await request(app).post("/api/v1/users").send(OTHER_USER);
+    otherUserId = otherSignupRes.body.user.id;
+
+    const otherLoginRes = await request(app)
+      .post("/api/v1/auth/login")
+      .send({ email: OTHER_USER.email, password: OTHER_USER.password });
+
+    otherAccessToken = otherLoginRes.body.accessToken;
+  });
+
+  beforeEach(async () => {
+    await pool.query("TRUNCATE TABLE communities RESTART IDENTITY CASCADE");
+  });
+
+  it("fetches the community by id", async () => {
+    const insertRes = await pool.query(
+      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
+      [ownerId, "fetchable-club", "a description worth reading"]
+    );
+    const communityId = insertRes.rows[0].id;
+
+    const res = await request(app)
+      .get(`${BASE_URL}/${communityId}`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      status: "success",
+      message: "Community Fetched Successfuly",
+      community: {
+        id: communityId,
+        name: "fetchable-club",
+        description: "a description worth reading",
+        ownerId,
+      },
+    });
+  });
+
+  it("allows a non-owner to fetch the community", async () => {
+    const insertRes = await pool.query(
+      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
+      [ownerId, "public-club", "readable by anyone logged in"]
+    );
+    const communityId = insertRes.rows[0].id;
+
+    const res = await request(app)
+      .get(`${BASE_URL}/${communityId}`)
+      .set("Authorization", `Bearer ${otherAccessToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.community.id).toBe(communityId);
+  });
+
+  it("returns 404 when the community does not exist", async () => {
+    const res = await request(app)
+      .get(`${BASE_URL}/${NON_EXISTENT_ID}`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(404);
+    expect(res.body.message).toMatch("Community was not found");
+  });
+
+  it("returns 404 after the community has been deleted", async () => {
+    const insertRes = await pool.query(
+      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
+      [ownerId, "soon-gone-club", "temporary"]
+    );
+    const communityId = insertRes.rows[0].id;
+
+    await pool.query("DELETE FROM communities WHERE id = $1", [communityId]);
+
+    const res = await request(app)
+      .get(`${BASE_URL}/${communityId}`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it("returns 400 when the community id is invalid", async () => {
+    const res = await request(app)
+      .get(`${BASE_URL}/999999`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch("Invalid Request Params");
+  });
+
+  it("rejects an invalid id format", async () => {
+    const res = await request(app)
+      .get(`${BASE_URL}/not-a-valid-id`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(400);
+  });
+
+  it("requires authentication", async () => {
+    const insertRes = await pool.query(
+      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
+      [ownerId, "no-auth-club", "some description"]
+    );
+    const communityId = insertRes.rows[0].id;
+
+    const res = await request(app).get(`${BASE_URL}/${communityId}`);
+
+    expect(res.status).toBe(401);
+  });
+});

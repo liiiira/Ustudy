@@ -16,7 +16,7 @@ export function validateBody(schema: ZodType) {
   }
 }
 
-// validates the query paramaters of http request
+// validates the query paramaters of https request
 export function validateParams(schema: ZodType) {
   return (req: Request, _res: Response, next: NextFunction) => {
    

@@ -15,3 +15,44 @@ export async function create(req: Request, res: Response){
     community: createdCommunity,
   })
 }
+
+export async function findAll(req: Request, res: Response){
+
+  const foundCommunities: CommunityDB[] = await communityService.findAll();
+
+  res.status(200).json({
+    status: "success",
+    message: "Communities Found Successfuly",
+    communities: foundCommunities
+  })
+}
+
+export async function updateById(req: Request<{id: string}>, res: Response){
+
+  const {id} = req.params;
+  const {name, description } = req.body;
+  const updatedCommunity: CommunityDB | null = await communityService.updateById(id, {name, description})
+
+  // Nothing changed
+  if (!updatedCommunity)
+    return res.status(204).json({})
+
+ 
+  return res.status(200).json({
+    status: "success",
+    community: updatedCommunity,
+    message: "Community Updated Successfully"
+  })
+}
+
+export async function deleteById(req: Request<{id: string}>, res: Response){
+
+  const {id} = req.params;
+  const deletedCommunity: {id: string} = await communityService.delelteById(id);
+  
+  return res.status(200).json({
+    status: "success",
+    message: "Community deleted successfuly",
+    community: deletedCommunity,
+  })
+}

@@ -1,6 +1,6 @@
 import { AppError } from "../../errors/appError.ts";
 import * as communityRepository from "./community.repository.ts";
-import { type CommunityCreate, type CommunityDB } from "./community.schema.ts";
+import { UpdateCommunityRepository, type CommunityCreate, type CommunityDB } from "./community.schema.ts";
 
 export async function create(CommunityCreate: CommunityCreate): Promise<CommunityDB>{
    
@@ -21,4 +21,64 @@ export async function create(CommunityCreate: CommunityCreate): Promise<Communit
 
 async function findByName(name: string): Promise<CommunityDB | null>{
     return await communityRepository.findByName(name);
+}
+
+async function findById(id: string): Promise<CommunityDB | null>{
+  return await communityRepository.findById(id);
+}
+
+export async function findAll(): Promise<CommunityDB[]>{
+  return await communityRepository.findAll();
+}
+
+export async function updateById(id: string, communityData:UpdateCommunityRepository) : Promise<CommunityDB | null>{
+
+  const {name, description} = communityData;
+  const community: CommunityDB | null = await findById(id);
+
+  if(!community)
+    throw new AppError("Community doesn't exist", 404);
+
+  
+  if(!name && !description)
+    throw new AppError("Body is Empty", 400);
+
+  const modifiedAttributes: Record<string, string> = {}
+  
+  // check if community name changed
+  if (name && community.name !== name){
+    // check if the new usename  is used by another user
+    const usernameExists: CommunityDB | null = await findByName(name);
+
+    if (usernameExists)
+      throw new AppError("New Community Name Is Already Used", 409);
+
+    modifiedAttributes["name"] = name;
+  }
+
+  // Check if description exists and changed 
+  if (description && community.description !== description)
+    modifiedAttributes["description"] = description;
+  // Check if nothing changed  
+  //
+  if (Object.keys(modifiedAttributes).length === 0)
+    return null;
+
+  const updatedCommunity: CommunityDB = await communityRepository.updateById(id, modifiedAttributes)
+  
+  if (!updatedCommunity)
+    throw new AppError("Community Was Not Updated", 500, "Unknown Failure");
+
+  return updatedCommunity;
+}
+
+export async function delelteById(id: string){
+  
+  const deletedCommunity: {id: string} | undefined = await communityRepository.deleteById(id);
+
+  if(!deletedCommunity)
+    throw new AppError("User Not Found", 404);
+  
+  return deletedCommunity;
+
 }

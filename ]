@@ -92,7 +92,7 @@ export async function updateById(id: string, communityData: UpdateCommunityRepos
   const query: string = `UPDATE communities
     SET ${updates.join(", ")}
     WHERE id = $${values.length + 1}
-    RETURNING id, name, description, owner_id AS "ownerId", created_at AS "createdAt"
+    RETURNING id, name, owner_id AS "ownerId", created_at AS "createdAt"
   `
   values.push(id);
 
@@ -109,6 +109,5 @@ export async function deleteById(id: string): Promise<{id: string} | undefined> 
         id`,
     [id]
   );
-
   return response.rows[0];
 }

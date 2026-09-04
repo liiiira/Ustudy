@@ -1,7 +1,6 @@
 import * as communityService from "./community.service.ts";
 import {type Request, type Response} from "express"
 import { CommmunityJoinUser, type CommunityDB } from "./community.schema";
-import { AppError } from "../../errors/appError.ts";
 
 export async function create(req: Request, res: Response){
 

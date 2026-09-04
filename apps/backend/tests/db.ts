@@ -1,10 +1,6 @@
 import pool from "../src/config/postgres.ts";
-import express from "express"
 import {createAccessToken} from "../src/utils/token.ts"
 
-// TODO: adjust columns to match your actual users/communities tables —
-// these are guesses (username/email for users, name/owner_id for communities).
-//
 export async function createTestUser(overrides: Partial<{ username: string; email: string }> = {}) {
 
   const username = overrides.username ?? `user_${Date.now()}`;

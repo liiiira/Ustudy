@@ -5,7 +5,7 @@ import isAuthenticated from "../../middlewares/isAuthenticated.ts";
 import {validateBody, validateParams} from "../../middlewares/validate.ts"
 import { createCommunitySchema, updateCommunitySchema, idSchema } from "./community.schema.ts";
 
-const router = Router();
+const router = Router({caseSensitive: true});
 
 router.get("/",
   isAuthenticated,

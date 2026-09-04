@@ -27,15 +27,14 @@ export type PostJoined = {
 
 export const postInputSchema = z.object({
   title: z.string().min(1).max(100),
-  textContent: z.string().min(1).max(1000),
+  textContent: z.string().min(1).max(1000)
 });
 
 export const communityIdSchema = z.object({
-  communityId: z.uuid(),
-})
+  communityId: z.uuid()
+});
 
 export const postIdSchema = z.object({
   communityId: z.uuid(),
   postId: z.uuid(),
-})
-  
+});

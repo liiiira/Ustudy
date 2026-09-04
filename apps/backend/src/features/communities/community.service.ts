@@ -25,9 +25,10 @@ async function findByName(name: string): Promise<CommunityDB | null>{
     return await communityRepository.findByName(name);
 }
 
- async function findById(id: string): Promise<CommunityDB | null>{
+export  async function findById(id: string): Promise<CommunityDB | null>{
 
-  return await communityRepository.findById(id);
+  const foundCommunity = await communityRepository.findById(id);
+  return foundCommunity;
 }
 
 export async function getByIdJoinUser(id: string): Promise<CommmunityJoinUser>{

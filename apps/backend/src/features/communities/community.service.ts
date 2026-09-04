@@ -31,7 +31,7 @@ export async function findAll(): Promise<CommunityDB[]>{
   return await communityRepository.findAll();
 }
 
-export async function updateById(id: string, communityData:UpdateCommunityRepository) : Promise<CommunityDB | null>{
+export async function updateById(userId: string, id: string, communityData:UpdateCommunityRepository) : Promise<CommunityDB | null>{
 
   const {name, description} = communityData;
   const community: CommunityDB | null = await findById(id);
@@ -39,7 +39,9 @@ export async function updateById(id: string, communityData:UpdateCommunityReposi
   if(!community)
     throw new AppError("Community doesn't exist", 404);
 
-  
+  if(userId !== community.ownerId) 
+    throw new AppError("You are not allowed to update this community", 403)
+
   if(!name && !description)
     throw new AppError("Body is Empty", 400);
 
@@ -64,7 +66,7 @@ export async function updateById(id: string, communityData:UpdateCommunityReposi
   if (Object.keys(modifiedAttributes).length === 0)
     return null;
 
-  const updatedCommunity: CommunityDB = await communityRepository.updateById(id, modifiedAttributes)
+  const updatedCommunity: CommunityDB | null = await communityRepository.updateById(id, modifiedAttributes)
   
   if (!updatedCommunity)
     throw new AppError("Community Was Not Updated", 500, "Unknown Failure");
@@ -72,9 +74,17 @@ export async function updateById(id: string, communityData:UpdateCommunityReposi
   return updatedCommunity;
 }
 
-export async function delelteById(id: string){
+export async function delelteById(userId: string, id: string){
+
+  const community: CommunityDB | null = await findById(id);
+
+  if(!community)
+    throw new AppError("Community was not found", 404);
+
+  if(community.ownerId !== userId)
+    throw new AppError("You are not allowed to delete this community", 403);
   
-  const deletedCommunity: {id: string} | undefined = await communityRepository.deleteById(id);
+  const deletedCommunity: {id: string} | null = await communityRepository.deleteById(id);
 
   if(!deletedCommunity)
     throw new AppError("User Not Found", 404);

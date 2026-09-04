@@ -15,7 +15,7 @@ export async function create( {name, description, ownerId} : CommunityCreate): P
     [ownerId, name, description]
   );
 
-  return result.rows[0]
+  return result.rows[0] ?? null;
 }
 
 
@@ -34,7 +34,7 @@ export async function findByName(name: string) : Promise<CommunityDB | null>{
     [name]
   );
 
-  return result.rows[0];
+  return result.rows[0] ?? null;
 }
 
 export async function findById(id: string) : Promise<CommunityDB | null>{
@@ -52,7 +52,7 @@ export async function findById(id: string) : Promise<CommunityDB | null>{
     [id]
   );
 
-  return result.rows[0];
+  return result.rows[0] ?? null;
 }
 
 export async function findAll(): Promise<CommunityDB[]>{
@@ -67,7 +67,7 @@ export async function findAll(): Promise<CommunityDB[]>{
   return result.rows;
 }
 
-export async function updateById(id: string, communityData: UpdateCommunityRepository): Promise<CommunityDB>{
+export async function updateById(id: string, communityData: UpdateCommunityRepository): Promise<CommunityDB | null>{
 
   const {name, description} = communityData;
   
@@ -98,10 +98,10 @@ export async function updateById(id: string, communityData: UpdateCommunityRepos
 
   const result = await pool.query(query, values)
 
-  return result.rows[0]
+  return result.rows[0] ?? null
 }
 
-export async function deleteById(id: string): Promise<{id: string} | undefined> {
+export async function deleteById(id: string): Promise<{id: string} | null> {
   
   const response = await  pool.query(`DELETE FROM communities
       WHERE id = $1
@@ -110,5 +110,5 @@ export async function deleteById(id: string): Promise<{id: string} | undefined> 
     [id]
   );
 
-  return response.rows[0];
+  return response.rows[0] ?? null;
 }

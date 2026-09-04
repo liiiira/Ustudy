@@ -28,10 +28,11 @@ export async function findAll(req: Request, res: Response){
 }
 
 export async function updateById(req: Request<{id: string}>, res: Response){
-
+  
+  const userId: string = req.user!.id;
   const {id} = req.params;
   const {name, description } = req.body;
-  const updatedCommunity: CommunityDB | null = await communityService.updateById(id, {name, description})
+  const updatedCommunity: CommunityDB | null = await communityService.updateById(userId, id, {name, description})
 
   // Nothing changed
   if (!updatedCommunity)
@@ -46,9 +47,10 @@ export async function updateById(req: Request<{id: string}>, res: Response){
 }
 
 export async function deleteById(req: Request<{id: string}>, res: Response){
-
+  
+  const userId: string = req.user!.id;
   const {id} = req.params;
-  const deletedCommunity: {id: string} = await communityService.delelteById(id);
+  const deletedCommunity: {id: string} = await communityService.delelteById(userId, id);
   
   return res.status(200).json({
     status: "success",

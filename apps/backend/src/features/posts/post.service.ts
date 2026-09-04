@@ -1,8 +1,9 @@
 import * as postRepository from "./post.repository.ts"
 import * as communityService from "../communities/community.service.ts"
-import type { PostInput, Post } from "./post.schema.ts";
+import type { PostInput, Post, PostJoined } from "./post.schema.ts";
 import {AppError} from "../../errors/appError.ts"
 import { CommunityDB } from "../communities/community.schema.ts";
+
 
 export async function create(ownerId: string, communityId: string,  postData: PostInput): Promise<Post>{
   
@@ -20,3 +21,25 @@ export async function create(ownerId: string, communityId: string,  postData: Po
 }
 
 
+export async function findById(postId: string): Promise<Post | null>{
+  
+  return await postRepository.findById(postId);
+}
+
+
+export async function getById(postId: string): Promise<PostJoined>{
+
+  const post: PostJoined | null = await postRepository.findByIdJoin(postId);
+
+  if(!post)
+    throw new AppError("Post was not found", 404);
+
+  return post;
+}
+
+export async function findAllCommunity(communityId: string): Promise<Post[]>{
+
+  const posts: Post[] = await postRepository.findAllCommunity(communityId)
+
+  return posts;
+}

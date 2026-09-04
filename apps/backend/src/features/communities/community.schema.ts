@@ -36,3 +36,13 @@ export const updateCommunitySchema = z.object({
 export const idSchema = z.object({
   id: z.uuid(),
 })
+
+
+export type CommmunityJoinUser = {
+  id: string;
+  ownerId: string;
+  createdAt: string;
+  name: string;
+  description: string;
+  ownerName: string;
+}

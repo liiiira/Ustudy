@@ -1,6 +1,6 @@
 import { AppError } from "../../errors/appError.ts";
 import * as communityRepository from "./community.repository.ts";
-import { UpdateCommunityRepository, type CommunityCreate, type CommunityDB } from "./community.schema.ts";
+import { CommmunityJoinUser, UpdateCommunityRepository, type CommunityCreate, type CommunityDB } from "./community.schema.ts";
 
 export async function create(CommunityCreate: CommunityCreate): Promise<CommunityDB>{
    
@@ -21,11 +21,23 @@ export async function create(CommunityCreate: CommunityCreate): Promise<Communit
 
 
 async function findByName(name: string): Promise<CommunityDB | null>{
+
     return await communityRepository.findByName(name);
 }
 
  async function findById(id: string): Promise<CommunityDB | null>{
+
   return await communityRepository.findById(id);
+}
+
+export async function getByIdJoinUser(id: string): Promise<CommmunityJoinUser>{
+
+  const foundCommunity = await communityRepository.findByIdJoinUser(id);
+  
+  if(!foundCommunity)
+    throw new AppError("Community was not found", 404);
+
+  return foundCommunity;
 }
 
 
@@ -72,8 +84,8 @@ export async function updateById(userId: string, id: string, communityData:Updat
   // Check if description exists and changed 
   if (description && community.description !== description)
     modifiedAttributes["description"] = description;
+
   // Check if nothing changed  
-  //
   if (Object.keys(modifiedAttributes).length === 0)
     return null;
 

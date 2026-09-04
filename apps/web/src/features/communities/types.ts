@@ -3,16 +3,37 @@ export type CreateCommunityData = {
   description: string;
 }
 
+
 export type CreateCommunityError = {
   name: string[];
-  descripition: string[];
+  description: string[];
+}
+
+export type CommunityProps = {
+  name?: string;
+  description?:string;
+}
+
+export type CommunityUpdate = {
+  name?: string;
+  description?: string;
 }
 
 export type Community = {
   id: string;
+  ownerId: string;
   name: string;
   description: string;
-  createdAt?: string;
+  createdAt: string;
+}
+
+export type CommunityJoinUser = {
+  id: string;
+  ownerId: string;
+  name: string; 
+  description: string;
+  createdAt: string;
+  ownerName: string;
 }
 
 export type UseCommunitiesList = {
@@ -24,6 +45,6 @@ export type UseCommunitiesList = {
 export type UseCommunity = {
   loading: boolean;
   error: boolean;
-  community: Community | null;
+  community: CommunityJoinUser | null;
 }
 

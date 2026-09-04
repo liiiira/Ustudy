@@ -1,4 +1,5 @@
-import { publicFetch } from "../../../lib/api";
+import { authFetch, publicFetch } from "../../../lib/api";
+import { type User } from "../../users/types";
 
 export async function login(userInfo: {email: string, password: string}): Promise<string>{
   const data = await publicFetch("/auth/login", 
@@ -28,4 +29,13 @@ export async function logout(): Promise<void>{
   );
 
   return;
+}
+
+export async function getMe(): Promise<User>{
+  const data = await authFetch("/users/me", 
+    {
+      method: "GET",
+    }
+  );
+  return data.user;
 }

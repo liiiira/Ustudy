@@ -13,7 +13,7 @@ export default function useCommunitiesList(): UseCommunitiesList{
     async function loadCommunities(){
       try{
 
-        const fetchedCommunities: Community[] = await communitiesApi.getAllCommunities()
+        const fetchedCommunities: Community[] = await communitiesApi.getAll()
         setCommunities(fetchedCommunities);
 
       }catch{

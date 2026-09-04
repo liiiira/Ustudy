@@ -8,6 +8,7 @@ import ProtectedRoute from "../components/protectedRoute.tsx";
 import CreateCommunityPage from "../features/communities/pages/createCommunityPage.tsx";
 import CommunitiesPage from "../features/communities/pages/communitiesPage.tsx";
 import CommunityPage from "../features/communities/pages/communityPage.tsx";
+import UpdateCommunityPage from "../features/communities/pages/updateCommunityPage.tsx";
 
 export default function AppRoutes(){
   return(
@@ -27,6 +28,7 @@ export default function AppRoutes(){
             <Route path="/communities" element={<CommunitiesPage />} />
             <Route path="/communities/create" element={<CreateCommunityPage />} />
             <Route path="/communities/:id" element={<CommunityPage />} />
+            <Route path="/communities/:id/update" element={<UpdateCommunityPage />} />
           </Route>
         </Route>
       </Routes>

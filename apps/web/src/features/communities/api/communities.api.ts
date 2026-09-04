@@ -1,8 +1,8 @@
 import { authFetch } from "../../../lib/api"
-import { type CreateCommunityData, type Community } from "../types";
+import { type CreateCommunityData, type Community, type CommunityUpdate, type CommunityJoinUser} from "../types";
 
 
-export async function createCommunity(communityData: CreateCommunityData): Promise<Community>{
+export async function create(communityData: CreateCommunityData): Promise<Community>{
 
   const data = await authFetch("/communities/",
     {
@@ -13,7 +13,7 @@ export async function createCommunity(communityData: CreateCommunityData): Promi
     return data.community 
 }
 
-export async function getAllCommunities(): Promise<Community[]>{
+export async function getAll(): Promise<Community[]>{
 
   const data = await authFetch("/communities",
   {
@@ -23,7 +23,7 @@ export async function getAllCommunities(): Promise<Community[]>{
   return data.communities;
 }
 
-export async function getCommunity(id: string): Promise<Community>{
+export async function getById(id: string): Promise<CommunityJoinUser>{
   const data = await authFetch(`/communities/${id}`, 
     {
       method: "GET",
@@ -32,3 +32,25 @@ export async function getCommunity(id: string): Promise<Community>{
 
   return data.community;
 }
+
+export async function updateById(id: string, community: CommunityUpdate){
+
+  const data = await authFetch(`/communities/${id}`, 
+    {
+      method: "PATCH",
+      body: community,
+    })
+
+  return data.community;
+}
+
+export async function deleteById(id: string): Promise<{id: string}>{
+  const data = await authFetch(`/communities/${id}`, 
+    {
+      method: "DELETE",
+    }
+  );
+
+  return data.community;
+}
+

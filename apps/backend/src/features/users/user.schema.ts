@@ -42,7 +42,6 @@ export interface User {
   hashedPassword?: string, 
 }
 
-
 export interface CreateUserRepository {
   username: string,
   hashedPassword: string,

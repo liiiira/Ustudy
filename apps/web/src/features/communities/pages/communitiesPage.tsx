@@ -16,7 +16,7 @@ export default function CommunitiesPage(){
     return (<div>loading ...</div>)
 
   return (
-    <div className="w-full min-h-screen flex-col">
+    <div className="bg-gray-200 w-full min-h-screen flex-col">
       <div className="flex flex-row-reverse w-full "><Button onClick={() => {navigate("/communities/create")}}>Create Community</Button></div>
       <div className="flex items-center justify-center">
          <CommunityList communities={communities} />

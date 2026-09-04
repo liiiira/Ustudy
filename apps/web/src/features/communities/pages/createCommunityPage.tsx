@@ -1,11 +1,11 @@
 import FormBg from "../../../components/layout/formBg";
-import CreateCommunityForm from "../components/createCommunityForm";
+import CommunityForm from "../components/communityForm";
 
 
 export default function CreateCommunityPage(){
   return (
     <FormBg>
-      <CreateCommunityForm />
+      <CommunityForm mode="Create"/>
     </FormBg>
   )
 }

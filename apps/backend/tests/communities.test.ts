@@ -1,9 +1,8 @@
 import request from "supertest";
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 
 import app from "../src/app.ts";
 import pool from "../src/config/postgres.ts";
-import { sign } from "jsonwebtoken";
 
 const BASE_URL = "/api/v1/communities";
 
@@ -12,6 +11,7 @@ const TEST_USER = {
   username: "community-tester",
   password: "SuperSecret123!",
 };
+
 let otherUserId: string;
 let otherAccessToken: string;
 
@@ -74,6 +74,9 @@ describe("POST /api/v1/communities", () => {
       .post(BASE_URL)
       .set("Authorization", `Bearer ${accessToken}`)
       .send({ name: "duplicate-club", description: "Second one, should fail" });
+
+
+
 
     expect(res.status).toBe(409);
     expect(res.body.message).toMatch(/already taken/i);

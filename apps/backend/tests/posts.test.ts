@@ -186,3 +186,103 @@ describe("POST /api/v1/communities/:communityId/posts", () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe("GET /api/v1/communities/:communityId/posts", () => {
+  let communityId: string;
+  let postId: string;
+
+  beforeEach(async () => {
+    await pool.query("TRUNCATE TABLE communities RESTART IDENTITY CASCADE");
+    const communityRes = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        name: "algorithms-club",
+        description: "A place to discuss algorithms",
+      });
+
+    communityId = communityRes.body.community.id;
+
+    const postRes = await request(app)
+      .post(`${BASE_URL}/${communityId}/posts`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        title: "My first post",
+        textContent: "This is my first post.",
+      });
+
+    postId = postRes.body.post.id;
+  });
+
+  it("returns all posts belonging to a community", async () => {
+    const res = await request(app)
+      .get(`${BASE_URL}/${communityId}/posts`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("success");
+    expect(res.body.posts).toHaveLength(1);
+
+    expect(res.body.posts[0]).toMatchObject({
+      id: postId,
+      title: "My first post",
+      textContent: "This is my first post.",
+      ownerId,
+      communityId,
+    });
+  });
+
+  it("requires authentication", async () => {
+    const res = await request(app)
+      .get(`${BASE_URL}/${communityId}/posts`);
+
+    expect(res.status).toBe(401);
+  });
+
+  it("rejects an invalid community ID", async () => {
+    const res = await request(app)
+      .get(`${BASE_URL}/not-a-uuid/posts`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns an empty array when the community has no posts", async () => {
+    await pool.query("DELETE FROM posts WHERE id = $1", [postId]);
+
+    const res = await request(app)
+      .get(`${BASE_URL}/${communityId}/posts`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.posts).toEqual([]);
+  });
+
+  it("does not return posts from another community", async () => {
+    const otherCommunityRes = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        name: "other-community",
+        description: "Another community",
+      });
+
+    const otherCommunityId = otherCommunityRes.body.community.id;
+
+    await request(app)
+      .post(`${BASE_URL}/${otherCommunityId}/posts`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        title: "Other post",
+        textContent: "Other content",
+      });
+
+    const res = await request(app)
+      .get(`${BASE_URL}/${communityId}/posts`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.posts).toHaveLength(1);
+    expect(res.body.posts[0].id).toBe(postId);
+  });
+});

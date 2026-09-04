@@ -1,7 +1,7 @@
 import * as postService from "./post.service.ts";
 import { communityIdSchema, type Post, type PostInput, type PostJoined } from "./post.schema.ts";
 import { Request, Response } from "express";
-import { findAllCommunity } from "./post.repository.ts";
+
 
 
 export async function create(req: Request<{communityId: string}>, res: Response){

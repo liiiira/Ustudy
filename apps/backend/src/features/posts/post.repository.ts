@@ -68,7 +68,8 @@ export async function findAllCommunity(communityId: string): Promise<Post[]>{
         community_id AS "communityId",
         posts.owner_id AS "ownerId",
         posts.created_at AS "createdAt",
-        name,
+        name
+    FROM posts
     INNER JOIN communities 
       ON posts.community_id = communities.id
     WHERE communities.id = $1`,

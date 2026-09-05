@@ -38,3 +38,9 @@ export type PostJoined = {
   communityName: string;
   cratedAt: Date,
 }
+
+export type UseCommunityPosts = {
+  loading: boolean, 
+  error: boolean,
+  communityPosts: Post[]
+}

@@ -104,7 +104,7 @@ export async function updateById(id: string, communityData: PostUpdate): Promise
   const query: string = `UPDATE posts
     SET ${updates.join(", ")}
     WHERE id = $${values.length + 1}
-    RETURNING id, title, textContent, owner_id AS "ownerId", created_at AS "createdAt", community_id AS "communityId"
+    RETURNING id, title, text_content AS "textContent", owner_id AS "ownerId", created_at AS "createdAt", community_id AS "communityId"
   `
   values.push(id);
 
@@ -116,7 +116,8 @@ export async function updateById(id: string, communityData: PostUpdate): Promise
 export async function deleteById(postId: string): Promise<{id: string} | null>{
   
   const response = await pool.query(`DELETE FROM posts
-      WHERE id = $1 `,
+      WHERE id = $1 
+      RETURNING id`,
     [postId]
   );
 

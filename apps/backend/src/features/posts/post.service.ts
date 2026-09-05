@@ -3,7 +3,6 @@ import * as communityService from "../communities/community.service.ts"
 import type { PostInput, Post, PostJoined, PostUpdate } from "./post.schema.ts";
 import {AppError} from "../../errors/appError.ts"
 import { CommunityDB } from "../communities/community.schema.ts";
-import { text } from "express";
 
 
 export async function create(ownerId: string, communityId: string,  postData: PostInput): Promise<Post>{
@@ -68,7 +67,7 @@ export async function updateById(userId: string, postId: string, communityData: 
 
   // Check if post text content exists and changed 
   if (textContent && post.textContent !== textContent)
-    modifiedAttributes["description"] = textContent;
+    modifiedAttributes["textContent"] = textContent;
 
   // Check if nothing changed  
   if (Object.keys(modifiedAttributes).length === 0)

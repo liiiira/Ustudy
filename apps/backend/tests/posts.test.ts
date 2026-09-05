@@ -2,9 +2,9 @@ import request from "supertest";
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import app from "../src/app.ts";
 import pool from "../src/config/postgres.ts";
-import { resetTables } from "./db.ts";
+import { resetTables, createCommunity, createPost, createUser, tokenFor, loginUser} from "./utils.ts";
 
-const BASE_URL = "/api/v1/communities";
+
 
 const TEST_USER = {
   email: "community-tests@example.com",
@@ -12,74 +12,37 @@ const TEST_USER = {
   password: "SuperSecret123!",
 };
 
-let otherUserId: string;
-let otherAccessToken: string;
-
 const OTHER_USER = {
   email: "other-user@example.com",
   username: "other-tester",
   password: "SomeValidPassword123!",
-  // ...whatever other fields TEST_USER requires
 };
 
-let accessToken: string;
-let ownerId: string;
+
 
 
 describe("POST /api/v1/communities/:communityId/posts", () => {
 
-  beforeAll(async () => {
-    await pool.query("TRUNCATE TABLE users RESTART IDENTITY CASCADE");
-
-    const signupRes = await request(app)
-      .post("/api/v1/users")
-      .send(TEST_USER);
-
-    ownerId = signupRes.body.user.id;
-
-    const loginRes = await request(app)
-      .post("/api/v1/auth/login")
-      .send({
-        email: TEST_USER.email,
-        password: TEST_USER.password,
-      });
-
-    accessToken = loginRes.body.accessToken;
-
-    // Create the second user
-    const otherSignupRes = await request(app)
-      .post("/api/v1/users")
-      .send(OTHER_USER);
-
-    otherUserId = otherSignupRes.body.user.id;
-
-    const otherLoginRes = await request(app)
-      .post("/api/v1/auth/login")
-      .send({
-        email: OTHER_USER.email,
-        password: OTHER_USER.password,
-      });
-
-    otherAccessToken = otherLoginRes.body.accessToken;
-  });
+  const BASE_URL = "/api/v1/communities"
+  let testUserId: string;
+  let otherUserId: string;
+  let accessToken: string;
+  let community;
+  let communityId: string;
 
   beforeEach(async () => {
-    await pool.query("TRUNCATE TABLE communities RESTART IDENTITY CASCADE");
-  });
+
+    await resetTables();
+
+    testUserId = await createUser(TEST_USER)
+    otherUserId = await createUser(OTHER_USER);
+    accessToken = await loginUser({email: TEST_USER.email, password: TEST_USER.password})
+    community = await createCommunity(accessToken, {name: "algorithms_club", description: "A place to discuss algorithms"});
+    communityId = community.id;
+
+  })
 
   it("creates a post in a community", async () => {
-    // Create a community first
-    const communityRes = await request(app)
-      .post(BASE_URL)
-      .set("Authorization", `Bearer ${accessToken}`)
-      .send({
-        name: "algorithms_club",
-        description: "A place to discuss algorithms",
-      });
-
-    const communityId: string = communityRes.body.community.id;
-    console.log("HEEEEEEEEY: ", communityRes.body.community);
-    
 
     const res = await request(app)
       .post(`${BASE_URL}/${communityId}/posts`)
@@ -88,15 +51,15 @@ describe("POST /api/v1/communities/:communityId/posts", () => {
         title: "My first post",
         textContent: "This is my first post.",
       });
-    
+
     expect(res.status).toBe(201);
     expect(res.body.status).toBe("success");
 
     expect(res.body.post).toMatchObject({
       title: "My first post",
       textContent: "This is my first post.",
-      ownerId,
       communityId,
+      ownerId: testUserId,
     });
 
     expect(res.body.post.id).toBeDefined();
@@ -109,23 +72,14 @@ describe("POST /api/v1/communities/:communityId/posts", () => {
     );
 
     expect(dbRow.rows).toHaveLength(1);
-    expect(dbRow.rows[0].owner_id).toBe(ownerId);
+    expect(dbRow.rows[0].owner_id).toBe(testUserId);
     expect(dbRow.rows[0].community_id).toBe(communityId);
     expect(dbRow.rows[0].title).toBe("My first post");
     expect(dbRow.rows[0].text_content).toBe("This is my first post.");
   });
 
 
-  it("requirees authentication", async () => {
-    const communityRes = await request(app)
-      .post(BASE_URL)
-      .set("Authorization", `Bearer ${accessToken}`)
-      .send({
-        name: "algorithms-club",
-        description: "A place to discuss algorithms",
-      });
-
-    const communityId = communityRes.body.community.id;
+  it("requires authentication", async () => {
 
     const res = await request(app)
       .post(`${BASE_URL}/${communityId}/posts`)
@@ -138,6 +92,8 @@ describe("POST /api/v1/communities/:communityId/posts", () => {
   });
 
   it("rejects an invalid community ID", async () => {
+
+    
     const res = await request(app)
       .post(`${BASE_URL}/not-a-uuid/posts`)
       .set("Authorization", `Bearer ${accessToken}`)
@@ -150,15 +106,6 @@ describe("POST /api/v1/communities/:communityId/posts", () => {
   });
 
   it("rejects invalid post data", async () => {
-    const communityRes = await request(app)
-      .post(BASE_URL)
-      .set("Authorization", `Bearer ${accessToken}`)
-      .send({
-        name: "algorithms-club",
-        description: "A place to discuss algorithms",
-      });
-
-    const communityId = communityRes.body.community.id;
 
     const res = await request(app)
       .post(`${BASE_URL}/${communityId}/posts`)
@@ -172,6 +119,7 @@ describe("POST /api/v1/communities/:communityId/posts", () => {
   });
 
   it("returns 400 when the community does not exist", async () => {
+
     const nonExistentCommunityId =
       "00000000-0000-0000-0000-000000000000";
 
@@ -187,52 +135,56 @@ describe("POST /api/v1/communities/:communityId/posts", () => {
   });
 });
 
+
+
+
 describe("GET /api/v1/communities/:communityId/posts", () => {
+  
+  const BASE_URL = "/api/v1/communities";
+  let testUserId: string;
+  let otherUserId: string;
+  let accessToken: string;
+  let community;
   let communityId: string;
+  let post;
   let postId: string;
+  let otherCommunity;
+  let otherCommunityId: string;
 
   beforeEach(async () => {
-    await pool.query("TRUNCATE TABLE communities RESTART IDENTITY CASCADE");
-    const communityRes = await request(app)
-      .post(BASE_URL)
-      .set("Authorization", `Bearer ${accessToken}`)
-      .send({
-        name: "algorithms-club",
-        description: "A place to discuss algorithms",
-      });
-
-    communityId = communityRes.body.community.id;
-
-    const postRes = await request(app)
-      .post(`${BASE_URL}/${communityId}/posts`)
-      .set("Authorization", `Bearer ${accessToken}`)
-      .send({
-        title: "My first post",
-        textContent: "This is my first post.",
-      });
-
-    postId = postRes.body.post.id;
+    resetTables();
+    testUserId = await createUser(TEST_USER)
+    otherUserId = await createUser(OTHER_USER);
+    accessToken = await loginUser({email: TEST_USER.email, password: TEST_USER.password})
+    community = await createCommunity(accessToken, {name: "algorithms_club", description: "A place to discuss algorithms"});
+    communityId = community.id
+    post = await createPost(communityId, accessToken, {textContent: "This is my first post.", title: "My first post"})
+    postId = post.id;    
+    otherCommunity = await createCommunity(accessToken, {name: "other-community", description: "Another community"});
+    otherCommunityId = otherCommunity.id;
   });
 
   it("returns all posts belonging to a community", async () => {
+
     const res = await request(app)
       .get(`${BASE_URL}/${communityId}/posts`)
       .set("Authorization", `Bearer ${accessToken}`);
 
-    expect(res.status).toBe(200);
-    expect(res.body.status).toBe("success");
-    expect(res.body.posts).toHaveLength(1);
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe("success");
+      expect(res.body.posts).toHaveLength(1);
 
-    expect(res.body.posts[0]).toMatchObject({
-      id: postId,
-      title: "My first post",
-      textContent: "This is my first post.",
-      ownerId,
-      communityId,
+      expect(res.body.posts[0]).toMatchObject({
+        id: postId,
+        title: "My first post",
+        textContent: "This is my first post.",
+        ownerId: testUserId,
+        communityId,
+      });
     });
-  });
 
   it("requires authentication", async () => {
+
     const res = await request(app)
       .get(`${BASE_URL}/${communityId}/posts`);
 
@@ -240,6 +192,7 @@ describe("GET /api/v1/communities/:communityId/posts", () => {
   });
 
   it("rejects an invalid community ID", async () => {
+
     const res = await request(app)
       .get(`${BASE_URL}/not-a-uuid/posts`)
       .set("Authorization", `Bearer ${accessToken}`);
@@ -248,7 +201,8 @@ describe("GET /api/v1/communities/:communityId/posts", () => {
   });
 
   it("returns an empty array when the community has no posts", async () => {
-    await pool.query("DELETE FROM posts WHERE id = $1", [postId]);
+    const community = await createCommunity(accessToken, {name: "idcccc", description: "it is useless idk"})
+    const communityId = community.id;
 
     const res = await request(app)
       .get(`${BASE_URL}/${communityId}/posts`)
@@ -259,30 +213,281 @@ describe("GET /api/v1/communities/:communityId/posts", () => {
   });
 
   it("does not return posts from another community", async () => {
-    const otherCommunityRes = await request(app)
-      .post(BASE_URL)
-      .set("Authorization", `Bearer ${accessToken}`)
-      .send({
-        name: "other-community",
-        description: "Another community",
-      });
-
-    const otherCommunityId = otherCommunityRes.body.community.id;
-
-    await request(app)
-      .post(`${BASE_URL}/${otherCommunityId}/posts`)
-      .set("Authorization", `Bearer ${accessToken}`)
-      .send({
-        title: "Other post",
-        textContent: "Other content",
-      });
+     
+    const post = await createPost(otherCommunityId, accessToken, {title: "Other post", textContent: "Other Content"})
+    const postId = post.id;
 
     const res = await request(app)
-      .get(`${BASE_URL}/${communityId}/posts`)
+      .get(`${BASE_URL}/${otherCommunityId}/posts`)
       .set("Authorization", `Bearer ${accessToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body.posts).toHaveLength(1);
     expect(res.body.posts[0].id).toBe(postId);
+  });
+});
+
+describe("PATCH /api/v1/communities/:communityId/posts/:postId", () => {
+   const BASE_URL = "/api/v1/communities";
+  let testUserId: string;
+  let otherUserId: string;
+  let accessToken: string;
+  let otherAccessToken: string;
+  let community;
+  let communityId: string;
+  let post;
+  let postId: string;
+  let otherCommunity;
+  let otherCommunityId: string;
+
+  beforeEach(async () => {
+
+    resetTables();
+    testUserId = await createUser(TEST_USER)
+    otherUserId = await createUser(OTHER_USER);
+    accessToken = await loginUser({email: TEST_USER.email, password: TEST_USER.password})
+    otherAccessToken = await loginUser({email: OTHER_USER.email, password: OTHER_USER.password})
+    community = await createCommunity(accessToken, {name: "algorithms_club", description: "A place to discuss algorithms"});
+    communityId = community.id
+    post = await createPost(communityId, accessToken, {textContent: "Original content", title: "Original title"})
+    postId = post.id;    
+    otherCommunity = await createCommunity(accessToken, {name: "other-community", description: "Another community"});
+    otherCommunityId = otherCommunity.id;
+
+  }); 
+  
+  it("updates a post", async () => {
+    const res = await request(app)
+      .patch(`${BASE_URL}/${communityId}/posts/${postId}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        title: "Updated title",
+        textContent: "Updated content",
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("success");
+
+    expect(res.body.post).toMatchObject({
+      id: postId,
+      title: "Updated title",
+      textContent: "Updated content",
+      ownerId: testUserId,
+      communityId,
+    });
+
+    // Verify the database
+    const dbRow = await pool.query(
+      `SELECT title, text_content, owner_id, community_id
+       FROM posts
+       WHERE id = $1`,
+      [postId]
+    );
+
+    expect(dbRow.rows).toHaveLength(1);
+    expect(dbRow.rows[0].title).toBe("Updated title");
+    expect(dbRow.rows[0].text_content).toBe("Updated content");
+    expect(dbRow.rows[0].owner_id).toBe(testUserId);
+    expect(dbRow.rows[0].community_id).toBe(communityId);
+  });
+
+  it("updates only the title", async () => {
+    const res = await request(app)
+      .patch(`${BASE_URL}/${communityId}/posts/${postId}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        title: "Updated title",
+      });
+
+    expect(res.status).toBe(200);
+
+    expect(res.body.post.title).toBe("Updated title");
+    expect(res.body.post.textContent).toBe("Original content");
+  });
+
+  it("updates only the text content", async () => {
+    const res = await request(app)
+      .patch(`${BASE_URL}/${communityId}/posts/${postId}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        textContent: "Updated content",
+      });
+
+    expect(res.status).toBe(200);
+
+    expect(res.body.post.title).toBe("Original title");
+    expect(res.body.post.textContent).toBe("Updated content");
+  });
+
+  it("requires authentication", async () => {
+    const res = await request(app)
+      .patch(`${BASE_URL}/${communityId}/posts/${postId}`)
+      .send({
+        title: "Updated title",
+      });
+
+    expect(res.status).toBe(401);
+  });
+
+  it("rejects an invalid post ID", async () => {
+    const res = await request(app)
+      .patch(`${BASE_URL}/${communityId}/posts/not-a-uuid`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        title: "Updated title",
+      });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 404 when the post does not exist", async () => {
+    const nonExistentPostId =
+      "00000000-0000-0000-0000-000000000000";
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${communityId}/posts/${nonExistentPostId}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        title: "Updated title",
+      });
+
+    expect(res.status).toBe(404);
+  });
+
+  it("rejects an empty update", async () => {
+    const res = await request(app)
+      .patch(`${BASE_URL}/${communityId}/posts/${postId}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({});
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 204 when nothing actually changes", async () => {
+    const res = await request(app)
+      .patch(`${BASE_URL}/${communityId}/posts/${postId}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        title: "Original title",
+        textContent: "Original content",
+      });
+
+    expect(res.status).toBe(204);
+  });
+
+  it("does not allow another user to update the post", async () => {
+    const res = await request(app)
+      .patch(`${BASE_URL}/${communityId}/posts/${postId}`)
+      .set("Authorization", `Bearer ${otherAccessToken}`)
+      .send({
+        title: "Hacked title",
+      });
+
+    expect(res.status).toBe(403);
+
+    // Verify it wasn't changed
+    const dbRow = await pool.query(
+      "SELECT title FROM posts WHERE id = $1",
+      [postId]
+    );
+
+    expect(dbRow.rows[0].title).toBe("Original title");
+  });
+});
+
+describe("DELETE /api/v1/communities/:communityId/posts/:postId", () => {
+  const BASE_URL = "/api/v1/communities";
+  let testUserId: string;
+  let otherUserId: string;
+  let accessToken: string;
+  let otherAccessToken: string;
+  let community;
+  let communityId: string;
+  let post;
+  let postId: string;
+  let otherCommunity;
+  let otherCommunityId: string;
+
+  beforeEach(async () => {
+
+    resetTables();
+    testUserId = await createUser(TEST_USER)
+    otherUserId = await createUser(OTHER_USER);
+    accessToken = await loginUser({email: TEST_USER.email, password: TEST_USER.password})
+    otherAccessToken = await loginUser({email: OTHER_USER.email, password: OTHER_USER.password})
+    community = await createCommunity(accessToken, {name: "algorithms_club", description: "A place to discuss algorithms"});
+    communityId = community.id
+    post = await createPost(communityId, accessToken, {textContent: "This Post will be delted", title: "Post to be delete"})
+    postId = post.id;    
+    otherCommunity = await createCommunity(accessToken, {name: "other-community", description: "Another community"});
+    otherCommunityId = otherCommunity.id;
+
+  });
+
+
+
+
+
+  it("deletes a post", async () => {
+    const res = await request(app)
+      .delete(`${BASE_URL}/${communityId}/posts/${postId}`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("success");
+
+    expect(res.body.post).toMatchObject({
+      id: postId,
+    });
+
+    // Verify it was actually deleted
+    const dbRow = await pool.query(
+      "SELECT * FROM posts WHERE id = $1",
+      [postId]
+    );
+
+    expect(dbRow.rows).toHaveLength(0);
+  });
+
+  it("requires authentication", async () => {
+    const res = await request(app)
+      .delete(`${BASE_URL}/${communityId}/posts/${postId}`);
+
+    expect(res.status).toBe(401);
+  });
+
+  it("rejects an invalid post ID", async () => {
+    const res = await request(app)
+      .delete(`${BASE_URL}/${communityId}/posts/not-a-uuid`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 404 when the post does not exist", async () => {
+    const nonExistentPostId =
+      "00000000-0000-0000-0000-000000000000";
+
+    const res = await request(app)
+      .delete(`${BASE_URL}/${communityId}/posts/${nonExistentPostId}`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it("does not allow another user to delete the post", async () => {
+    const res = await request(app)
+      .delete(`${BASE_URL}/${communityId}/posts/${postId}`)
+      .set("Authorization", `Bearer ${otherAccessToken}`);
+
+    expect(res.status).toBe(403);
+
+    // Verify it wasn't deleted
+    const dbRow = await pool.query(
+      "SELECT * FROM posts WHERE id = $1",
+      [postId]
+    );
+
+    expect(dbRow.rows).toHaveLength(1);
   });
 });

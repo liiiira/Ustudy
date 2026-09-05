@@ -10,7 +10,7 @@ const TEST_USER = {
   email: "community-tests@example.com",
   username: "community-tester",
   password: "SuperSecret123!",
-};
+}; 
 
 let otherUserId: string;
 let otherAccessToken: string;
@@ -19,7 +19,6 @@ const OTHER_USER = {
   email: "other-user@example.com",
   username: "other-tester",
   password: "SomeValidPassword123!",
-  // ...whatever other fields TEST_USER requires
 };
 
 let accessToken: string;

@@ -3,7 +3,6 @@ import { Router } from "express";
 import isAuthenticated from "../../middlewares/isAuthenticated.ts";
 import { communityIdSchema, postIdSchema, postInputSchema, postUpdateSchema} from "./post.schema.ts";
 import {validateBody, validateParams} from "../../middlewares/validate.ts"
-import { is } from "zod/locales";
 
 const router = Router({caseSensitive: true, mergeParams: true});
 

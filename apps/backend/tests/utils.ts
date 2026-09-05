@@ -58,7 +58,11 @@ export async function createPost(communityId: string, accessToken: string, data:
 
 
 export async function resetTables() {
-  await pool.query(`TRUNCATE posts, communities, users RESTART IDENTITY CASCADE`);
+  await pool.query(`TRUNCATE posts, communities, users CASCADE`);
+}
+
+export async function resetPostsTables(){
+  await pool.query("TRUNCATE posts CASCADE") 
 }
 
 export function tokenFor(userId: string) {

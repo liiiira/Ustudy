@@ -57,7 +57,9 @@ export async function findById(id: string) : Promise<CommunityDB | null>{
 }
 
 export async function findAll(): Promise<CommunityDB[]>{
-  const result = await pool.query(`SELECT 
+
+  const result = await pool.query(
+    `SELECT 
         id,
         owner_id AS "ownerId",
         name,
@@ -104,7 +106,8 @@ export async function updateById(id: string, communityData: UpdateCommunityRepos
 
 export async function deleteById(id: string): Promise<{id: string} | null> {
   
-  const response = await  pool.query(`DELETE FROM communities
+  const response = await  pool.query(
+    `DELETE FROM communities
       WHERE id = $1
       RETURNING 
         id`,
@@ -116,7 +119,8 @@ export async function deleteById(id: string): Promise<{id: string} | null> {
 
 export async function findByIdJoinUser(id: string): Promise<CommmunityJoinUser | null>{
 
-  const response = await pool.query(`SELECT 
+  const response = await pool.query(
+    `SELECT 
         communities.id AS "id",
         owner_id AS "ownerId",
         communities.created_at AS "createdAt",

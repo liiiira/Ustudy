@@ -2,9 +2,11 @@ import request from "supertest";
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import app from "../src/app.ts";
 import pool from "../src/config/postgres.ts";
-import { resetTables, createCommunity, createPost, createUser, tokenFor, loginUser} from "./utils.ts";
+import { resetTables, createCommunity, createPost, createUser, resetPostsTables, loginUser} from "./utils.ts";
 
 
+
+const BASE_URL = "/api/v1/communities"
 
 const TEST_USER = {
   email: "community-tests@example.com",
@@ -18,28 +20,33 @@ const OTHER_USER = {
   password: "SomeValidPassword123!",
 };
 
+let testUserId: string;
+let otherUserId: string;
+let accessToken: string;
+let otherAccessToken: string;
+let community;
+let communityId: string;
+let otherCommunity;
+let otherCommunityId: string;
 
+beforeAll(async () => {
+    await resetTables();
+    testUserId = await createUser(TEST_USER);
+    otherUserId = await createUser(OTHER_USER);
+    accessToken = await loginUser({email: TEST_USER.email, password: TEST_USER.password})
+    otherAccessToken = await loginUser({email: OTHER_USER.email, password: OTHER_USER.password})
+    community = await createCommunity(accessToken, {name: "algorithms_club", description: "A place to discuss algorithms"});
+    communityId = community.id;   
+    otherCommunity = await createCommunity(accessToken, {name: "other-community", description: "Another community"});
+    otherCommunityId = otherCommunity.id;
+})
 
 
 describe("POST /api/v1/communities/:communityId/posts", () => {
 
-  const BASE_URL = "/api/v1/communities"
-  let testUserId: string;
-  let otherUserId: string;
-  let accessToken: string;
-  let community;
-  let communityId: string;
 
   beforeEach(async () => {
-
-    await resetTables();
-
-    testUserId = await createUser(TEST_USER)
-    otherUserId = await createUser(OTHER_USER);
-    accessToken = await loginUser({email: TEST_USER.email, password: TEST_USER.password})
-    community = await createCommunity(accessToken, {name: "algorithms_club", description: "A place to discuss algorithms"});
-    communityId = community.id;
-
+    await resetPostsTables();
   })
 
   it("creates a post in a community", async () => {
@@ -140,29 +147,17 @@ describe("POST /api/v1/communities/:communityId/posts", () => {
 
 describe("GET /api/v1/communities/:communityId/posts", () => {
   
-  const BASE_URL = "/api/v1/communities";
-  let testUserId: string;
-  let otherUserId: string;
-  let accessToken: string;
-  let community;
-  let communityId: string;
   let post;
   let postId: string;
-  let otherCommunity;
-  let otherCommunityId: string;
 
   beforeEach(async () => {
-    resetTables();
-    testUserId = await createUser(TEST_USER)
-    otherUserId = await createUser(OTHER_USER);
-    accessToken = await loginUser({email: TEST_USER.email, password: TEST_USER.password})
-    community = await createCommunity(accessToken, {name: "algorithms_club", description: "A place to discuss algorithms"});
-    communityId = community.id
+
+    await resetPostsTables();
     post = await createPost(communityId, accessToken, {textContent: "This is my first post.", title: "My first post"})
     postId = post.id;    
-    otherCommunity = await createCommunity(accessToken, {name: "other-community", description: "Another community"});
-    otherCommunityId = otherCommunity.id;
+
   });
+
 
   it("returns all posts belonging to a community", async () => {
 
@@ -228,31 +223,14 @@ describe("GET /api/v1/communities/:communityId/posts", () => {
 });
 
 describe("PATCH /api/v1/communities/:communityId/posts/:postId", () => {
-   const BASE_URL = "/api/v1/communities";
-  let testUserId: string;
-  let otherUserId: string;
-  let accessToken: string;
-  let otherAccessToken: string;
-  let community;
-  let communityId: string;
+
   let post;
   let postId: string;
-  let otherCommunity;
-  let otherCommunityId: string;
 
   beforeEach(async () => {
-
-    resetTables();
-    testUserId = await createUser(TEST_USER)
-    otherUserId = await createUser(OTHER_USER);
-    accessToken = await loginUser({email: TEST_USER.email, password: TEST_USER.password})
-    otherAccessToken = await loginUser({email: OTHER_USER.email, password: OTHER_USER.password})
-    community = await createCommunity(accessToken, {name: "algorithms_club", description: "A place to discuss algorithms"});
-    communityId = community.id
+    await resetPostsTables();
     post = await createPost(communityId, accessToken, {textContent: "Original content", title: "Original title"})
     postId = post.id;    
-    otherCommunity = await createCommunity(accessToken, {name: "other-community", description: "Another community"});
-    otherCommunityId = otherCommunity.id;
 
   }); 
   
@@ -396,37 +374,15 @@ describe("PATCH /api/v1/communities/:communityId/posts/:postId", () => {
 });
 
 describe("DELETE /api/v1/communities/:communityId/posts/:postId", () => {
-  const BASE_URL = "/api/v1/communities";
-  let testUserId: string;
-  let otherUserId: string;
-  let accessToken: string;
-  let otherAccessToken: string;
-  let community;
-  let communityId: string;
   let post;
   let postId: string;
-  let otherCommunity;
-  let otherCommunityId: string;
 
   beforeEach(async () => {
 
-    resetTables();
-    testUserId = await createUser(TEST_USER)
-    otherUserId = await createUser(OTHER_USER);
-    accessToken = await loginUser({email: TEST_USER.email, password: TEST_USER.password})
-    otherAccessToken = await loginUser({email: OTHER_USER.email, password: OTHER_USER.password})
-    community = await createCommunity(accessToken, {name: "algorithms_club", description: "A place to discuss algorithms"});
-    communityId = community.id
+    await resetPostsTables();
     post = await createPost(communityId, accessToken, {textContent: "This Post will be delted", title: "Post to be delete"})
     postId = post.id;    
-    otherCommunity = await createCommunity(accessToken, {name: "other-community", description: "Another community"});
-    otherCommunityId = otherCommunity.id;
-
   });
-
-
-
-
 
   it("deletes a post", async () => {
     const res = await request(app)

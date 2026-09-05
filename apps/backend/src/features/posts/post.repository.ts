@@ -3,7 +3,8 @@ import type { PostInput, Post , PostJoined, PostUpdate} from "./post.schema.ts";
 
 export async function create (ownerId: string, communityId: string, {title, textContent}: PostInput): Promise<Post | null>{
 
-  const response = await pool.query(`INSERT INTO 
+  const response = await pool.query(
+    `INSERT INTO 
       posts(title, text_content, owner_id, community_id) 
       VALUES($1, $2, $3, $4)
       RETURNING
@@ -20,7 +21,9 @@ export async function create (ownerId: string, communityId: string, {title, text
 }
 
 export async function findById(postId: string): Promise<Post | null>{
-  const response = await pool.query(`SELECT 
+
+  const response = await pool.query(
+    `SELECT 
         title,
         text_content AS "textContent",
         id,
@@ -37,7 +40,8 @@ export async function findById(postId: string): Promise<Post | null>{
 
 export async function findByIdJoin(postId: string): Promise<PostJoined | null>{
 
-  const response = await pool.query(`SELECT 
+  const response = await pool.query(
+    `SELECT 
         title,
         text_content AS "textContent",
         posts.id,
@@ -61,7 +65,8 @@ export async function findByIdJoin(postId: string): Promise<PostJoined | null>{
 
 export async function findAllCommunity(communityId: string): Promise<Post[]>{
 
-  const response = await pool.query(`SELECT 
+  const response = await pool.query(
+    `SELECT 
         title,
         text_content AS "textContent",
         posts.id,
@@ -104,8 +109,15 @@ export async function updateById(id: string, communityData: PostUpdate): Promise
   const query: string = `UPDATE posts
     SET ${updates.join(", ")}
     WHERE id = $${values.length + 1}
-    RETURNING id, title, text_content AS "textContent", owner_id AS "ownerId", created_at AS "createdAt", community_id AS "communityId"
-  `
+    RETURNING 
+      id, 
+      title, 
+      text_content AS "textContent",
+      owner_id AS "ownerId",
+      created_at AS "createdAt",
+      community_id AS "communityId"
+  `;
+
   values.push(id);
 
   const result = await pool.query(query, values)
@@ -115,7 +127,8 @@ export async function updateById(id: string, communityData: PostUpdate): Promise
 
 export async function deleteById(postId: string): Promise<{id: string} | null>{
   
-  const response = await pool.query(`DELETE FROM posts
+  const response = await pool.query(
+    `DELETE FROM posts
       WHERE id = $1 
       RETURNING id`,
     [postId]

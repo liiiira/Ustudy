@@ -1,6 +1,6 @@
 import request from "supertest";
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
-
+import { createUser, loginUser, resetCommunitiesTable, resetTables } from "./utils.ts";
 import app from "../src/app.ts";
 import pool from "../src/config/postgres.ts";
 
@@ -12,35 +12,35 @@ const TEST_USER = {
   password: "SuperSecret123!",
 }; 
 
-let otherUserId: string;
-let otherAccessToken: string;
-
 const OTHER_USER = {
   email: "other-user@example.com",
   username: "other-tester",
   password: "SomeValidPassword123!",
 };
 
+let otherUserId: string;
+let otherAccessToken: string;
+let testUserId: string;
 let accessToken: string;
-let ownerId: string;
+
+
+beforeAll(async () => {
+    await resetTables();
+    testUserId = await createUser(TEST_USER);
+    otherUserId = await createUser(OTHER_USER);
+    console.log("User id: ", testUserId)
+    console.log("otherser id: ", otherUserId);
+    accessToken = await loginUser({email: TEST_USER.email, password: TEST_USER.password})
+    otherAccessToken = await loginUser({email: OTHER_USER.email, password: OTHER_USER.password}) 
+    console.log("accessToken: ", accessToken);
+    console.log("otherAccessToken: ", otherAccessToken);
+})
 
 describe("POST /api/v1/communities", () => {
-  beforeAll(async () => {
-    await pool.query("TRUNCATE TABLE users RESTART IDENTITY CASCADE");
-    const signupRes = await request(app).post("/api/v1/users").send(TEST_USER);
-    ownerId = signupRes.body.user.id;
-
-    const loginRes = await request(app)
-      .post("/api/v1/auth/login")
-      .send({ email: TEST_USER.email, password: TEST_USER.password });
-
-    accessToken = loginRes.body.accessToken;
-  });
 
   beforeEach(async () => {
-    await pool.query("TRUNCATE TABLE communities RESTART IDENTITY CASCADE");
-  });
-
+    await resetCommunitiesTable(); 
+  })
 
   it("creates a community and persists it", async () => {
     const res = await request(app)
@@ -53,15 +53,17 @@ describe("POST /api/v1/communities", () => {
     expect(res.body.community).toMatchObject({
       name: "algorithms-club",
       description: "A place to discuss algorithms",
-      ownerId,
+      ownerId: testUserId,
     });
+
     expect(res.body.community.id).toBeDefined();
     expect(res.body.community.createdAt).toBeDefined();
 
     const dbRow = await pool.query("SELECT * FROM communities WHERE name = $1", ["algorithms-club"]);
     expect(dbRow.rows).toHaveLength(1);
-    expect(dbRow.rows[0].owner_id).toBe(ownerId);
+    expect(dbRow.rows[0].owner_id).toBe(testUserId);
   });
+
 
   it("rejects a duplicate community name with 409", async () => {
     await request(app)
@@ -74,15 +76,13 @@ describe("POST /api/v1/communities", () => {
       .set("Authorization", `Bearer ${accessToken}`)
       .send({ name: "duplicate-club", description: "Second one, should fail" });
 
-
-
-
     expect(res.status).toBe(409);
     expect(res.body.message).toMatch(/already taken/i);
 
     const dbRows = await pool.query("SELECT * FROM communities WHERE name = $1", ["duplicate-club"]);
     expect(dbRows.rows).toHaveLength(1);
   });
+
 
   it("requires authentication", async () => {
     const res = await request(app)
@@ -114,20 +114,9 @@ describe("POST /api/v1/communities", () => {
 
 
 describe("GET /api/v1/communities", () => {
-  beforeAll(async () => {
-
-    await pool.query("TRUNCATE TABLE communities RESTART IDENTITY CASCADE");
-    const signupRes = await request(app).post("/api/v1/users").send(TEST_USER);
   
-
-    const loginRes = await request(app)
-      .post("/api/v1/auth/login")
-      .send({ email: TEST_USER.email, password: TEST_USER.password });
-    accessToken = loginRes.body.accessToken;
-  });
-
   beforeEach(async () => {
-    await pool.query("TRUNCATE TABLE communities RESTART IDENTITY CASCADE");
+    await resetCommunitiesTable()
   });
 
 
@@ -146,7 +135,7 @@ describe("GET /api/v1/communities", () => {
     await pool.query(
       `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3), ($1, $4, $5)`,
       [
-        ownerId,
+        testUserId,
         "algorithms-club",
         "A place to discuss algorithms",
         "systems-programming",
@@ -165,12 +154,12 @@ describe("GET /api/v1/communities", () => {
         expect.objectContaining({
           name: "algorithms-club",
           description: "A place to discuss algorithms",
-          ownerId,
+          ownerId: testUserId,
         }),
         expect.objectContaining({
           name: "systems-programming",
           description: "Low-level programming discussion",
-          ownerId,
+          ownerId: testUserId,
         }),
       ])
     );
@@ -179,7 +168,7 @@ describe("GET /api/v1/communities", () => {
   it("returns communities with the expected fields", async () => {
     await pool.query(
       `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3)`,
-      [ownerId, "shape-check-club", "Checking field shape"]
+      [testUserId, "shape-check-club", "Checking field shape"]
     );
 
     const res = await request(app)
@@ -190,7 +179,7 @@ describe("GET /api/v1/communities", () => {
     expect(community).toMatchObject({
       name: "shape-check-club",
       description: "Checking field shape",
-      ownerId,
+      ownerId: testUserId,
     });
     expect(community.id).toBeDefined();
     expect(community.createdAt).toBeDefined();
@@ -206,36 +195,16 @@ describe("GET /api/v1/communities", () => {
 
 
 describe("PATCH /api/v1/communities/:id", () => {
-  beforeAll(async () => {
-    await pool.query("TRUNCATE TABLE users RESTART IDENTITY CASCADE");
-    const signupRes = await request(app).post("/api/v1/users").send(TEST_USER);
-    ownerId = signupRes.body.user.id;
-
-    const loginRes = await request(app)
-      .post("/api/v1/auth/login")
-      .send({ email: TEST_USER.email, password: TEST_USER.password });
-
-    accessToken = loginRes.body.accessToken;
-
-    // Second user who owns nothing — used to prove non-owners can't update.
-    const otherSignupRes = await request(app).post("/api/v1/users").send(OTHER_USER);
-    otherUserId = otherSignupRes.body.user.id;
-
-    const otherLoginRes = await request(app)
-      .post("/api/v1/auth/login")
-      .send({ email: OTHER_USER.email, password: OTHER_USER.password });
-
-    otherAccessToken = otherLoginRes.body.accessToken;
-  });
 
   beforeEach(async () => {
-    await pool.query("TRUNCATE TABLE communities RESTART IDENTITY CASCADE");
+    await resetCommunitiesTable() 
   });
+  
 
   it("updates both the name and description", async () => {
     const insertRes = await pool.query(
       `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [ownerId, "original-name", "original description"]
+      [testUserId, "original-name", "original description"]
     );
     const communityId = insertRes.rows[0].id;
 
@@ -260,7 +229,7 @@ describe("PATCH /api/v1/communities/:id", () => {
   it("updates only the name when description is omitted", async () => {
     const insertRes = await pool.query(
       `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [ownerId, "name-only-club", "keep this description"]
+      [testUserId, "name-only-club", "keep this description"]
     );
     const communityId = insertRes.rows[0].id;
 
@@ -279,7 +248,7 @@ describe("PATCH /api/v1/communities/:id", () => {
   it("updates only the description when name is omitted", async () => {
     const insertRes = await pool.query(
       `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [ownerId, "description-only-club", "original description"]
+      [testUserId, "description-only-club", "original description"]
     );
     const communityId = insertRes.rows[0].id;
 
@@ -298,7 +267,7 @@ describe("PATCH /api/v1/communities/:id", () => {
   it("returns 204 when the submitted values match the existing ones", async () => {
     const insertRes = await pool.query(
       `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [ownerId, "unchanged-club", "unchanged description"]
+      [testUserId, "unchanged-club", "unchanged description"]
     );
     const communityId = insertRes.rows[0].id;
 
@@ -313,7 +282,7 @@ describe("PATCH /api/v1/communities/:id", () => {
   it("rejects an empty body with no name or description", async () => {
     const insertRes = await pool.query(
       `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [ownerId, "empty-body-club", "some description"]
+      [testUserId, "empty-body-club", "some description"]
     );
     const communityId = insertRes.rows[0].id;
 
@@ -327,7 +296,7 @@ describe("PATCH /api/v1/communities/:id", () => {
 
   it("returns 400 when the community id is invalid", async () => {
     const res = await request(app)
-      .patch(`${BASE_URL}/999999`)
+      .patch(`${BASE_URL}/invalid-id`)
       .set("Authorization", `Bearer ${accessToken}`)
       .send({ name: "does-not-matter" });
 
@@ -338,11 +307,11 @@ describe("PATCH /api/v1/communities/:id", () => {
   it("rejects a duplicate name with 409", async () => {
     await pool.query(
       `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3)`,
-      [ownerId, "taken-name", "first club"]
+      [testUserId, "taken-name", "first club"]
     );
     const insertRes = await pool.query(
       `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [ownerId, "original-name", "second club"]
+      [testUserId, "original-name", "second club"]
     );
     const communityId = insertRes.rows[0].id;
 
@@ -358,7 +327,7 @@ describe("PATCH /api/v1/communities/:id", () => {
   it("rejects an update from a user who is not the owner", async () => {
     const insertRes = await pool.query(
       `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [ownerId, "owner-only-club", "original description"]
+      [testUserId, "owner-only-club", "original description"]
     );
     const communityId = insertRes.rows[0].id;
 
@@ -377,19 +346,21 @@ describe("PATCH /api/v1/communities/:id", () => {
   });
 
   it("returns 404 when a non-owner targets a community that doesn't exist", async () => {
+
+   const NON_EXISTENT_ID = "00000000-0000-4000-8000-000000000000"; 
     const res = await request(app)
-      .patch(`${BASE_URL}/999999`)
+      .patch(`${BASE_URL}/${NON_EXISTENT_ID}`)
       .set("Authorization", `Bearer ${otherAccessToken}`)
       .send({ name: "does-not-matter" });
 
     // id shape is valid but no row exists — ownership check never runs.
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(404);
   });
 
   it("requires authentication", async () => {
     const insertRes = await pool.query(
       `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [ownerId, "no-auth-club", "some description"]
+      [testUserId, "no-auth-club", "some description"]
     );
     const communityId = insertRes.rows[0].id;
 
@@ -410,39 +381,18 @@ describe("PATCH /api/v1/communities/:id", () => {
   });
 });
 
+
 describe("DELETE /api/v1/communities/:id", () => {
   const NON_EXISTENT_ID = "00000000-0000-4000-8000-000000000000";
 
-  beforeAll(async () => {
-    await pool.query("TRUNCATE TABLE users RESTART IDENTITY CASCADE");
-    const signupRes = await request(app).post("/api/v1/users").send(TEST_USER);
-    ownerId = signupRes.body.user.id;
-
-    const loginRes = await request(app)
-      .post("/api/v1/auth/login")
-      .send({ email: TEST_USER.email, password: TEST_USER.password });
-
-    accessToken = loginRes.body.accessToken;
-
-    // Second user who owns nothing — used to prove non-owners can't delete.
-    const otherSignupRes = await request(app).post("/api/v1/users").send(OTHER_USER);
-    otherUserId = otherSignupRes.body.user.id;
-
-    const otherLoginRes = await request(app)
-      .post("/api/v1/auth/login")
-      .send({ email: OTHER_USER.email, password: OTHER_USER.password });
-
-    otherAccessToken = otherLoginRes.body.accessToken;
-  });
-
   beforeEach(async () => {
-    await pool.query("TRUNCATE TABLE communities RESTART IDENTITY CASCADE");
+    await resetCommunitiesTable();  
   });
 
   it("deletes the community and returns it", async () => {
     const insertRes = await pool.query(
       `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [ownerId, "to-be-deleted", "will not survive this test"]
+      [testUserId, "to-be-deleted", "will not survive this test"]
     );
     const communityId = insertRes.rows[0].id;
 
@@ -490,7 +440,7 @@ describe("DELETE /api/v1/communities/:id", () => {
   it("rejects a delete from a user who is not the owner", async () => {
     const insertRes = await pool.query(
       `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [ownerId, "owner-only-club", "should survive this test"]
+      [testUserId, "owner-only-club", "should survive this test"]
     );
     const communityId = insertRes.rows[0].id;
 
@@ -519,7 +469,7 @@ describe("DELETE /api/v1/communities/:id", () => {
   it("returns 404 when deleting an already-deleted community", async () => {
     const insertRes = await pool.query(
       `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [ownerId, "delete-me-twice", "first delete should win"]
+      [testUserId, "delete-me-twice", "first delete should win"]
     );
     const communityId = insertRes.rows[0].id;
 
@@ -537,7 +487,7 @@ describe("DELETE /api/v1/communities/:id", () => {
   it("requires authentication", async () => {
     const insertRes = await pool.query(
       `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [ownerId, "no-auth-club", "some description"]
+      [testUserId, "no-auth-club", "some description"]
     );
     const communityId = insertRes.rows[0].id;
 
@@ -553,37 +503,14 @@ describe("DELETE /api/v1/communities/:id", () => {
 describe("GET /api/v1/communities/:id", () => {
   const NON_EXISTENT_ID = "00000000-0000-4000-8000-000000000000";
 
-  beforeAll(async () => {
-    await pool.query("TRUNCATE TABLE users RESTART IDENTITY CASCADE");
-    const signupRes = await request(app).post("/api/v1/users").send(TEST_USER);
-    ownerId = signupRes.body.user.id;
-
-    const loginRes = await request(app)
-      .post("/api/v1/auth/login")
-      .send({ email: TEST_USER.email, password: TEST_USER.password });
-
-    accessToken = loginRes.body.accessToken;
-
-    // Second user with no communities of their own — used to confirm
-    // read access isn't restricted to the owner.
-    const otherSignupRes = await request(app).post("/api/v1/users").send(OTHER_USER);
-    otherUserId = otherSignupRes.body.user.id;
-
-    const otherLoginRes = await request(app)
-      .post("/api/v1/auth/login")
-      .send({ email: OTHER_USER.email, password: OTHER_USER.password });
-
-    otherAccessToken = otherLoginRes.body.accessToken;
-  });
-
   beforeEach(async () => {
-    await pool.query("TRUNCATE TABLE communities RESTART IDENTITY CASCADE");
+    await resetCommunitiesTable();
   });
 
   it("fetches the community by id", async () => {
     const insertRes = await pool.query(
       `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [ownerId, "fetchable-club", "a description worth reading"]
+      [testUserId, "fetchable-club", "a description worth reading"]
     );
     const communityId = insertRes.rows[0].id;
 
@@ -599,16 +526,18 @@ describe("GET /api/v1/communities/:id", () => {
         id: communityId,
         name: "fetchable-club",
         description: "a description worth reading",
-        ownerId,
+        ownerId: testUserId,
       },
     });
   });
 
   it("allows a non-owner to fetch the community", async () => {
+
     const insertRes = await pool.query(
       `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [ownerId, "public-club", "readable by anyone logged in"]
+      [testUserId, "public-club", "readable by anyone logged in"]
     );
+
     const communityId = insertRes.rows[0].id;
 
     const res = await request(app)
@@ -629,10 +558,12 @@ describe("GET /api/v1/communities/:id", () => {
   });
 
   it("returns 404 after the community has been deleted", async () => {
+
     const insertRes = await pool.query(
       `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [ownerId, "soon-gone-club", "temporary"]
+      [testUserId, "soon-gone-club", "temporary"]
     );
+
     const communityId = insertRes.rows[0].id;
 
     await pool.query("DELETE FROM communities WHERE id = $1", [communityId]);
@@ -662,9 +593,10 @@ describe("GET /api/v1/communities/:id", () => {
   });
 
   it("requires authentication", async () => {
+
     const insertRes = await pool.query(
       `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [ownerId, "no-auth-club", "some description"]
+      [testUserId, "no-auth-club", "some description"]
     );
     const communityId = insertRes.rows[0].id;
 

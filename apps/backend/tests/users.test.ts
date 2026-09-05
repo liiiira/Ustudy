@@ -3,9 +3,6 @@ import  request  from 'supertest';
 import app from '../src/app';
 import pool from '../src/config/postgres';
 
-// To guarantee independence of tests
-
-
 
 describe("POST /users/", () => {
 

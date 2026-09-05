@@ -2,7 +2,7 @@ import request from "supertest";
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import app from "../src/app.ts";
 import pool from "../src/config/postgres.ts";
-import { resetTables, createCommunity, createPost, createUser, resetPostsTables, loginUser} from "./utils.ts";
+import { resetTables, createCommunity, createPost, createUser, resetPostsTable, loginUser} from "./utils.ts";
 
 
 
@@ -46,7 +46,7 @@ describe("POST /api/v1/communities/:communityId/posts", () => {
 
 
   beforeEach(async () => {
-    await resetPostsTables();
+    await resetPostsTable();
   })
 
   it("creates a post in a community", async () => {
@@ -151,11 +151,9 @@ describe("GET /api/v1/communities/:communityId/posts", () => {
   let postId: string;
 
   beforeEach(async () => {
-
-    await resetPostsTables();
+    await resetPostsTable();
     post = await createPost(communityId, accessToken, {textContent: "This is my first post.", title: "My first post"})
     postId = post.id;    
-
   });
 
 
@@ -228,7 +226,7 @@ describe("PATCH /api/v1/communities/:communityId/posts/:postId", () => {
   let postId: string;
 
   beforeEach(async () => {
-    await resetPostsTables();
+    await resetPostsTable();
     post = await createPost(communityId, accessToken, {textContent: "Original content", title: "Original title"})
     postId = post.id;    
 
@@ -379,7 +377,7 @@ describe("DELETE /api/v1/communities/:communityId/posts/:postId", () => {
 
   beforeEach(async () => {
 
-    await resetPostsTables();
+    await resetPostsTable();
     post = await createPost(communityId, accessToken, {textContent: "This Post will be delted", title: "Post to be delete"})
     postId = post.id;    
   });

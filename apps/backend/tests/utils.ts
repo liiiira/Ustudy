@@ -16,7 +16,7 @@ export async function createUser(userData: {email: string, username: string, pas
   return res.body.user.id;
 }
 
-export async function loginUser (userData: {email: string, password: string}){
+export async function loginUser (userData: {email: string, password: string}): Promise<string>{
 
   const BASE_URL = "/api/v1/auth/login"
   const {email, password} = userData;
@@ -61,8 +61,12 @@ export async function resetTables() {
   await pool.query(`TRUNCATE posts, communities, users CASCADE`);
 }
 
-export async function resetPostsTables(){
+export async function resetPostsTable(){
   await pool.query("TRUNCATE posts CASCADE") 
+}
+
+export async function resetCommunitiesTable(){
+  await pool.query("TRUNCATE communities CASCADE")
 }
 
 export function tokenFor(userId: string) {

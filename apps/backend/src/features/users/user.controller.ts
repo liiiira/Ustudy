@@ -18,7 +18,6 @@ export async function create(req:Request, res: Response){
   })
 }
 
-
 export async function findAll(_req: Request, res: Response){
 
   const users: User[] = await userService.findAll();

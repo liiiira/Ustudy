@@ -7,6 +7,7 @@ export default function useCommunity(id: string): UseCommunity{
   
   const [loading, setLoading] = useState<boolean>(true);
   const [community, setCommunity] = useState<CommunityJoinUser | null>(null)
+
   const [error, setError] = useState<boolean>(false);
 
   useEffect(() => {

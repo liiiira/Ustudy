@@ -1,3 +1,5 @@
+import type { Post } from "../posts/types";
+
 export type CreateCommunityData = {
   name: string;
   description: string;
@@ -48,3 +50,8 @@ export type UseCommunity = {
   community: CommunityJoinUser | null;
 }
 
+export type UsePosts = {
+  loading: boolean, 
+  error: boolean,
+  communityPosts: Post[]
+}

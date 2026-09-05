@@ -18,7 +18,6 @@ type ErrorResponse = {
 export async function publicFetch(endPointPath: string, options?: PublicOptionsType){
 
   options = options ?? {}
-  console.log(endPointPath, options)
   const response =  await fetchApi(endPointPath, false,  options)
 
   if(!response.ok){
@@ -29,7 +28,6 @@ export async function publicFetch(endPointPath: string, options?: PublicOptionsT
   if(response.status === 204)
     return ;
   
-  console.log("Response: ", response)
   return response.json();
 
 }

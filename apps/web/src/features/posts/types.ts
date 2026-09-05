@@ -44,3 +44,9 @@ export type UseCommunityPosts = {
   error: boolean,
   communityPosts: Post[]
 }
+export type UsePost = {
+  loading: boolean, 
+  error: boolean,
+  post: PostJoined | null;
+}
+

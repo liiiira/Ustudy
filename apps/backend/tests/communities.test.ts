@@ -28,12 +28,8 @@ beforeAll(async () => {
     await resetTables();
     testUserId = await createUser(TEST_USER);
     otherUserId = await createUser(OTHER_USER);
-    console.log("User id: ", testUserId)
-    console.log("otherser id: ", otherUserId);
     accessToken = await loginUser({email: TEST_USER.email, password: TEST_USER.password})
     otherAccessToken = await loginUser({email: OTHER_USER.email, password: OTHER_USER.password}) 
-    console.log("accessToken: ", accessToken);
-    console.log("otherAccessToken: ", otherAccessToken);
 })
 
 describe("POST /api/v1/communities", () => {

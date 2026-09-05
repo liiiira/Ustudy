@@ -7,8 +7,8 @@ import { useParams } from "react-router";
 
 export default function UpdateCommunityPage(){
 
-  const {id} = useParams();
-  const {loading, error, community}: UseCommunity = useCommunity(id!);
+  const {communityId} = useParams();
+  const {loading, error, community}: UseCommunity = useCommunity(communityId!);
 
   if(error)
     return (<p>error</p>)
@@ -20,7 +20,7 @@ export default function UpdateCommunityPage(){
 
   return (
     <FormBg>
-      <CommunityForm id={id} name={name} description={description} mode="Update"/>
+      <CommunityForm id={communityId} name={name} description={description} mode="Update"/>
     </FormBg>
   )
 }

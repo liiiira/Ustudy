@@ -36,7 +36,6 @@ export function AuthProvider({children}: {children: React.ReactNode}){
       await authApi.logout();
       removeAccessToken();
       setIsAuthenticated(false);
-      console.log("logout called")
 
     }finally{
       setLoading(false);

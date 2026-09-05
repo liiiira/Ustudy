@@ -44,12 +44,12 @@ export async function findByIdJoin(postId: string): Promise<PostJoined | null>{
     `SELECT 
         title,
         text_content AS "textContent",
-        posts.id,
+        posts.id AS "postId",
         community_id AS "communityId",
         posts.owner_id AS "ownerId",
         posts.created_at AS "createdAt",
-        name,
-        username
+        communities.name AS "communityName",
+        username AS "ownerName"
       FROM posts
       INNER JOIN users 
         ON posts.owner_id = users.id 

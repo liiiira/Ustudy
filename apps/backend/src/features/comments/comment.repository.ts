@@ -1,5 +1,5 @@
 import pool from "../../config/postgres.ts"
-import type { CommentCreate, CommentDB, CommentJoinUser } from "./comment.schema.ts";
+import type { CommentCreate, CommentDB, CommentInput, CommentJoinUser } from "./comment.schema.ts";
 
 export async function create({ownerId, postId, textContent}: CommentCreate): Promise<CommentDB | null>{
   const result = await pool.query(
@@ -56,10 +56,10 @@ export async function findById(commentId: string): Promise<CommentDB | null>{
   return result.rows[0] ?? null;
 }
 
-export async function updateById(commentId: string): Promise<CommentDB | null>{
+export async function updateById(commentId: string, {textContent}: CommentInput): Promise<CommentDB | null>{
   const result = await pool.query(
     `UPDATE comments 
-      SET text_content = $1
+      SET text_content = $2
       WHERE id = $1
       RETURNING
         id,
@@ -67,7 +67,7 @@ export async function updateById(commentId: string): Promise<CommentDB | null>{
         owner_id as "ownerId",
         text_content as "textContent",
         created_at as "createdAt"`,
-    [commentId]
+    [commentId, textContent]
   );
 
   return result.rows[0] ?? null;

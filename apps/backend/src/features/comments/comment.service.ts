@@ -14,7 +14,7 @@ export async function create(ownerId: string, postId: string, commentInput: Comm
   const createdComment: CommentDB | null = await commentRepository.create({...commentInput, postId, ownerId});
   
   if(!createdComment)
-    throw new AppError("Unexpected Internal Error: Failed to create post", 500);
+    throw new AppError("Unexpected Internal Error: Failed to create comment", 500);
 
   return createdComment
 }
@@ -29,4 +29,26 @@ export async function findAllPost(postId: string): Promise<CommentJoinUser[]>{
   const postComments: CommentJoinUser[] = await commentRepository.findAllPost(postId);
   
   return postComments;
+}
+
+export async function findById(commentId: string): Promise<CommentDB | null>{
+  return commentRepository.findById(commentId)
+}
+
+export async function updateById(userId: string, commentId: string, commentData: CommentInput): Promise<CommentDB>{
+
+  const comment: CommentDB | null = await findById(commentId);
+
+  if(!comment)
+    throw new AppError("Comment doesn't exist", 404);
+
+  if(userId !== comment.ownerId) 
+    throw new AppError("You are not allowed to update this comment", 403)
+
+  const updatedComment: CommentDB | null = await commentRepository.updateById(commentId, commentData);
+  
+  if(!updatedComment)
+    throw new AppError("Unexpected Internal Error: Failed to update comment", 500);
+ 
+  return updatedComment;
 }

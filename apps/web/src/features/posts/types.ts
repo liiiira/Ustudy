@@ -40,13 +40,18 @@ export type PostJoined = {
 }
 
 export type UseCommunityPosts = {
-  loading: boolean, 
-  error: boolean,
+  loading: boolean; 
+  error: boolean;
   communityPosts: Post[]
 }
 export type UsePost = {
-  loading: boolean, 
-  error: boolean,
+  loading: boolean;
+  error: boolean;
   post: PostJoined | null;
 }
 
+export type UsePosts = {
+  loading: boolean; 
+  error: boolean;
+  posts: Post[] | PostJoined[];
+}

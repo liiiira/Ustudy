@@ -20,7 +20,19 @@ export async function getById(communityId:string, postId: string): Promise<PostJ
   return data.post;
 } 
 
-export async function getAllCommunity(communityId: string): Promise<Post[]>{
+
+export async function getPosts(params?: {communityId?: string, userId?: string}){
+
+  let posts; 
+  // HACK: it doesn't handle case of no params for now
+  if(params && params.communityId)
+    posts = await getAllCommunity(params.communityId);
+  
+  return posts!;
+}
+
+
+async function getAllCommunity(communityId: string): Promise<Post[]>{
   const data = await authFetch(`/communities/${communityId}/posts`, 
     {
       method: "GET",

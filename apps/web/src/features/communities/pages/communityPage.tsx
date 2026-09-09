@@ -1,12 +1,14 @@
 import { useParams } from "react-router";
 import Button from "../../../components/ui/button";
 import useCommunity from "../hooks/useCommunity";
-import type {UseCommunity, UsePosts } from "../types";
+import type {UseCommunity} from "../types";
 import { useNavigate } from "react-router";
 import * as communityApi from "../api/communities.api";
 import { useAuth } from "../../auth/hooks/useAuth";
-import usePosts from "../hooks/usePosts";
+import usePosts from "../../posts/hooks/usePosts";
+import type { UsePosts, Post } from "../../posts/types";
 import PostList from "../../posts/components/postList";
+
 
 export default function CommunityPage(){
    
@@ -15,7 +17,7 @@ export default function CommunityPage(){
   const {communityId} = useParams();
 
   const {loading: communityLoading, error: communityError, community}: UseCommunity = useCommunity(communityId!);
-  const {loading: postsLoading, error: postsError, communityPosts}: UsePosts = usePosts(communityId!);
+  const {loading: postsLoading, error: postsError, posts: communityPosts}: UsePosts = usePosts({communityId});
 
 
   const {user} = useAuth();
@@ -65,7 +67,7 @@ export default function CommunityPage(){
       </div>
 
       <div className="flex justify-center ">
-          <PostList posts={communityPosts} />
+          <PostList posts={communityPosts as Post[]} />
       </div>
     </div>
 

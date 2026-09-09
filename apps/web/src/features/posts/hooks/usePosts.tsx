@@ -4,18 +4,21 @@ import type { UsePosts } from "../types.ts";
 import type { Post } from "../../posts/types.ts";
 
 
-export default function usePosts(communityId: string): UsePosts{
+export default function usePosts(params?: {communityId?: string, userId?: string}): UsePosts{
+
+  const {communityId, userId} = params ?? {}
+
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<boolean>(false);
-  const [communityPosts, setCommunityPosts] = useState<Post[]>([])
+  const [posts, setPosts] = useState<Post[]>([])
   
   useEffect(() => {
     async function loadCommunityPosts(){
 
       try{
 
-        const fetchedPosts: Post[] = await postsApi.getAllCommunity(communityId);
-        setCommunityPosts(fetchedPosts);
+        const fetchedPosts: Post[] = await postsApi.getPosts({communityId, userId});
+        setPosts(fetchedPosts);
 
       }catch{
         setError(true);
@@ -27,7 +30,7 @@ export default function usePosts(communityId: string): UsePosts{
     }
     loadCommunityPosts();
 
-  }, [communityId])
+  }, [communityId, userId])
 
-  return {loading, error, communityPosts}
+  return {loading, error, posts}
 }

@@ -30,7 +30,7 @@ export async function findAllPost(req: Request<{communityId: string, postId: str
   })
 }
 
-export async function updateById(req: Request<{communityId: stirng, postId: stirng, commentId: string}>, res: Response){
+export async function updateById(req: Request<{communityId: string, postId: string, commentId: string}>, res: Response){
 
   const {commentId} = req.params;
   const userId: string = req.user!.id;

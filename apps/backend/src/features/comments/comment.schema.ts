@@ -33,3 +33,9 @@ export const postIdSchema = z.object({
   communityId: z.uuid(),
   postId: z.uuid(),
 });
+
+export const commentIdSchema = z.object({
+  communityId: z.uuid(),
+  postId: z.uuid(), 
+  commentId: z.uuid(),
+})

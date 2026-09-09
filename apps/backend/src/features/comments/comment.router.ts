@@ -24,5 +24,6 @@ router.patch("/:commentId",
   validateParams(commentIdSchema),
   validateBody(commentUpdateSchema),
   commentController.updateById
-)
+);
+
 export default router;

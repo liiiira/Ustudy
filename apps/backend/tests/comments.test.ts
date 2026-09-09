@@ -144,7 +144,6 @@ describe("POST /api/v1/communities/:communityId/posts/:postId/comments", () => {
 
 describe("GET /api/v1/communities/:communityId/posts/:postId/comments", () => {
   const commentUrl = () => `${BASE_URL}/${communityId}/posts/${postId}/comments`;
-
   const seedComment = async (token: string, textContent: string) => {
     const res = await request(app)
       .post(commentUrl())
@@ -152,6 +151,7 @@ describe("GET /api/v1/communities/:communityId/posts/:postId/comments", () => {
       .send({ textContent });
     return res.body.comment;
   };
+
 
   it("returns an empty array when the post has no comments", async () => {
     const res = await request(app)
@@ -226,4 +226,93 @@ describe("GET /api/v1/communities/:communityId/posts/:postId/comments", () => {
 
     expect(res.status).toBe(404);
   }); 
+});
+
+
+describe("PATCH /api/v1/communities/:communityId/posts/:postId/comments/:commentId", () => {
+  let comment: any;
+  const commentsUrl = () =>
+  `${BASE_URL}/${communityId}/posts/${postId}/comments`;
+
+  const commentUrl = (commentId: string) =>
+    `${commentsUrl()}/${commentId}`;
+
+  const seedComment = async (token: string, textContent: string) => {
+  const res = await request(app)
+    .post(commentsUrl())
+    .set("Authorization", `Bearer ${token}`)
+    .send({ textContent });
+
+  return res.body.comment;
+}; 
+  beforeEach(async () => {
+    comment = await seedComment(accessToken, "Original comment content");
+  });
+
+  it("updates the comment when the requester is the owner", async () => {
+    const res = await request(app)
+      .patch(commentUrl(comment.id))
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ textContent: "Updated comment content" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.comment.textContent).toBe("Updated comment content");
+    expect(res.body.comment.id).toBe(comment.id);
+  });
+
+  it("rejects when the requester is not the owner", async () => {
+    const res = await request(app)
+      .patch(commentUrl(comment.id))
+      .set("Authorization", `Bearer ${otherAccessToken}`)
+      .send({ textContent: "Trying to edit someone else's comment" });
+
+    expect(res.status).toBe(403);
+  });
+
+  it("returns 404 for a well-formed but nonexistent commentId", async () => {
+    const nonexistentCommentId = "00000000-0000-0000-0000-000000000000";
+
+    const res = await request(app)
+      .patch(commentUrl(nonexistentCommentId))
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ textContent: "Doesn't matter" });
+
+    expect(res.status).toBe(404);
+  });
+
+  it("rejects an invalid commentId format", async () => {
+    const res = await request(app)
+      .patch(`${BASE_URL}/${communityId}/posts/${postId}/comments/not-a-uuid`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ textContent: "Doesn't matter" });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects when not authenticated", async () => {
+    const res = await request(app)
+      .patch(commentUrl(comment.id))
+      .send({ textContent: "No auth" });
+
+    expect(res.status).toBe(401);
+  });
+
+  it("rejects an empty textContent", async () => {
+    const res = await request(app)
+      .patch(commentUrl(comment.id))
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ textContent: "" });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 204 when submitted textContent matches the existing content", async () => {
+    const res = await request(app)
+      .patch(commentUrl(comment.id))
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ textContent: "Original comment content" });
+
+    expect(res.status).toBe(204);
+    expect(res.body).toEqual({});
+  });
 });

@@ -19,7 +19,7 @@ export async function create(ownerId: string, postId: string, commentInput: Comm
   return createdComment
 }
 
-export async function findAllPost(postId: string){
+export async function findAllPost(postId: string): Promise<CommentJoinUser[]>{
 
    const postExists: Post | null = await postRepository.findById(postId)
 

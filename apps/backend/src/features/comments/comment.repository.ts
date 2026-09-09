@@ -72,3 +72,16 @@ export async function updateById(commentId: string, {textContent}: CommentInput)
 
   return result.rows[0] ?? null;
 }
+
+export async function deleteById(commentId: string): Promise<{id: string} | null>{
+
+  const result = await pool.query(
+    `DELETE FROM comments 
+      WHERE comments.id = $1
+      RETURNING 
+        id`,
+      [commentId]
+  );
+
+  return result.rows[0] ?? null;
+}

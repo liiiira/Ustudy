@@ -26,4 +26,10 @@ router.patch("/:commentId",
   commentController.updateById
 );
 
+router.delete("/:commentId",
+  isAuthenticated, 
+  validateParams(commentIdSchema),
+  commentController.deleteById
+); 
+
 export default router;

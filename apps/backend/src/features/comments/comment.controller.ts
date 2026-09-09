@@ -46,6 +46,18 @@ export async function updateById(req: Request<{communityId: string, postId: stri
     message: "Comment Updated Successfuly", 
     comment: updatedComment
   })
-
 }
 
+export async function deleteById(req: Request<{communityId: string, postId: string, commentId: string}>, res: Response){
+
+  const {commentId} = req.params;
+  const userId: string = req.user!.id;
+
+  const deletedComment: {id: string} = await commentService.deleteById(userId, commentId);
+
+  return res.status(200).json({
+    status: "success",
+    message: "Comment Deleted Successfuly", 
+    comment: deletedComment
+  });
+}

@@ -51,9 +51,10 @@ export async function updateById(userId: string, commentId: string, commentData:
   if(!textContent)
     throw new AppError("Body is Empty", 400);
 
+
+  // NOTE: it's unnecessary now. it's just to make adding new data to a comment easier later
   const modifiedAttributes: Record<string, string> = {}
   
-
   if (textContent && comment.textContent !== textContent)
     modifiedAttributes["textContent"] = textContent;
 
@@ -66,4 +67,22 @@ export async function updateById(userId: string, commentId: string, commentData:
     throw new AppError("Unexpected Internal Error: Failed to update comment", 500);
  
   return updatedComment;
+}
+
+export async function deleteById(userId: string ,commentId: string){
+
+  const comment: CommentDB | null = await findById(commentId); 
+  
+  if(!comment)
+    throw new AppError("Comment was not found", 404);
+
+  if(userId !== comment.ownerId)
+    throw new AppError("You are not allowed to delete this comment", 403);
+
+  const deletedPost: {id: string} | null = await commentRepository.deleteById(commentId)
+
+  if(!deletedPost)
+    throw new AppError("Internal error: Failed to delete post", 500);
+
+  return deletedPost;
 }

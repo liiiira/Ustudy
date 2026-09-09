@@ -30,3 +30,22 @@ export async function findAllPost(req: Request<{communityId: string, postId: str
   })
 }
 
+export async function updateById(req: Request<{communityId: stirng, postId: stirng, commentId: string}>, res: Response){
+
+  const {commentId} = req.params;
+  const userId: string = req.user!.id;
+  const {textContent} = req.body;
+
+  const updatedComment: CommentDB | null = await commentService.updateById(userId,commentId , {textContent})
+
+  if(!updatedComment)
+    return res.status(204).json();
+  
+  return res.status(200).json({
+    status: "success",
+    message: "Comment Updated Successfuly", 
+    comment: updatedComment
+  })
+
+}
+

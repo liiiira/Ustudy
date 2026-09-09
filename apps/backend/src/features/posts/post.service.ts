@@ -44,9 +44,9 @@ export async function findAllCommunity(communityId: string): Promise<Post[]>{
   return posts;
 }
 
-export async function updateById(userId: string, postId: string, communityData: PostUpdate) : Promise<Post | null>{
+export async function updateById(userId: string, postId: string, postData: PostUpdate) : Promise<Post | null>{
 
-  const {title, textContent} = communityData;
+  const {title, textContent} = postData;
 
   const post: Post | null = await findById(postId);
 

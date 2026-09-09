@@ -1,6 +1,6 @@
 import * as commentRepository from "./comment.repository.ts";
 import * as postRepository from "../posts/post.repository.ts"
-import { CommentInput, CommentDB, CommentJoinUser } from "./comment.schema.ts";
+import { CommentInput, CommentDB, CommentJoinUser, CommentUpdate } from "./comment.schema.ts";
 import { AppError } from "../../errors/appError";
 import { Post } from "../posts/post.schema.ts";
 
@@ -35,7 +35,9 @@ export async function findById(commentId: string): Promise<CommentDB | null>{
   return commentRepository.findById(commentId)
 }
 
-export async function updateById(userId: string, commentId: string, commentData: CommentInput): Promise<CommentDB>{
+export async function updateById(userId: string, commentId: string, commentData: CommentUpdate): Promise<CommentDB | null>{
+
+  const {textContent} = commentData;
 
   const comment: CommentDB | null = await findById(commentId);
 
@@ -45,7 +47,20 @@ export async function updateById(userId: string, commentId: string, commentData:
   if(userId !== comment.ownerId) 
     throw new AppError("You are not allowed to update this comment", 403)
 
-  const updatedComment: CommentDB | null = await commentRepository.updateById(commentId, commentData);
+
+  if(!textContent)
+    throw new AppError("Body is Empty", 400);
+
+  const modifiedAttributes: Record<string, string> = {}
+  
+
+  if (textContent && comment.textContent !== textContent)
+    modifiedAttributes["textContent"] = textContent;
+
+  if (Object.keys(modifiedAttributes).length === 0)
+    return null;
+
+  const updatedComment: CommentDB | null = await commentRepository.updateById(commentId, {textContent});
   
   if(!updatedComment)
     throw new AppError("Unexpected Internal Error: Failed to update comment", 500);

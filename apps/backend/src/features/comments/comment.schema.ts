@@ -3,6 +3,9 @@ import {z} from "zod"
 export type CommentInput = {
   textContent: string;
 }
+export type CommentUpdate = {
+  textContent?: string;
+}
 export type CommentCreate = CommentInput & {
   ownerId: string;
   postId: string;
@@ -19,6 +22,10 @@ export type CommentJoinUser = CommentDB & {
 
 export const commentInputSchema = z.object({
   textContent: z.string().min(1).max(1000),
+})
+
+export const commentUpdateSchema = z.object({
+  textContent: z.string().min(1).max(1000).optional(),
 })
 
 

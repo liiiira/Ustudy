@@ -11,6 +11,6 @@ router.use("/users", userRouter);
 router.use("/auth", authRouter);
 router.use("/communities", communityRouter)
 router.use("/communities/:communityId/posts", postRouter)
-router.use("/communities/:communityId/posts/postId/comments", commentRouter);
+router.use("/communities/:communityId/posts/:postId/comments", commentRouter);
 
 export default router;

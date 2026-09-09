@@ -14,7 +14,7 @@ export type CommentDB = CommentCreate & {
 }
 
 export type CommentJoinUser = CommentDB & {
-  ownerName: string;
+  ownerUsername: string;
 }
 
 export const commentInputSchema = z.object({

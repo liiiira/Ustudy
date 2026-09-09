@@ -13,5 +13,10 @@ router.post("/",
   commentController.create
 );
 
+router.get("/",
+  isAuthenticated,
+  validateParams(postIdSchema),
+  commentController.findAllPost
+);
 
 export default router;

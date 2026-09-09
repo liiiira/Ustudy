@@ -6,7 +6,7 @@ export function Navbar(){
   
   const {isAuthenticated} = useAuth();
   return (
-    <div id="navbar" className="flex flex-row items-center justify-between px-6 py-2 sticky top-0 w-full bg-white border-2 border-gray-500 font-bold " >
+    <div id="navbar" className="flex flex-row items-center justify-between px-6 py-2 sticky top-0 w-full bg-white font-bold " >
       
       <div id="navbar-logo" className="flex items-center justify-center px-4 py-2">
         <Link to="/">Ustudy</Link>

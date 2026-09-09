@@ -13,7 +13,7 @@ export default function PostView({communityId, postId, title, textContent, owner
   }
   return(
 
-    <div className="bg-white px-8 py-4 flex flex-col  rounded-2xl w-full h-full hover:cursor-pointer hover:bg-gray-100 transform-color" >
+    <div className="bg-white px-8 py-4 flex-1 flex flex-col  rounded-2xl h-full hover:cursor-pointer transform-color" >
       
       <div className="flex flex-row justify-between">
         <div>

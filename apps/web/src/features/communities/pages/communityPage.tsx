@@ -35,9 +35,9 @@ export default function CommunityPage(){
   } 
 
   return(
-  <div className="bg-white px-8 py-4 gap-4 w-full min-h-screen flex flex-col">
+  <div className="bg-slate-200 px-8 py-4 gap-4 w-full min-h-screen flex flex-col">
 
-    <div className="flex flex-row justify-between">
+    <div className="bg-white px-8 py-4 flex flex-row justify-between rounded-2xl">
       
       <div className="flex flex-col">
         <div className="font-bold text-2xl">{name}</div>
@@ -60,7 +60,7 @@ export default function CommunityPage(){
 
     </div>
     <div>
-      <div>
+      <div className="flex w-full flex-row-reverse">
           <Button onClick={() => navigate(`/communities/${communityId}/posts/create`)}>Create post</Button>
       </div>
 

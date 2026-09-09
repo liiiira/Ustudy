@@ -50,13 +50,15 @@ export default function PostForm({title = "", textContent = "", mode = "Create",
     
     try{
 
-      if(mode === "Create")
+      if(mode === "Create"){
         await postApi.create(communityId, post);
-
-      else if(mode === "Update")
+        navigate(`/communities/${communityId}/`)
+      }
+      else if(mode === "Update"){
         await postApi.updateById(communityId, postId!, post);
+        navigate(`/communities/${communityId}/posts/${postId}`)
+      }
 
-      navigate(`/communities/${communityId}/`)
     }catch(err){
       if(err instanceof Error)
         setApiError(err.message);

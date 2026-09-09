@@ -16,7 +16,7 @@ export default function PostPage(){
     return <p>error</p>
 
   return (
-    <div className="w-full h-full px-8 py-4 items-center justify-center">
+    <div className="w-full flex flex-row h-screen px-20 py-8 justify-center bg-slate-200">
       <PostView {...post!} />
     </div>
   )

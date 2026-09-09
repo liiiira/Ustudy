@@ -29,7 +29,7 @@ export type Post = {
 }
 
 export type PostJoined = {
-  id: string;
+  postId: string;
   title: string;
   textContent: string;
   ownerId: string;

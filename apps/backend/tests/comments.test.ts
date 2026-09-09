@@ -316,3 +316,94 @@ describe("PATCH /api/v1/communities/:communityId/posts/:postId/comments/:comment
     expect(res.body).toEqual({});
   });
 });
+
+
+
+
+describe("DELETE /api/v1/communities/:communityId/posts/:postId/comments/:commentId", () => {
+  let comment: any;
+
+  const commentsUrl = () =>
+    `${BASE_URL}/${communityId}/posts/${postId}/comments`;
+
+  const commentUrl = (commentId: string) =>
+    `${commentsUrl()}/${commentId}`;
+
+  const seedComment = async (token: string, textContent: string) => {
+    const res = await request(app)
+      .post(commentsUrl())
+      .set("Authorization", `Bearer ${token}`)
+      .send({ textContent });
+
+    return res.body.comment;
+  };
+
+  beforeEach(async () => {
+    comment = await seedComment(accessToken, "Comment to delete");
+  });
+
+  it("deletes the comment when the requester is the owner", async () => {
+    const res = await request(app)
+      .delete(commentUrl(comment.id))
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      message: "Comment Deleted Successfuly",
+      status: "success",
+      comment: {
+        id: comment.id
+      },
+    });
+  });
+
+  it("rejects deletion when the requester is not the owner", async () => {
+    const res = await request(app)
+      .delete(commentUrl(comment.id))
+      .set("Authorization", `Bearer ${otherAccessToken}`);
+
+    expect(res.status).toBe(403);
+  });
+
+  it("returns 404 for a well-formed but nonexistent commentId", async () => {
+    const nonexistentCommentId =
+      "00000000-0000-0000-0000-000000000000";
+
+    const res = await request(app)
+      .delete(commentUrl(nonexistentCommentId))
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it("rejects an invalid commentId format", async () => {
+    const res = await request(app)
+      .delete(
+        `${BASE_URL}/${communityId}/posts/${postId}/comments/not-a-uuid`
+      )
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects when not authenticated", async () => {
+    const res = await request(app)
+      .delete(commentUrl(comment.id));
+
+    expect(res.status).toBe(401);
+  });
+
+  it("actually removes the comment", async () => {
+    await request(app)
+      .delete(commentUrl(comment.id))
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    const res = await request(app)
+      .get(commentsUrl())
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.comments).toEqual([]);
+  });
+});
+

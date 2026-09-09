@@ -10,3 +10,7 @@ export type CommentDB = {
   textContent: string;
   createdAt: string;
 }
+
+export type CommentInput = {
+  textContent: string;
+}

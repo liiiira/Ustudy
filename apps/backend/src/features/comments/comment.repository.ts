@@ -39,3 +39,36 @@ export async function findAllPost(postId: string):Promise<CommentJoinUser[]>{
 
   return result.rows;
 }
+
+export async function findById(commentId: string): Promise<CommentDB | null>{
+  const result = await pool.query(
+    `SELECT 
+        id,
+        post_id as "postId",
+        owner_id as "ownerId",
+        text_content as "textContent",
+        created_at as "createdAt"
+      FROM comments
+      WHERE id = $1`,
+    [commentId]
+  );
+
+  return result.rows[0] ?? null;
+}
+
+export async function updateById(commentId: string): Promise<CommentDB | null>{
+  const result = await pool.query(
+    `UPDATE comments 
+      SET text_content = $1
+      WHERE id = $1
+      RETURNING
+        id,
+        post_id as "postId",
+        owner_id as "ownerId",
+        text_content as "textContent",
+        created_at as "createdAt"`,
+    [commentId]
+  );
+
+  return result.rows[0] ?? null;
+}

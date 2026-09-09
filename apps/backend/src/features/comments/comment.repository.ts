@@ -1,5 +1,5 @@
 import pool from "../../config/postgres.ts"
-import type { CommentCreate, CommentDB } from "./community.schema.ts";
+import type { CommentCreate, CommentDB } from "./comment.schema.ts";
 
 export async function create({ownerId, postId, textContent}: CommentCreate): Promise<CommentDB | null>{
   const result = await pool.query(

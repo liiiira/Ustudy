@@ -9,7 +9,7 @@ export async function create(ownerId: string, postId: string, commentInput: Comm
   const postExists: Post | null = await postRepository.findById(postId)
 
   if(!postExists)
-    throw new AppError("Community was not found", 404);
+    throw new AppError("Post was not found", 404);
   
   const createdComment: CommentDB | null = await commentRepository.create({...commentInput, postId, ownerId});
   

@@ -1,7 +1,6 @@
 import request from "supertest";
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import app from "../src/app.ts";
-import pool from "../src/config/postgres.ts";
 import { resetTables, createCommunity, createPost, createUser, loginUser, resetCommentsTable} from "./utils.ts";
 
 

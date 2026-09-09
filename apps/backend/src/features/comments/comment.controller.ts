@@ -8,7 +8,7 @@ export async function create(req: Request<{communityId: string, postId: string}>
   const ownerId: string = req.user!.id;
   const commentInput: CommentInput = req.body;
 
-  const createdComment: CommentDB = await commentService.create(ownerId, postId, commentInput);
+  const createdComment: CommentJoinUser = await commentService.create(ownerId, postId, commentInput);
 
   return res.status(201).json({
     status: "success",

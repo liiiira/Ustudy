@@ -4,14 +4,14 @@ import { CommentInput, CommentDB, CommentJoinUser, CommentUpdate } from "./comme
 import { AppError } from "../../errors/appError";
 import { Post } from "../posts/post.schema.ts";
 
-export async function create(ownerId: string, postId: string, commentInput: CommentInput): Promise<CommentDB>{
+export async function create(ownerId: string, postId: string, commentInput: CommentInput): Promise<CommentJoinUser>{
 
   const postExists: Post | null = await postRepository.findById(postId)
 
   if(!postExists)
     throw new AppError("Post was not found", 404);
   
-  const createdComment: CommentDB | null = await commentRepository.create({...commentInput, postId, ownerId});
+  const createdComment: CommentJoinUser | null = await commentRepository.create({...commentInput, postId, ownerId});
   
   if(!createdComment)
     throw new AppError("Unexpected Internal Error: Failed to create comment", 500);

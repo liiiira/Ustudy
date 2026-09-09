@@ -1,20 +1,25 @@
 import pool from "../../config/postgres.ts"
 import type { CommentCreate, CommentDB, CommentInput, CommentJoinUser } from "./comment.schema.ts";
 
-export async function create({ownerId, postId, textContent}: CommentCreate): Promise<CommentDB | null>{
-  const result = await pool.query(
-    `INSERT INTO 
-      comments(owner_id, post_id, text_content) 
-      VALUES($1, $2, $3)
-      RETURNING 
-        id,
-        post_id as "postId",
-        owner_id as "ownerId",
-        text_content as "textContent",
-        created_at as "createdAt"
-        `,
-    [ownerId, postId, textContent]
-  );
+export async function create({ownerId, postId, textContent}: CommentCreate): Promise<CommentJoinUser | null>{
+
+  const query =  
+    `WITH inserted_comment AS (
+      INSERT INTO comments (post_id, owner_id, text_content)
+      VALUES ($1, $2, $3)
+      RETURNING id, post_id, owner_id, text_content, created_at
+    )
+  SELECT
+    inserted_comment.id AS "id",
+    inserted_comment.post_id AS "postId",
+    inserted_comment.owner_id AS "ownerId",
+    inserted_comment.text_content AS "textContent",
+    inserted_comment.created_at AS "createdAt",
+    users.username AS "ownerUsername"
+  FROM inserted_comment
+  JOIN users ON users.id = inserted_comment.owner_id`
+
+  const result = await pool.query(query, [ownerId, postId, textContent]);
 
   return result.rows[0] ?? null;
 }

@@ -57,6 +57,7 @@ export async function createPost(communityId: string, accessToken: string, data:
 
 
 
+
 export async function resetTables() {
   await pool.query(`TRUNCATE posts, communities, users CASCADE`);
 }
@@ -69,6 +70,9 @@ export async function resetCommunitiesTable(){
   await pool.query("TRUNCATE communities CASCADE")
 }
 
+export async function resetCommentsTable(){
+  await pool.query("TRUNCATE comments CASCADE");
+}
 export function tokenFor(userId: string) {
   return createAccessToken(userId);
 }

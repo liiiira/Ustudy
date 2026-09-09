@@ -1,20 +1,20 @@
 import {z} from "zod"
 
-export type CommentCreate = {
-  ownerId: string;
-  postId: string
+export type CommentInput = {
   textContent: string;
 }
-export type CommentDB = {
-  id: string;
+export type CommentCreate = CommentInput & {
   ownerId: string;
   postId: string;
-  textContent: string;
+}
+
+export type CommentDB = CommentCreate & {
+  id: string;
   createdAt: string;
 }
 
-export type CommentInput = {
-  textContent: string;
+export type CommentJoinUser = CommentDB & {
+  ownerName: string;
 }
 
 export const commentInputSchema = z.object({

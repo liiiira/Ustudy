@@ -1,6 +1,6 @@
 import * as commentService from "./comment.service.ts";
 import type { Request, Response } from "express";
-import type { CommentDB, CommentInput } from "./community.schema.ts";
+import type { CommentDB, CommentInput } from "./comment.schema.ts";
 
 export async function create(req: Request<{communityId: string, postId: string}>, res: Response){
 

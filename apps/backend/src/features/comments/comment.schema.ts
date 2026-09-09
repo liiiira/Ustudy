@@ -1,3 +1,5 @@
+import {z} from "zod"
+
 export type CommentCreate = {
   ownerId: string;
   postId: string
@@ -14,3 +16,13 @@ export type CommentDB = {
 export type CommentInput = {
   textContent: string;
 }
+
+export const commentInputSchema = z.object({
+  textContent: z.string().min(1).max(1000),
+})
+
+
+export const postIdSchema = z.object({
+  communityId: z.uuid(),
+  postId: z.uuid(),
+});

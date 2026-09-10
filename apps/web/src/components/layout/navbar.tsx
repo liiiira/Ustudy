@@ -8,7 +8,7 @@ export function Navbar(){
   
   const {isAuthenticated, logout} = useAuth();
   return (
-    <div id="navbar" className="flex flex-row items-center justify-between px-6 py-2 sticky top-0 w-full bg-white font-bold " >
+    <div id="navbar" className="flex flex-row items-center justify-between px-10 py-2 sticky top-0 w-full bg-white font-bold border-b-2 border-gray-400" >
       
       <div id="navbar-logo" className="flex items-center justify-center px-4 py-2">
         <Link to="/">Ustudy</Link>
@@ -16,21 +16,20 @@ export function Navbar(){
 
       {isAuthenticated &&
 
-        <div id="navbar-links" className="flex flex-row justify-between gap-5">
+        <div id="navbar-right-side" className="flex flex-row gap-20">
 
-          <div className="flex flex-row-reverse justify-between items-center gap-4">
+          <div className="flex flex-row items-center gap-4">
             
-            <NavbarDropDownMenu 
-              logout={logout} 
-            />
             <Link 
               to="/communities" 
               className="font-light transition-colors hover:text-blue-700"
             >
               Communities
             </Link>
-
           </div>
+          <NavbarDropDownMenu 
+            logout={logout} 
+          />
         </div>
       }
     

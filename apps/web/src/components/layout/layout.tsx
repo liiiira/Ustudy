@@ -7,7 +7,7 @@ export default function Layout(){
       <main className="flex-1">
         <Outlet />
       </main>
-      <p className="flex items-cetner justify-cetner bg-blue-950 text-white  font-extrabold w-full">Footer</p>
+      <p className=" bg-blue-950 text-white  font-extrabold w-full">Footer</p>
     </div>
   );
 }

@@ -16,7 +16,7 @@ export default function PostPage(){
     return <p>error</p>
 
   return (
-    <div className="w-full flex flex-col gap-12 h-screen pt-16 px-20 bg-slate-200">
+    <div className="w-full flex flex-col gap-12 min-h-screen py-16 px-20 bg-slate-200">
       <PostView {...post!} />
       <CommentSection
         postId={postId!}

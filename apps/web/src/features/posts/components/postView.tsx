@@ -1,37 +1,39 @@
 import { useNavigate } from "react-router"
-import Button from "../../../components/ui/button"
 import  type { PostJoined } from "../types"
 import * as postApi from "../api/posts.api"
+import DropdownMenu from "../../../components/ui/dropdownMenu";
+
+
 
 export default function PostView({communityId, postId, title, textContent, ownerId, ownerName, communityName, cratedAt}: PostJoined){
   
   const navigate = useNavigate();
   
+  function handleUpdatePost(){
+    navigate(`/communities/${communityId}/posts/${postId}/update`)
+  }
   async function handleDeletePost(){
     await postApi.deleteById(communityId, postId);
     navigate(`/communities/${communityId}/`)
   }
   return(
 
-    <div className="bg-white px-8 py-4 flex-1 flex flex-col  rounded-2xl h-full hover:cursor-pointer transform-color" >
+    <div className="bg-white px-8 py-4 flex-1 flex flex-col  rounded-2xl h-full shadow-xl" >
       
       <div className="flex flex-row justify-between">
         <div>
           published by: {ownerName}, {communityName}
         </div>
-        <div className="flex flex-row gap-3">
-          <Button 
-            onClick={() => navigate(`/communities/${communityId}/posts/${postId}/update`)}
-          >
-            Update
-          </Button>
-
-          <Button 
-            variant="Danger" 
-            onClick={handleDeletePost}
-          >
-            Delete
-          </Button>
+        <div className="relative">
+          <div>
+            ...
+          </div>
+          <DropdownMenu 
+            options={{
+              "Update": handleUpdatePost,
+              "Delete": handleDeletePost,
+            }}
+          />
         </div>
       </div>
 

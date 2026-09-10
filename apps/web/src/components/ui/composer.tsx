@@ -33,7 +33,7 @@ export default function Composer({
   return (
   <div className="flex flex-col h-max w-full">
       <form
-        className="flex flex-col items-start gap-3 w-full h-max border-2 border-black"
+        className="flex flex-col items-start gap-3 px-4 py-2 w-full h-max border-2 rounded-2xl border-gray-400 bg-white"
         onSubmit={onSubmit}>
 
         <textarea
@@ -48,7 +48,7 @@ export default function Composer({
         />
 
      
-        <div className="flex w-full h-max flex-row-reverse"> 
+        <div className="flex w-full h-max flex-row justify-end"> 
           <Button
             variant="Primary"
             type="button"

@@ -59,15 +59,17 @@ export default function CommentForm({textContent = "", mode = "Create", postId, 
   }
 
   return (
-    <Composer
-      inputError={inputError.textContent}
-      name="textContent"
-      value={comment.textContent}
-      handleChange={handleChange}
-      onSubmit={onSubmit}
-      submitLabel="Comment"
-      charLimit={1000}
-      placeholder="Join the discussion"
-    />
+    <div className="flex w-full h-max px-4">
+      <Composer
+        inputError={inputError.textContent}
+        name="textContent"
+        value={comment.textContent}
+        handleChange={handleChange}
+        onSubmit={onSubmit}
+        submitLabel="Comment"
+        charLimit={1000}
+        placeholder="Join the discussion"
+      />
+    </div>
     )
 }

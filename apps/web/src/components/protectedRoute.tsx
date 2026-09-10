@@ -11,7 +11,7 @@ export default function ProtectedRoute(){
     return (<p>Loading ...</p>)
 
   if(!isAuthenticated){
-    // reaplce to replace the protected path with login
+    // "reaplce" attribute is to replace the protected path with login
     //so no weird behavior happens when we go back 
     return <Navigate to="/login" replace />
   }

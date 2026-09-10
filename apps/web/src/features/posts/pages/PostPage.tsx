@@ -2,7 +2,6 @@ import { useParams } from "react-router";
 import PostView from "../components/postView";
 import usePost from "../hooks/usePost";
 import type { UsePost } from "../types";
-import useComments from "../../comments/hooks/useComments";
 import { CommentSection } from "../../comments/components/commentSection";
 
 export default function PostPage(){

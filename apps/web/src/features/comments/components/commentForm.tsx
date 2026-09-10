@@ -2,8 +2,7 @@ import * as commentApi from "../api/comments.api.ts"
 import { useState } from "react";
 import type { CommentInput, CommentJoinUser } from "../types";
 import { validateLength } from "../../../utils/validators";
-import TextField from "../../../components/ui/textField.tsx";
-import Button from "../../../components/ui/button.tsx";
+import Composer from "../../../components/ui/composer.tsx";
 
 type CommentFormProps = {
   textContent?: string;
@@ -23,18 +22,18 @@ export default function CommentForm({textContent = "", mode = "Create", postId, 
   
   const [comment, setComment] = useState<CommentInput>({textContent: textContent});
   const [apiError, setApiError] = useState<string>("");
-  const [inputError, setInputError] = useState<CommentError>({ textContent: []});
+  const [inputError, setInputError] = useState<CommentError>({textContent: []});
   const [valid, setValid] = useState<boolean>(false);
 
   function handleChange(e: React.ChangeEvent<HTMLTextAreaElement> | React.ChangeEvent<HTMLInputElement>){
     
     const newComment: CommentInput = {...comment, [e.target.name]: e.target.value};
     setComment(newComment)
-    setValid(validateCommunity(newComment));
+    setValid(validateComment(newComment));
   }
 
 
-  function validateCommunity(comment: CommentInput): boolean{
+  function validateComment(comment: CommentInput): boolean{
     
     const {textContent} = comment;
 
@@ -46,18 +45,12 @@ export default function CommentForm({textContent = "", mode = "Create", postId, 
   }  
 
 
-  async function handleSubmit(e: React.SubmitEvent){
-    e.preventDefault();
-    
+  async function onSubmit(){
     try{
-
       if(mode === "Create"){
         const createdComment: CommentJoinUser = await commentApi.create(communityId, postId, comment);
         onSuccess!(createdComment);
         setComment({textContent: ""})
-      }
-      if(mode == "Update"){
-        const pass = "";
       }
     }catch(err){
       if(err instanceof Error)
@@ -66,34 +59,15 @@ export default function CommentForm({textContent = "", mode = "Create", postId, 
   }
 
   return (
-    <form 
-      className="flex flex-col w-full px-4 py-2 "
-      onSubmit={handleSubmit}>
-      <TextField
-        id="text-content" 
-        name="textContent" 
-        value={comment.textContent} 
-        charLimit={1000} 
-        placeholder="Join the discussion" 
-        label="Comment"
-        inputError={inputError.textContent}
-        handleChange={handleChange}
-        rows={2}
-      />
-      <div id="form-footer" className="flex justify-center items-center">
-
-        <Button 
-          variant="Primary"
-          disabled={!valid}
-          type="submit"
-        > 
-          {mode === "Create" ? "Create" : mode === "Update" ? "Update" : ""} 
-        </Button>
-
-      </div>      
-      <div className="min-h-[1.25rem] text-red-500 text-sm text-center">
-          {apiError}
-      </div>
-    </form> 
+    <Composer
+      inputError={inputError.textContent}
+      name="textContent"
+      value={comment.textContent}
+      handleChange={handleChange}
+      onSubmit={onSubmit}
+      submitLabel="Comment"
+      charLimit={1000}
+      placeholder="Join the discussion"
+    />
     )
 }

@@ -11,7 +11,7 @@ export default function DropdownMenu({options}: DropdownMenuProps){
   return(
 
     <div 
-      className="flex flex-col w-max h-max absolute top-full mt-2 right-0 rounded-xl border-2  border-gray-500 overflow-hidden shadow-2xl bg-white">
+      className="flex flex-col w-max h-max right-0 rounded-xl border-2  border-gray-500 overflow-hidden shadow-2xl bg-white">
       
       {labels.map((label, index) => (
         <div 

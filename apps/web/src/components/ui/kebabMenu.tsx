@@ -17,14 +17,14 @@ export default function KebabMenu({options}: KebabMenuProps){
   }
 
   return(
-    <div className="relative">
+    <div className="relative w-max h-max">
       <EllipsisVertical 
         className="w-5 h-5 hover:cursor-pointer" 
         onClick={toggleOpen}
       />
 
         <div 
-          className={`absolute top-full mt-2 right-0 transition-all duration-150 ease-out
+          className={`absolute h-max w-max top-full mt-2 right-0 transition-all duration-150 ease-out
               ${open 
                 ? "opacity-100 scale-100 pointer-events-auto"
                 : "opacity-0 scale-95 pointer-events-none"}`}

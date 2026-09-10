@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router"
 import  type { PostJoined } from "../types"
 import * as postApi from "../api/posts.api"
-import DropdownMenu from "../../../components/ui/dropdownMenu";
 import KebabMenu from "../../../components/ui/kebabMenu";
 
 
@@ -21,12 +20,17 @@ export default function PostView({communityId, postId, title, textContent, owner
 
   return(
 
-    <div className="bg-white px-8 py-4 flex-1 flex flex-col  rounded-2xl h-full shadow-xl" >
+    <div className="bg-white px-8 pt-4 pb-10 flex flex-col gap-2 rounded-2xl w-full h-max shadow-xl" >
       
-      <div className="flex flex-row justify-between">
+      <div className="flex w-full flex-row justify-between">
 
-        <div>
-          published by: {ownerName}, {communityName}
+        <div className="flex flex-row gap-2 justify-center items-center font-light text-xs">
+          <div>
+            published by: {ownerName}
+          </div>
+          <div>
+           {communityName}
+          </div>
         </div>
 
         <KebabMenu
@@ -39,9 +43,9 @@ export default function PostView({communityId, postId, title, textContent, owner
         />
       </div>
 
-      <div className=" px-2 py-1 flex flex-col gap-1">
-        <div className="font-bold text-black text-xl">{title}</div>
-        <div className="font-medium text-gray-700 text-xs">{textContent}</div>
+      <div className=" px-2 py-1 flex flex-col h-max gap-4">
+        <div className="font-bold text-black text-xl whitespace-pre-wrap wrap-break-word">{title}</div>
+        <div className="font-light text-black whitespace-pre-wrap wrap-break-word">{textContent}</div>
       </div>
     </div>
   )

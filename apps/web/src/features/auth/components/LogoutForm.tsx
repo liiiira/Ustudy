@@ -5,7 +5,7 @@ import Button from "../../../components/ui/button";
 
 export default function LogoutForm( {className} : {className?: string}){
   const navigate = useNavigate();
-  const {logout}: AuthContextType= useAuth();
+  const {logout}: AuthContextType = useAuth();
 
   async function handleLogout(e: React.SubmitEvent){
 
@@ -28,7 +28,6 @@ export default function LogoutForm( {className} : {className?: string}){
   return (
     
     <form className={`flex items-center justify-center w-max h-max ${className}`} onSubmit={handleLogout}>
-
       <Button variant="Primary" type="submit">Log Out</Button>
     </form>
   )

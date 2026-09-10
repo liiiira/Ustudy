@@ -31,6 +31,7 @@ export default function KebabMenu({options}: KebabMenuProps){
         >
             <DropdownMenu 
               options={options}
+              size="xs"
             />
         </div>
 

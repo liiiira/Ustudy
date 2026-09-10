@@ -59,7 +59,7 @@ export default function CommentForm({textContent = "", mode = "Create", postId, 
   }
 
   return (
-    <div className="flex w-full h-max px-4">
+    <div className="flex w-full h-max">
       <Composer
         inputError={inputError.textContent}
         name="textContent"

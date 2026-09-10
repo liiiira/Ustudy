@@ -42,8 +42,8 @@ export default function CommunityPage(){
     <div className="bg-white px-8 py-4 flex flex-row justify-between rounded-2xl">
       
       <div className="flex flex-col">
-        <div className="font-bold text-2xl">{name}</div>
-        <div className="font-medium">{description}</div>
+        <div className="font-bold text-2xl wrap-break-word whitespace-break-spaces">{name}</div>
+        <div className="font-medium wrap-break-word whitespace-break-spaces">{description}</div>
         <div className="flex flex-row gap-1">
           <div className="text-center">Created by: {ownerName} At {createdAt}</div>
           
@@ -52,13 +52,12 @@ export default function CommunityPage(){
     
       {/* dispaly the buttons only if the user is the owner of the community*/}
 
-     {user!.id === ownerId && 
+      {user!.id === ownerId && 
 
-      <div className="flex flex-row items-center gap-3">
+        <div className="flex flex-row items-center gap-3">
           <Button onClick={() => navigate(`/communities/${communityId}/update`)}>Update</Button>
           <Button onClick={handleDeleteCommunity} variant="Danger">Delete</Button>
-      </div>
-
+        </div>
       }
 
     </div>

@@ -45,7 +45,7 @@ export default function LoginForm(){
     }
     try{
       await login(user);
-      navigate("/test")
+      navigate("/communities");
     }catch(err){
       if(err instanceof Error)
         setApiError(err.message);

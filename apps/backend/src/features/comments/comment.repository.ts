@@ -19,7 +19,7 @@ export async function create({ownerId, postId, textContent}: CommentCreate): Pro
   FROM inserted_comment
   JOIN users ON users.id = inserted_comment.owner_id`
 
-  const result = await pool.query(query, [ownerId, postId, textContent]);
+  const result = await pool.query(query, [postId, ownerId, textContent]);
 
   return result.rows[0] ?? null;
 }

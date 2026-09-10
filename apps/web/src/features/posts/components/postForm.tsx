@@ -36,8 +36,8 @@ export default function PostForm({title = "", textContent = "", mode = "Create",
     
     const {title, textContent} = post;
 
-    const nameErrors: string[] = validateLength("Community title", title, 1, 100);
-    const textContentErrors: string[] = validateLength("Community Description", textContent, 1, 1000);
+    const nameErrors: string[] = validateLength("Post Title", title, 1, 100);
+    const textContentErrors: string[] = validateLength("Post Text Content", textContent, 1, 1000);
 
     setInputError({title: nameErrors, textContent: textContentErrors  })
 

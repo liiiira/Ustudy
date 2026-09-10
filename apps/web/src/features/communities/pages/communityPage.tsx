@@ -45,7 +45,8 @@ export default function CommunityPage(){
         <div className="font-bold text-2xl">{name}</div>
         <div className="font-medium">{description}</div>
         <div className="flex flex-row gap-1">
-          <div className="text-center">Created by: {ownerName}</div>
+          <div className="text-center">Created by: {ownerName} At {createdAt}</div>
+          
         </div>
       </div>
     

@@ -39,11 +39,7 @@ export type PostJoined = {
   cratedAt: Date,
 }
 
-export type UseCommunityPosts = {
-  loading: boolean; 
-  error: boolean;
-  communityPosts: Post[]
-}
+
 export type UsePost = {
   loading: boolean;
   error: boolean;

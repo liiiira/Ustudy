@@ -93,3 +93,9 @@ docker-compose.override.yml
 pgdata
 redisdata
 
+# ==========================
+# Agent logs / local agent context
+# ==========================
+agent-logs/
+/CLAUDE.md
+

@@ -21,6 +21,10 @@ export function CommentSection({communityId, postId}: CommentSectionProps){
     setComments((prev) => [...prev, newComment])
   }
 
+  function handleCommentDeleted(deletedComment: {id: string}){
+    setComments((prev) => prev.filter((p) => p.id !== deletedComment.id));
+  }
+
   return(
     <div className="flex flex-col gap-8 w-full h-max px-4">
       <CommentForm 
@@ -28,7 +32,13 @@ export function CommentSection({communityId, postId}: CommentSectionProps){
         communityId={communityId!}
         onSuccess={handleCommentCreated}
       />
-      <CommentsList comments={comments}/>
+      <CommentsList 
+        communityId={communityId} 
+        postId={postId}
+        comments={comments} 
+        onDeleteSuccess={handleCommentDeleted}
+      />
+      
     </div>
   );
 }

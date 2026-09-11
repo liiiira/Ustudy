@@ -123,7 +123,7 @@ export default function PostForm({title = "", textContent = "", mode = "Create",
           disabled={!valid}
           type="submit"
       > 
-          {mode === "Create" ? "Create Community" : mode === "Update" ? "Update Community" : ""} 
+          {mode === "Create" ? "Share the post" : mode === "Update" ? "Update the post" : ""} 
       </Button>
 
     </div>

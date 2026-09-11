@@ -18,7 +18,7 @@ type CommentError = {
 }
 
 
-export default function CommentForm({textContent = "", mode = "Create", postId, communityId, commentId, onSuccess}: CommentFormProps){
+export default function CommentForm({textContent = "", mode = "Create", postId, communityId, onSuccess}: CommentFormProps){
   
   const [comment, setComment] = useState<CommentInput>({textContent: textContent});
   const [apiError, setApiError] = useState<string>("");

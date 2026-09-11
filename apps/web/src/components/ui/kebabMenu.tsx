@@ -9,8 +9,10 @@ type KebabMenuProps = {
 }
 
 export default function KebabMenu({options}: KebabMenuProps){
-  
+
   const [open, setOpen] = useState<boolean>(false);
+  if(Object.keys(options).length === 0) return <></> 
+
 
   function toggleOpen(e: React.MouseEvent){
     setOpen(!open);

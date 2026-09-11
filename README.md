@@ -27,8 +27,7 @@ along the way. See `docs/dev-logs/` for that side of it.
 
 ## Stack
 
-**Backend** — Node.js, Express, TypeScript, PostgreSQL via `pg` (no ORM —
-SQL is written and controlled directly), Redis, SQL migrations,
+**Backend** — Node.js, Express, TypeScript, PostgreSQL via `pg`, Redis,
 Vitest + Supertest for API testing.
 
 **Frontend** — React, TypeScript, Vite, Tailwind CSS.

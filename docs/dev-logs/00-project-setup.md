@@ -48,7 +48,7 @@ other containers, not host processes). Mitigated with a bounded
 connect-with-retry loop on process boot rather than a real readiness check.
 This is a stopgap, not a readiness protocol — see below.
 
-## Things to add
+## Future Plans
 
 - **Replace the retry loop with real readiness signaling.** A fixed-attempt
   retry loop is a heuristic, not a guarantee — it doesn't distinguish "still

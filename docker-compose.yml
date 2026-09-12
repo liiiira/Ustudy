@@ -2,7 +2,7 @@ services:
   postgres:
     image: postgres:18
     ports:
-      - "${POSTGRES_PORT}:5432"
+      - "127.0.0.1:${POSTGRES_PORT}:5432"
     environment:
       POSTGRES_USER: "${POSTGRES_USER}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
@@ -13,14 +13,14 @@ services:
   redis:
     image: redis:8
     ports:
-      - "${REDIS_PORT}:6379"
+      - "127.0.0.1:${REDIS_PORT}:6379"
     volumes:
       - ./redisdata:/data
 
   postgres-test:
     image: postgres:18
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     environment:
       POSTGRES_DB: ustudy_test
       POSTGRES_USER: postgres

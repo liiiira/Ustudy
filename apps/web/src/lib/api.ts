@@ -60,7 +60,7 @@ export async function authFetch(endPointPath: string, options?: PublicOptionsTyp
       return ;
 
     if(newResponse.ok)
-      return response.json();
+      return newResponse.json();
     
     const newErrorData = await newResponse.json() as ErrorResponse;
     

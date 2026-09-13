@@ -10,7 +10,7 @@ Discord server that died six months ago.
 It's also a personal engineering playground — a real excuse to build a
 backend, a database, an API, and (soon) a mobile client the way you'd actually
 build them in production, and to document the reasoning behind each decision
-along the way. See `docs/dev-logs/` for that side of it.
+along the way. See `dev-logs/` for that side of it.
 
 ## Product
 
@@ -47,7 +47,7 @@ Controller -> Service -> Repository -> PostgreSQL
 
 Controllers handle HTTP, services hold business logic, repositories own SQL.
 Cross-cutting concerns (validation, auth, error handling) live in middleware.
-Full breakdown in `docs/dev-logs/`.
+Full breakdown in `dev-logs/`.
 
 ## Status
 

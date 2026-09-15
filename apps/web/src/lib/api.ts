@@ -1,5 +1,5 @@
 import { getAccessToken, setAccessToken } from "../features/auth/token";
-
+import concatQueryParams from "../utils/concatQueryParams";
 type PublicOptionsType = {
   body?: Record<string, string>,
   method?: "POST" | "GET" | "PATCH" | "DELETE" | "PUT",
@@ -15,6 +15,7 @@ type ErrorResponse = {
   message: string;
 }
 
+// it's  
 export async function publicFetch(endPointPath: string, options?: PublicOptionsType){
 
   options = options ?? {}
@@ -73,24 +74,21 @@ export async function authFetch(endPointPath: string, options?: PublicOptionsTyp
 
 }
 
+
+// NOTE:: This function shouldn't be used outside this file
+//
+// it's wrapper function to fetch
 async function fetchApi(endPointPath: string, auth: boolean = false , options: OptionsType){
 
   const params = options.queryParams ?? null;
+  const queryParams: string = concatQueryParams(params);
 
-  const queryParams: string = ''
-
-  if(params){
-    for (const key of params.keys)
-      queryParams.concat(`${key}=${params[key]}`);
-  }
-   
   const accessToken: string = options.accessToken ?? "";
-
   const body = options.body ? JSON.stringify(options.body) : null;
 
   const remainingOptions = {
     body: body,
-    method: options.method ?? "GET",
+    method: options.method,
   }
   
   const response = await fetch(`http://localhost:3000/api/v1${endPointPath}?${queryParams}`, {

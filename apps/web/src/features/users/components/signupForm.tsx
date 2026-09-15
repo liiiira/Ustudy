@@ -32,7 +32,7 @@ export default function SignupForm(){
 
     setInputError({email: emailErrors, username: usernameErrors, password: passwordErrors  })
 
-    return ![passwordErrors, emailErrors].some((error: string[]) => error.length > 0);
+    return ![emailErrors, usernameErrors ,passwordErrors].some((error: string[]) => error.length > 0);
   }  
 
 

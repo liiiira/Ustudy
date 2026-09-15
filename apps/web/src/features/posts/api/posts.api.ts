@@ -49,7 +49,7 @@ export async function updateById(communityId: string, postId: string, postData: 
       body: postData,
     })
 
-  return data.post;
+  return data ?? null
 }
 
 export async function deleteById(communityId: string, postId: string): Promise<{id: string}>{

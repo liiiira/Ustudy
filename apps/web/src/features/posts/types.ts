@@ -25,7 +25,7 @@ export type Post = {
   textContent: string;
   ownerId: string;
   communityId: string;
-  cratedAt: Date,
+  createdAt: Date,
 }
 
 export type PostJoined = {
@@ -36,7 +36,7 @@ export type PostJoined = {
   ownerName: string;
   communityId: string;
   communityName: string;
-  cratedAt: Date,
+  createdAt: Date,
 }
 
 

@@ -5,7 +5,7 @@ import KebabMenu from "../../../components/ui/kebabMenu";
 
 
 
-export default function PostView({communityId, postId, title, textContent, ownerId, ownerName, communityName, cratedAt}: PostJoined){
+export default function PostView({communityId, postId, title, textContent, ownerId, ownerName, communityName, createdAt}: PostJoined){
   
   const navigate = useNavigate();
   

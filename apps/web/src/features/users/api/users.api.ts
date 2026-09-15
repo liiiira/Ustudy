@@ -11,13 +11,13 @@ export async function createUser(userData: {email: string, username: string, pas
   return data.user;
 }
 
-export async function updateUser(userId: string, UserData: {email?: string, usernmae?: string, password?: string}): Promise<User>{
+export async function updateUser(userId: string, UserData: {email?: string, usernmae?: string, password?: string}): Promise<User | null>{
 
   const data = await authFetch(`users/${userId}`, {
     body: UserData,
     method: "PATCH",
   })
-  return data.user;
+  return data.user ?? null;
 }
 
 export async function getUser(userId: string): Promise<User>{

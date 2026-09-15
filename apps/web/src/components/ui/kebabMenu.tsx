@@ -1,7 +1,6 @@
 import DropdownMenu from "./dropdownMenu"
 import { EllipsisVertical } from "lucide-react"
-import { useState } from "react"
-
+import { useState, useRef, useEffect} from "react"
 
 
 type KebabMenuProps = { 
@@ -11,12 +10,26 @@ type KebabMenuProps = {
 export default function KebabMenu({options}: KebabMenuProps){
 
   const [open, setOpen] = useState<boolean>(false);
-  if(Object.keys(options).length === 0) return <></> 
+  const ref = useRef<HTMLDivElement>(null);
 
 
   function toggleOpen(e: React.MouseEvent){
     setOpen(!open);
   }
+
+  useEffect(() => {
+    if(!open) return;
+    
+    const handler = (e: MouseEvent) => {
+      if(ref.current && !ref.current.contains(e.target as Node)) 
+        setOpen(false);
+    }
+
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open])
+
+  if(Object.keys(options).length === 0) return <></> 
 
   return(
     <div className="relative w-max h-max">
@@ -32,6 +45,7 @@ export default function KebabMenu({options}: KebabMenuProps){
                 : "opacity-0 scale-95 pointer-events-none"}`}
         >
             <DropdownMenu 
+              ref={ref}
               options={options}
               size="xs"
             />

@@ -1,5 +1,5 @@
 import DropdownMenu from "./dropdownMenu"
-import React, { useState } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router";
 
 
@@ -11,12 +11,25 @@ type NavbarDropDownMenuProps = {
 export default function NavbarDropDownMenu({logout}: NavbarDropDownMenuProps){
   
   const navigate = useNavigate();
+  const ref = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState<boolean>(false);
 
 
   function toggleOpen(e: React.MouseEvent){
     setOpen(!open);
   }
+
+  useEffect(() => {
+    if(!open) return;
+    
+    const handler = (e: MouseEvent) => {
+      if(ref.current && !ref.current.contains(e.target as Node)) 
+        setOpen(false);
+    }
+
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open])
 
   async function handleLogout(e: React.MouseEvent<HTMLDivElement>){
 
@@ -60,6 +73,7 @@ export default function NavbarDropDownMenu({logout}: NavbarDropDownMenuProps){
             "Logout": handleLogout,
           }}
           size="xl"
+          ref={ref}
         />
       </div>
     </div>

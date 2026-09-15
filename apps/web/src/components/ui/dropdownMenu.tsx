@@ -3,6 +3,7 @@
 type DropdownMenuProps = {
   options: Record<string, ((e: React.MouseEvent<HTMLDivElement>) => void)> 
   size: "xs" | "md" | "xl"
+  ref: React.RefObject<HTMLDivElement | null>
 }
 const PADDINGS: Record<DropdownMenuProps["size"], string> = {
   "xs": "px-4 py-2",
@@ -16,7 +17,7 @@ const ROUNDED: Record<DropdownMenuProps["size"], string> = {
   "xl": "rounded-md",
 }
 
-export default function DropdownMenu({options, size}: DropdownMenuProps){
+export default function DropdownMenu({options, size, ref}: DropdownMenuProps){
 
   const labels: string[] = Object.keys(options);
   const functions: ((e: React.MouseEvent<HTMLDivElement>) => void)[] = Object.values(options)
@@ -27,8 +28,9 @@ export default function DropdownMenu({options, size}: DropdownMenuProps){
   return(
 
     <div 
-      className={`flex flex-col w-max h-max right-0 ${rounded} border-2  border-gray-400 overflow-hidden shadow-2xl bg-white`}>
-      
+      className={`flex flex-col w-max h-max right-0 ${rounded} border-2  border-gray-400 overflow-hidden shadow-2xl bg-white`}
+      ref={ref}
+    >
       {labels.map((label, index) => (
         <div 
           key={index} 

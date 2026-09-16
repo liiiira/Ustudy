@@ -28,6 +28,31 @@ export async function loginUser (userData: {email: string, password: string}): P
   return res.body.accessToken;
 }
 
+// same as loginUser, but also returns the raw refresh-token cookie header,
+// needed by tests that call /auth/refresh or /auth/logout directly
+export async function loginUserFull(userData: {email: string, password: string}): Promise<{accessToken: string, refreshCookie: string}>{
+
+  const BASE_URL = "/api/v1/auth/login"
+  const {email, password} = userData;
+
+  const res = await request(app)
+    .post(BASE_URL)
+    .send({email, password})
+
+  return {
+    accessToken: res.body.accessToken,
+    refreshCookie: res.headers["set-cookie"][0],
+  };
+}
+
+export async function registerAndLogin(userData: {email: string, username: string, password: string}): Promise<{id: string, accessToken: string}>{
+
+  const id = await createUser(userData);
+  const accessToken = await loginUser({email: userData.email, password: userData.password});
+
+  return {id, accessToken};
+}
+
 export async function createCommunity(accessToken: string, communityData: {name: string, description: string}) {
 
   const BASE_URL = "/api/v1/communities";
@@ -72,6 +97,10 @@ export async function resetCommunitiesTable(){
 
 export async function resetCommentsTable(){
   await pool.query("TRUNCATE comments CASCADE");
+}
+
+export async function resetUsersTable(){
+  await pool.query("TRUNCATE users CASCADE");
 }
 export function tokenFor(userId: string) {
   return createAccessToken(userId);

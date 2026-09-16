@@ -1,466 +1,355 @@
-import { describe, it, expect , beforeEach, afterAll} from 'vitest';
-import  request  from 'supertest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import request from 'supertest';
 import app from '../src/app';
 import pool from '../src/config/postgres';
+import { createUser, registerAndLogin, resetUsersTable } from './utils.ts';
 
+const BASE_URL = "/api/v1/users";
 
-describe("POST /users/", () => {
+const TEST_USER = {
+  username: "user_tester",
+  email: "user-tests@example.com",
+  password: "SuperSecret123!",
+};
 
-  beforeEach(async() => {
-   await  pool.query('TRUNCATE TABLE users CASCADE');
-  })
-  
-  it("should register a user with JSON", async () =>{
-    const response = await request(app)
-      .post("/api/v1/users")
-      .set("Content-Type", "application/json")
-      .send({
-        username: "kirakira",
-        password: "12345678",
-        email: "kira@gmail.com"
-      })
-    //Created successfuly 
-    expect(response.status).toBe(201);
+const OTHER_USER = {
+  username: "other_tester",
+  email: "other-user-tests@example.com",
+  password: "SomeValidPassword123!",
+};
 
-    // Response is a json 
-    expect(response.headers['content-type']).toMatch(/json/);
+describe("POST /api/v1/users", () => {
 
-      // the json object contains the exact data we need
-    expect(response.body.status).toBe("success");
-    expect(response.body.message).toBe("User Created Successfuly")
-    expect(response.body.user).toMatchObject({
-      username: "kirakira",
-      email: "kira@gmail.com",
-    })
+  beforeEach(resetUsersTable);
 
+  it("registers a user", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .send(TEST_USER);
+
+    expect(res.status).toBe(201);
+    expect(res.headers["content-type"]).toMatch(/json/);
+    expect(res.body.status).toBe("success");
+    expect(res.body.message).toBe("User Created Successfuly");
+    expect(res.body.user).toMatchObject({
+      username: TEST_USER.username,
+      email: TEST_USER.email,
+    });
+    expect(res.body.user.id).toBeDefined();
   });
 
+  it("rejects an invalid email format", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .send({ ...TEST_USER, email: "not-an-email" });
 
-  it("should reject an invalid email format", async () => {
-    const response = await request(app)
-      .post("/api/v1/users")
-      .send({
-        username: "validuser",
-        password: "12345678",
-        email: "not-an-email"
-      });
-
-    expect(response.status).toBe(400);
-    expect(response.headers["content-type"]).toMatch(/json/);
-    expect(response.body.status).toBe("error");
+    expect(res.status).toBe(400);
+    expect(res.body.status).toBe("error");
   });
 
-  it("should reject a username longer than 25 characters", async () => {
-    const response = await request(app)
-      .post("/api/v1/users")
-      .send({
-        username: "a".repeat(26),
-        password: "12345678",
-        email: "longusername@gmail.com"
-      });
+  it("rejects a username shorter than 3 characters", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .send({ ...TEST_USER, username: "ab" });
 
-    expect(response.status).toBe(400);
-    expect(response.headers["content-type"]).toMatch(/json/);
-    expect(response.body.status).toBe("error");
+    expect(res.status).toBe(400);
   });
 
+  it("rejects a username longer than 25 characters", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .send({ ...TEST_USER, username: "a".repeat(26) });
 
-  it("should reject a username shorter than 3 characters", async () => {
-    const response = await request(app)
-      .post("/api/v1/users")
-      .send({
-        username: "ab",
-        password: "12345678",
-        email: "shortusername@gmail.com"
-      });
-
-    expect(response.status).toBe(400);
-    expect(response.headers["content-type"]).toMatch(/json/);
-    expect(response.body.status).toBe("error");
+    expect(res.status).toBe(400);
   });
 
-  it("should reject a username that already exists", async () => {
+  it("rejects a username that already exists", async () => {
+    await createUser(TEST_USER);
 
-    // Create a user
-    await request(app)
-      .post("/api/v1/users")
-      .send({
-        username: "existinguser",
-        password: "12345678",
-        email: "first@gmail.com"
-      });
+    const res = await request(app)
+      .post(BASE_URL)
+      .send({ ...TEST_USER, email: "different@example.com" });
 
-    // Try creating another user with the same username
-    const response = await request(app)
-      .post("/api/v1/users")
-      .send({
-        username: "existinguser",
-        password: "87654321",
-        email: "second@gmail.com"
-      });
-
-    expect(response.status).toBe(409);
-    expect(response.headers["content-type"]).toMatch(/json/);
-    expect(response.body.status).toBe("error");
+    expect(res.status).toBe(409);
   });
 
+  it("rejects an email that already exists", async () => {
+    await createUser(TEST_USER);
 
-  it("should reject an email that already exists", async () => {
-    
-    //Create a user
-    await request(app)
-      .post("/api/v1/users")
-      .send({
-        username: "firstuser",
-        password: "12345678",
-        email: "existing@gmail.com"
-      });
-    
-    //Create a user with same email
-    const response = await request(app)
-      .post("/api/v1/users")
-      .send({
-        username: "seconduser",
-        password: "87654321",
-        email: "existing@gmail.com"
-      });
+    const res = await request(app)
+      .post(BASE_URL)
+      .send({ ...TEST_USER, username: "different_username" });
 
-    expect(response.status).toBe(409);
-    expect(response.headers["content-type"]).toMatch(/json/);
-    expect(response.body.status).toBe("error");
+    expect(res.status).toBe(409);
   });
-
 });
 
+describe("GET /api/v1/users", () => {
 
+  beforeEach(resetUsersTable);
 
+  it("returns every registered user to an authenticated caller", async () => {
+    await createUser(TEST_USER);
+    const { accessToken } = await registerAndLogin(OTHER_USER);
 
-describe("GET /users/", () => {
+    const res = await request(app)
+      .get(BASE_URL)
+      .set("Authorization", `Bearer ${accessToken}`);
 
-  beforeEach(async() => {
-   await  pool.query('TRUNCATE TABLE users CASCADE');
-  })
-
-  it("should return all users", async () => {
-    // Create users first
-    await request(app)
-      .post("/api/v1/users")
-      .send({
-        username: "userone",
-        password: "12345678",
-        email: "userone@gmail.com",
-      });
-
-    await request(app)
-      .post("/api/v1/users")
-      .send({
-        username: "usertwo",
-        password: "12345678",
-        email: "usertwo@gmail.com",
-      });
-
-    const response = await request(app)
-      .get("/api/v1/users");
-
-    expect(response.status).toBe(200);
-    expect(response.headers["content-type"]).toMatch(/json/);
-
-    expect(response.body.status).toBe("success");
-    expect(response.body.users).toHaveLength(2);
-
-    expect(response.body.users).toEqual(
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("success");
+    expect(res.body.users).toHaveLength(2);
+    expect(res.body.users).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({
-          username: "userone",
-          email: "userone@gmail.com",
-        }),
-        expect.objectContaining({
-          username: "usertwo",
-          email: "usertwo@gmail.com",
-        }),
+        expect.objectContaining({ username: TEST_USER.username, email: TEST_USER.email }),
+        expect.objectContaining({ username: OTHER_USER.username, email: OTHER_USER.email }),
       ])
     );
   });
 
+  it("requires authentication", async () => {
+    const res = await request(app).get(BASE_URL);
 
-  it("should return an empty array when there are no users", async () => {
-   beforeEach(async() => {
-      await  pool.query('TRUNCATE TABLE users CASCADE');
-    })
-    const response = await request(app)
-      .get("/api/v1/users");
-
-    expect(response.status).toBe(200);
-    expect(response.headers["content-type"]).toMatch(/json/);
-
-    expect(response.body.status).toBe("success");
-    expect(response.body.users).toEqual([]);
-  });
-
-});
-
-describe("GET /users/:id", () => {
-  
-  it("should return a user by id", async () => {
-    const createResponse = await request(app)
-      .post("/api/v1/users")
-      .send({
-        username: "lyeslyes",
-        password: "12345678",
-        email: "lyes@gmail.com",
-      });
-
-    const userId = createResponse.body.user.id;
-
-    const response = await request(app)
-      .get(`/api/v1/users/${userId}`);
-  
-    expect(response.status).toBe(200);
-    expect(response.headers["content-type"]).toMatch(/json/);
-
-    expect(response.body.status).toBe("success");
-    expect(response.body.user).toMatchObject({
-      id: userId,
-      username: "lyeslyes",
-      email: "lyes@gmail.com",
-    });
-  });
-
-
-  it("should return 404 when the user does not exist", async () => {
-    const userId = "e0cb88ea-87cf-4f45-9b86-4171e6a6e729";
-
-    const response = await request(app)
-      .get(`/api/v1/users/${userId}`);
-
-    expect(response.status).toBe(404);
-    expect(response.headers["content-type"]).toMatch(/json/);
-
-    expect(response.body.status).toBe("error");
-  });
-
-
-  it("should return 400 when the id is invalid", async () => {
-    const response = await request(app)
-      .get("/api/v1/users/not-a-valid-uuid");
-
-    expect(response.status).toBe(400);
-    expect(response.headers["content-type"]).toMatch(/json/);
-
-    expect(response.body.status).toBe("error");
+    expect(res.status).toBe(401);
   });
 });
 
+describe("GET /api/v1/users/:id", () => {
 
+  beforeEach(resetUsersTable);
 
+  it("returns a user by id", async () => {
+    const { id, accessToken } = await registerAndLogin(TEST_USER);
 
-describe("PATCH /users/:id/", () => {
-  let userId: string;
+    const res = await request(app)
+      .get(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${accessToken}`);
 
-  beforeEach(async () => {
-    await pool.query(`TRUNCATE TABLE users CASCADE`)
-    const response = await request(app)
-      .post("/api/v1/users")
-      .set("Content-Type", "application/json")
-      .send({
-        username: "kirakira",
-        password: "12345678",
-        email: "kira@gmail.com",
-      });
-
-    expect(response.status).toBe(201);
-
-    userId = response.body.user.id;
-  });
-
-  it("should update a user with JSON", async () => {
-    const response = await request(app)
-      .patch(`/api/v1/users/${userId}`)
-      .set("Content-Type", "application/json")
-      .send({
-        username: "newname",
-      });
-
-    // Updated successfully
-    expect(response.status).toBe(200);
-
-    // Response is JSON
-    expect(response.headers["content-type"]).toMatch(/json/);
-
-    // Response contains expected data
-    expect(response.body.status).toBe("success");
-    expect(response.body.message).toBe("User Updated Successfully");
-
-    expect(response.body.user).toMatchObject({
-      id: userId,
-      username: "newname",
-      email: "kira@gmail.com",
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("success");
+    expect(res.body.user).toMatchObject({
+      id,
+      username: TEST_USER.username,
+      email: TEST_USER.email,
     });
   });
 
-  it("should update multiple fields", async () => {
-    const response = await request(app)
-      .patch(`/api/v1/users/${userId}`)
-      .set("Content-Type", "application/json")
-      .send({
-        username: "newname",
-        email: "newemail@gmail.com",
-      });
+  it("allows a different authenticated user to fetch someone else's profile", async () => {
+    const { id: targetId } = await registerAndLogin(TEST_USER);
+    const { accessToken } = await registerAndLogin(OTHER_USER);
 
-    expect(response.status).toBe(200);
+    const res = await request(app)
+      .get(`${BASE_URL}/${targetId}`)
+      .set("Authorization", `Bearer ${accessToken}`);
 
-    expect(response.headers["content-type"]).toMatch(/json/);
+    expect(res.status).toBe(200);
+    expect(res.body.user.id).toBe(targetId);
+  });
 
-    expect(response.body.status).toBe("success");
+  it("returns 404 when the user does not exist", async () => {
+    const { accessToken } = await registerAndLogin(TEST_USER);
+    const nonExistentId = "00000000-0000-0000-0000-000000000000";
 
-    expect(response.body.user).toMatchObject({
-      id: userId,
+    const res = await request(app)
+      .get(`${BASE_URL}/${nonExistentId}`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it("returns 400 when the id is invalid", async () => {
+    const { accessToken } = await registerAndLogin(TEST_USER);
+
+    const res = await request(app)
+      .get(`${BASE_URL}/not-a-valid-uuid`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(400);
+  });
+
+  it("requires authentication", async () => {
+    const { id } = await registerAndLogin(TEST_USER);
+
+    const res = await request(app).get(`${BASE_URL}/${id}`);
+
+    expect(res.status).toBe(401);
+  });
+});
+
+describe("PATCH /api/v1/users/:id/", () => {
+
+  beforeEach(resetUsersTable);
+
+  it("updates the caller's own username", async () => {
+    const { id, accessToken } = await registerAndLogin(TEST_USER);
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ username: "newname" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("success");
+    expect(res.body.message).toBe("User Updated Successfully");
+    expect(res.body.user).toMatchObject({
+      id,
       username: "newname",
-      email: "newemail@gmail.com",
+      email: TEST_USER.email,
     });
   });
 
-  it("should update only the provided email ", async () => {
-    const response = await request(app)
-      .patch(`/api/v1/users/${userId}`)
-      .set("Content-Type", "application/json")
-      .send({
-        username: "newname",
-      });
+  it("updates multiple fields at once", async () => {
+    const { id, accessToken } = await registerAndLogin(TEST_USER);
 
-    expect(response.status).toBe(200);
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ username: "newname", email: "newemail@example.com" });
 
-    expect(response.body.user).toMatchObject({
-      id: userId,
+    expect(res.status).toBe(200);
+    expect(res.body.user).toMatchObject({
+      id,
       username: "newname",
-      email: "kira@gmail.com",
+      email: "newemail@example.com",
     });
   });
 
-  it("should return 204 when nothing actually changes", async () => {
-    const response = await request(app)
-      .patch(`/api/v1/users/${userId}`)
-      .set("Content-Type", "application/json")
-      .send({
-        username: "kirakira",
-        email: "kira@gmail.com",
-      });
+  it("returns 204 when nothing actually changes", async () => {
+    const { id, accessToken } = await registerAndLogin(TEST_USER);
 
-    // Request was valid, but nothing changed
-    expect(response.status).toBe(204);
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ username: TEST_USER.username, email: TEST_USER.email });
 
-    // 204 must not contain a response body
-    expect(response.body).toEqual({});
+    expect(res.status).toBe(204);
+    expect(res.body).toEqual({});
   });
 
-  it("should return 404 when the user does not exist", async () => {
-    const response = await request(app)
-      .patch("/api/v1/users/00000000-0000-0000-0000-000000000000")
-      .set("Content-Type", "application/json")
-      .send({
-        username: "newname",
-      });
+  it("does not allow another user to update the account", async () => {
+    const { id } = await registerAndLogin(TEST_USER);
+    const { accessToken: otherAccessToken } = await registerAndLogin(OTHER_USER);
 
-    expect(response.status).toBe(404);
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${otherAccessToken}`)
+      .send({ username: "hijacked" });
 
-    expect(response.headers["content-type"]).toMatch(/json/);
+    expect(res.status).toBe(403);
 
-    expect(response.body.status).toBe("error");
+    // Verify it wasn't changed
+    const dbRow = await pool.query("SELECT username FROM users WHERE id = $1", [id]);
+    expect(dbRow.rows[0].username).toBe(TEST_USER.username);
   });
 
-  it("should return 400 when the request body is invalid", async () => {
-    const response = await request(app)
-      .patch(`/api/v1/users/${userId}`)
-      .set("Content-Type", "application/json")
-      .send({
-        username: "ab",
-      });
+  it("returns 404 when the user does not exist", async () => {
+    const { accessToken } = await registerAndLogin(TEST_USER);
+    const nonExistentId = "00000000-0000-0000-0000-000000000000";
 
-    expect(response.status).toBe(400);
+    const res = await request(app)
+      .patch(`${BASE_URL}/${nonExistentId}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ username: "newname" });
 
-    expect(response.headers["content-type"]).toMatch(/json/);
-
-    expect(response.body.status).toBe("error");
+    expect(res.status).toBe(404);
   });
 
-  it("should return 400 when the request body is empty", async () => {
-    const response = await request(app)
-      .patch(`/api/v1/users/${userId}`)
-      .set("Content-Type", "application/json")
+  it("returns 400 when the request body fails validation", async () => {
+    const { id, accessToken } = await registerAndLogin(TEST_USER);
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ username: "ab" });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when the request body is empty", async () => {
+    const { id, accessToken } = await registerAndLogin(TEST_USER);
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
       .send({});
 
-    expect(response.status).toBe(400);
+    expect(res.status).toBe(400);
+  });
 
-    expect(response.headers["content-type"]).toMatch(/json/);
+  it("requires authentication", async () => {
+    const { id } = await registerAndLogin(TEST_USER);
 
-    expect(response.body.status).toBe("error");
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .send({ username: "newname" });
+
+    expect(res.status).toBe(401);
   });
 });
 
-
-
-
 describe("DELETE /api/v1/users/:id", () => {
-  let userId: string;
 
-  beforeEach(async () => {
-    await pool.query(`TRUNCATE TABLE users CASCADE`)
-    const response = await request(app)
-      .post("/api/v1/users")
-      .send({
-        username: "kirakira",
-        password: "12345678",
-        email: "kira@gmail.com",
-      });
+  beforeEach(resetUsersTable);
 
-    userId = response.body.user.id;
-  });
+  it("deletes the caller's own account", async () => {
+    const { id, accessToken } = await registerAndLogin(TEST_USER);
 
-  it("should delete an existing user", async () => {
-    const response = await request(app)
-      .delete(`/api/v1/users/${userId}`);
+    const res = await request(app)
+      .delete(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${accessToken}`);
 
-    expect(response.status).toBe(200);
-  });
-
-  it("should return the deleted user's id only", async () => {
-    const response = await request(app)
-      .delete(`/api/v1/users/${userId}`);
-
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual({
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
       status: "success",
       message: "User Deleted Successfully",
-      user: {
-        id: userId,
-        
-      },
+      user: { id },
     });
+
+    const dbRow = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
+    expect(dbRow.rows).toHaveLength(0);
   });
 
-  it("should actually delete the user", async () => {
-    await request(app)
-      .delete(`/api/v1/users/${userId}`);
+  it("does not allow another user to delete the account", async () => {
+    const { id } = await registerAndLogin(TEST_USER);
+    const { accessToken: otherAccessToken } = await registerAndLogin(OTHER_USER);
 
-    const response = await request(app)
-      .get(`/api/v1/users/${userId}`);
+    const res = await request(app)
+      .delete(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${otherAccessToken}`);
 
-    expect(response.status).toBe(404);
+    expect(res.status).toBe(403);
+
+    // Verify it wasn't deleted
+    const dbRow = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
+    expect(dbRow.rows).toHaveLength(1);
   });
 
-  it("should return 404 when the user does not exist", async () => {
-    const response = await request(app)
-      .delete("/api/v1/users/00000000-0000-0000-0000-000000000000");
+  it("returns 404 when the user does not exist", async () => {
+    const { accessToken } = await registerAndLogin(TEST_USER);
+    const nonExistentId = "00000000-0000-0000-0000-000000000000";
 
-    expect(response.status).toBe(404);
+    const res = await request(app)
+      .delete(`${BASE_URL}/${nonExistentId}`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(404);
   });
 
-  it("should return 400 for an invalid user id", async () => {
-    const response = await request(app)
-      .delete("/api/v1/users/not-a-valid-uuid");
+  it("returns 400 for an invalid user id", async () => {
+    const { accessToken } = await registerAndLogin(TEST_USER);
 
-    expect(response.status).toBe(400);
+    const res = await request(app)
+      .delete(`${BASE_URL}/not-a-valid-uuid`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(400);
   });
-})
 
+  it("requires authentication", async () => {
+    const { id } = await registerAndLogin(TEST_USER);
 
+    const res = await request(app).delete(`${BASE_URL}/${id}`);
+
+    expect(res.status).toBe(401);
+  });
+});

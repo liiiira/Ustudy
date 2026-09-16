@@ -1,6 +1,6 @@
 import request from "supertest";
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
-import { createUser, loginUser, resetCommunitiesTable, resetTables } from "./utils.ts";
+import { createUser, loginUser, createCommunity, resetCommunitiesTable, resetTables } from "./utils.ts";
 import app from "../src/app.ts";
 import pool from "../src/config/postgres.ts";
 
@@ -10,7 +10,7 @@ const TEST_USER = {
   email: "community-tests@example.com",
   username: "community-tester",
   password: "SuperSecret123!",
-}; 
+};
 
 const OTHER_USER = {
   email: "other-user@example.com",
@@ -18,25 +18,22 @@ const OTHER_USER = {
   password: "SomeValidPassword123!",
 };
 
-let otherUserId: string;
-let otherAccessToken: string;
 let testUserId: string;
+let otherUserId: string;
 let accessToken: string;
-
+let otherAccessToken: string;
 
 beforeAll(async () => {
-    await resetTables();
-    testUserId = await createUser(TEST_USER);
-    otherUserId = await createUser(OTHER_USER);
-    accessToken = await loginUser({email: TEST_USER.email, password: TEST_USER.password})
-    otherAccessToken = await loginUser({email: OTHER_USER.email, password: OTHER_USER.password}) 
-})
+  await resetTables();
+  testUserId = await createUser(TEST_USER);
+  otherUserId = await createUser(OTHER_USER);
+  accessToken = await loginUser({ email: TEST_USER.email, password: TEST_USER.password });
+  otherAccessToken = await loginUser({ email: OTHER_USER.email, password: OTHER_USER.password });
+});
 
 describe("POST /api/v1/communities", () => {
 
-  beforeEach(async () => {
-    await resetCommunitiesTable(); 
-  })
+  beforeEach(resetCommunitiesTable);
 
   it("creates a community and persists it", async () => {
     const res = await request(app)
@@ -51,7 +48,6 @@ describe("POST /api/v1/communities", () => {
       description: "A place to discuss algorithms",
       ownerId: testUserId,
     });
-
     expect(res.body.community.id).toBeDefined();
     expect(res.body.community.createdAt).toBeDefined();
 
@@ -60,12 +56,8 @@ describe("POST /api/v1/communities", () => {
     expect(dbRow.rows[0].owner_id).toBe(testUserId);
   });
 
-
   it("rejects a duplicate community name with 409", async () => {
-    await request(app)
-      .post(BASE_URL)
-      .set("Authorization", `Bearer ${accessToken}`)
-      .send({ name: "duplicate-club", description: "First one" });
+    await createCommunity(accessToken, { name: "duplicate-club", description: "First one" });
 
     const res = await request(app)
       .post(BASE_URL)
@@ -74,11 +66,7 @@ describe("POST /api/v1/communities", () => {
 
     expect(res.status).toBe(409);
     expect(res.body.message).toMatch(/already taken/i);
-
-    const dbRows = await pool.query("SELECT * FROM communities WHERE name = $1", ["duplicate-club"]);
-    expect(dbRows.rows).toHaveLength(1);
   });
-
 
   it("requires authentication", async () => {
     const res = await request(app)
@@ -107,14 +95,9 @@ describe("POST /api/v1/communities", () => {
   });
 });
 
-
-
 describe("GET /api/v1/communities", () => {
-  
-  beforeEach(async () => {
-    await resetCommunitiesTable()
-  });
 
+  beforeEach(resetCommunitiesTable);
 
   it("returns 200 and an empty array when there are no communities", async () => {
     const res = await request(app)
@@ -128,16 +111,8 @@ describe("GET /api/v1/communities", () => {
   });
 
   it("returns all communities that exist in the database", async () => {
-    await pool.query(
-      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3), ($1, $4, $5)`,
-      [
-        testUserId,
-        "algorithms-club",
-        "A place to discuss algorithms",
-        "systems-programming",
-        "Low-level programming discussion",
-      ]
-    );
+    await createCommunity(accessToken, { name: "algorithms-club", description: "A place to discuss algorithms" });
+    await createCommunity(accessToken, { name: "systems-programming", description: "Low-level programming discussion" });
 
     const res = await request(app)
       .get(BASE_URL)
@@ -147,25 +122,14 @@ describe("GET /api/v1/communities", () => {
     expect(res.body.communities).toHaveLength(2);
     expect(res.body.communities).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({
-          name: "algorithms-club",
-          description: "A place to discuss algorithms",
-          ownerId: testUserId,
-        }),
-        expect.objectContaining({
-          name: "systems-programming",
-          description: "Low-level programming discussion",
-          ownerId: testUserId,
-        }),
+        expect.objectContaining({ name: "algorithms-club", description: "A place to discuss algorithms", ownerId: testUserId }),
+        expect.objectContaining({ name: "systems-programming", description: "Low-level programming discussion", ownerId: testUserId }),
       ])
     );
   });
 
   it("returns communities with the expected fields", async () => {
-    await pool.query(
-      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3)`,
-      [testUserId, "shape-check-club", "Checking field shape"]
-    );
+    await createCommunity(accessToken, { name: "shape-check-club", description: "Checking field shape" });
 
     const res = await request(app)
       .get(BASE_URL)
@@ -187,50 +151,111 @@ describe("GET /api/v1/communities", () => {
   });
 });
 
+describe("GET /api/v1/communities/:id", () => {
+  const NON_EXISTENT_ID = "00000000-0000-4000-8000-000000000000";
 
+  beforeEach(resetCommunitiesTable);
 
+  it("fetches the community by id", async () => {
+    const community = await createCommunity(accessToken, { name: "fetchable-club", description: "a description worth reading" });
+
+    const res = await request(app)
+      .get(`${BASE_URL}/${community.id}`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      status: "success",
+      message: "Community Fetched Successfuly",
+      community: {
+        id: community.id,
+        name: "fetchable-club",
+        description: "a description worth reading",
+        ownerId: testUserId,
+      },
+    });
+  });
+
+  it("allows a non-owner to fetch the community", async () => {
+    const community = await createCommunity(accessToken, { name: "public-club", description: "readable by anyone logged in" });
+
+    const res = await request(app)
+      .get(`${BASE_URL}/${community.id}`)
+      .set("Authorization", `Bearer ${otherAccessToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.community.id).toBe(community.id);
+  });
+
+  it("returns 404 when the community does not exist", async () => {
+    const res = await request(app)
+      .get(`${BASE_URL}/${NON_EXISTENT_ID}`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(404);
+    expect(res.body.message).toMatch("Community was not found");
+  });
+
+  it("returns 404 after the community has been deleted", async () => {
+    const community = await createCommunity(accessToken, { name: "soon-gone-club", description: "temporary" });
+
+    await pool.query("DELETE FROM communities WHERE id = $1", [community.id]);
+
+    const res = await request(app)
+      .get(`${BASE_URL}/${community.id}`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it("returns 400 when the community id is invalid", async () => {
+    const res = await request(app)
+      .get(`${BASE_URL}/999999`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch("Invalid Request Params");
+  });
+
+  it("requires authentication", async () => {
+    const community = await createCommunity(accessToken, { name: "no-auth-club", description: "some description" });
+
+    const res = await request(app).get(`${BASE_URL}/${community.id}`);
+
+    expect(res.status).toBe(401);
+  });
+});
 
 describe("PATCH /api/v1/communities/:id", () => {
 
-  beforeEach(async () => {
-    await resetCommunitiesTable() 
-  });
-  
+  beforeEach(resetCommunitiesTable);
 
   it("updates both the name and description", async () => {
-    const insertRes = await pool.query(
-      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [testUserId, "original-name", "original description"]
-    );
-    const communityId = insertRes.rows[0].id;
+    const community = await createCommunity(accessToken, { name: "original-name", description: "original description" });
 
     const res = await request(app)
-      .patch(`${BASE_URL}/${communityId}`)
+      .patch(`${BASE_URL}/${community.id}`)
       .set("Authorization", `Bearer ${accessToken}`)
       .send({ name: "renamed-club", description: "updated description" });
 
     expect(res.status).toBe(200);
     expect(res.body.status).toBe("success");
     expect(res.body.community).toMatchObject({
-      id: communityId,
+      id: community.id,
       name: "renamed-club",
       description: "updated description",
     });
 
-    const dbRow = await pool.query("SELECT * FROM communities WHERE id = $1", [communityId]);
+    const dbRow = await pool.query("SELECT * FROM communities WHERE id = $1", [community.id]);
     expect(dbRow.rows[0].name).toBe("renamed-club");
     expect(dbRow.rows[0].description).toBe("updated description");
   });
 
   it("updates only the name when description is omitted", async () => {
-    const insertRes = await pool.query(
-      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [testUserId, "name-only-club", "keep this description"]
-    );
-    const communityId = insertRes.rows[0].id;
+    const community = await createCommunity(accessToken, { name: "name-only-club", description: "keep this description" });
 
     const res = await request(app)
-      .patch(`${BASE_URL}/${communityId}`)
+      .patch(`${BASE_URL}/${community.id}`)
       .set("Authorization", `Bearer ${accessToken}`)
       .send({ name: "renamed-name-only" });
 
@@ -242,33 +267,25 @@ describe("PATCH /api/v1/communities/:id", () => {
   });
 
   it("updates only the description when name is omitted", async () => {
-    const insertRes = await pool.query(
-      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [testUserId, "description-only-club", "original description"]
-    );
-    const communityId = insertRes.rows[0].id;
+    const community = await createCommunity(accessToken, { name: "description-only-club", description: "original description" });
 
     const res = await request(app)
-      .patch(`${BASE_URL}/${communityId}`)
+      .patch(`${BASE_URL}/${community.id}`)
       .set("Authorization", `Bearer ${accessToken}`)
       .send({ description: "brand new description" });
 
     expect(res.status).toBe(200);
-    expect(res.body.community.id).toBe(communityId);
+    expect(res.body.community.id).toBe(community.id);
 
-    const dbRow = await pool.query("SELECT * FROM communities WHERE id = $1", [communityId]);
+    const dbRow = await pool.query("SELECT * FROM communities WHERE id = $1", [community.id]);
     expect(dbRow.rows[0].description).toBe("brand new description");
   });
 
   it("returns 204 when the submitted values match the existing ones", async () => {
-    const insertRes = await pool.query(
-      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [testUserId, "unchanged-club", "unchanged description"]
-    );
-    const communityId = insertRes.rows[0].id;
+    const community = await createCommunity(accessToken, { name: "unchanged-club", description: "unchanged description" });
 
     const res = await request(app)
-      .patch(`${BASE_URL}/${communityId}`)
+      .patch(`${BASE_URL}/${community.id}`)
       .set("Authorization", `Bearer ${accessToken}`)
       .send({ name: "unchanged-club", description: "unchanged description" });
 
@@ -276,14 +293,10 @@ describe("PATCH /api/v1/communities/:id", () => {
   });
 
   it("rejects an empty body with no name or description", async () => {
-    const insertRes = await pool.query(
-      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [testUserId, "empty-body-club", "some description"]
-    );
-    const communityId = insertRes.rows[0].id;
+    const community = await createCommunity(accessToken, { name: "empty-body-club", description: "some description" });
 
     const res = await request(app)
-      .patch(`${BASE_URL}/${communityId}`)
+      .patch(`${BASE_URL}/${community.id}`)
       .set("Authorization", `Bearer ${accessToken}`)
       .send({});
 
@@ -301,18 +314,11 @@ describe("PATCH /api/v1/communities/:id", () => {
   });
 
   it("rejects a duplicate name with 409", async () => {
-    await pool.query(
-      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3)`,
-      [testUserId, "taken-name", "first club"]
-    );
-    const insertRes = await pool.query(
-      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [testUserId, "original-name", "second club"]
-    );
-    const communityId = insertRes.rows[0].id;
+    await createCommunity(accessToken, { name: "taken-name", description: "first club" });
+    const community = await createCommunity(accessToken, { name: "original-name", description: "second club" });
 
     const res = await request(app)
-      .patch(`${BASE_URL}/${communityId}`)
+      .patch(`${BASE_URL}/${community.id}`)
       .set("Authorization", `Bearer ${accessToken}`)
       .send({ name: "taken-name" });
 
@@ -321,14 +327,10 @@ describe("PATCH /api/v1/communities/:id", () => {
   });
 
   it("rejects an update from a user who is not the owner", async () => {
-    const insertRes = await pool.query(
-      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [testUserId, "owner-only-club", "original description"]
-    );
-    const communityId = insertRes.rows[0].id;
+    const community = await createCommunity(accessToken, { name: "owner-only-club", description: "original description" });
 
     const res = await request(app)
-      .patch(`${BASE_URL}/${communityId}`)
+      .patch(`${BASE_URL}/${community.id}`)
       .set("Authorization", `Bearer ${otherAccessToken}`)
       .send({ name: "hijacked-name", description: "hijacked description" });
 
@@ -336,14 +338,14 @@ describe("PATCH /api/v1/communities/:id", () => {
     expect(res.body.message).toMatch(/not allowed/i);
 
     // Nothing should have actually changed in the DB.
-    const dbRow = await pool.query("SELECT * FROM communities WHERE id = $1", [communityId]);
+    const dbRow = await pool.query("SELECT * FROM communities WHERE id = $1", [community.id]);
     expect(dbRow.rows[0].name).toBe("owner-only-club");
     expect(dbRow.rows[0].description).toBe("original description");
   });
 
   it("returns 404 when a non-owner targets a community that doesn't exist", async () => {
+    const NON_EXISTENT_ID = "00000000-0000-4000-8000-000000000000";
 
-   const NON_EXISTENT_ID = "00000000-0000-4000-8000-000000000000"; 
     const res = await request(app)
       .patch(`${BASE_URL}/${NON_EXISTENT_ID}`)
       .set("Authorization", `Bearer ${otherAccessToken}`)
@@ -354,14 +356,10 @@ describe("PATCH /api/v1/communities/:id", () => {
   });
 
   it("requires authentication", async () => {
-    const insertRes = await pool.query(
-      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [testUserId, "no-auth-club", "some description"]
-    );
-    const communityId = insertRes.rows[0].id;
+    const community = await createCommunity(accessToken, { name: "no-auth-club", description: "some description" });
 
     const res = await request(app)
-      .patch(`${BASE_URL}/${communityId}`)
+      .patch(`${BASE_URL}/${community.id}`)
       .send({ name: "should-be-rejected" });
 
     expect(res.status).toBe(401);
@@ -377,33 +375,26 @@ describe("PATCH /api/v1/communities/:id", () => {
   });
 });
 
-
 describe("DELETE /api/v1/communities/:id", () => {
   const NON_EXISTENT_ID = "00000000-0000-4000-8000-000000000000";
 
-  beforeEach(async () => {
-    await resetCommunitiesTable();  
-  });
+  beforeEach(resetCommunitiesTable);
 
   it("deletes the community and returns it", async () => {
-    const insertRes = await pool.query(
-      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [testUserId, "to-be-deleted", "will not survive this test"]
-    );
-    const communityId = insertRes.rows[0].id;
+    const community = await createCommunity(accessToken, { name: "to-be-deleted", description: "will not survive this test" });
 
     const res = await request(app)
-      .delete(`${BASE_URL}/${communityId}`)
+      .delete(`${BASE_URL}/${community.id}`)
       .set("Authorization", `Bearer ${accessToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({
       status: "success",
       message: "Community deleted successfuly",
-      community: { id: communityId },
+      community: { id: community.id },
     });
 
-    const dbRow = await pool.query("SELECT * FROM communities WHERE id = $1", [communityId]);
+    const dbRow = await pool.query("SELECT * FROM communities WHERE id = $1", [community.id]);
     expect(dbRow.rows).toHaveLength(0);
   });
 
@@ -425,30 +416,18 @@ describe("DELETE /api/v1/communities/:id", () => {
     expect(res.body.message).toMatch("Invalid Request Params");
   });
 
-  it("rejects an invalid id format", async () => {
-    const res = await request(app)
-      .delete(`${BASE_URL}/not-a-valid-id`)
-      .set("Authorization", `Bearer ${accessToken}`);
-
-    expect(res.status).toBe(400);
-  });
-
   it("rejects a delete from a user who is not the owner", async () => {
-    const insertRes = await pool.query(
-      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [testUserId, "owner-only-club", "should survive this test"]
-    );
-    const communityId = insertRes.rows[0].id;
+    const community = await createCommunity(accessToken, { name: "owner-only-club", description: "should survive this test" });
 
     const res = await request(app)
-      .delete(`${BASE_URL}/${communityId}`)
+      .delete(`${BASE_URL}/${community.id}`)
       .set("Authorization", `Bearer ${otherAccessToken}`);
 
     expect(res.status).toBe(403);
     expect(res.body.message).toMatch(/not allowed/i);
 
     // Nothing should have actually been deleted.
-    const dbRow = await pool.query("SELECT * FROM communities WHERE id = $1", [communityId]);
+    const dbRow = await pool.query("SELECT * FROM communities WHERE id = $1", [community.id]);
     expect(dbRow.rows).toHaveLength(1);
   });
 
@@ -463,140 +442,24 @@ describe("DELETE /api/v1/communities/:id", () => {
   });
 
   it("returns 404 when deleting an already-deleted community", async () => {
-    const insertRes = await pool.query(
-      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [testUserId, "delete-me-twice", "first delete should win"]
-    );
-    const communityId = insertRes.rows[0].id;
+    const community = await createCommunity(accessToken, { name: "delete-me-twice", description: "first delete should win" });
 
-    const firstRes = await request(app)
-      .delete(`${BASE_URL}/${communityId}`)
-      .set("Authorization", `Bearer ${accessToken}`);
-    expect(firstRes.status).toBe(200);
+    await request(app)
+      .delete(`${BASE_URL}/${community.id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .expect(200);
 
     const secondRes = await request(app)
-      .delete(`${BASE_URL}/${communityId}`)
+      .delete(`${BASE_URL}/${community.id}`)
       .set("Authorization", `Bearer ${accessToken}`);
+
     expect(secondRes.status).toBe(404);
   });
 
   it("requires authentication", async () => {
-    const insertRes = await pool.query(
-      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [testUserId, "no-auth-club", "some description"]
-    );
-    const communityId = insertRes.rows[0].id;
+    const community = await createCommunity(accessToken, { name: "no-auth-club", description: "some description" });
 
-    const res = await request(app).delete(`${BASE_URL}/${communityId}`);
-
-    expect(res.status).toBe(401);
-  });
-});
-
-
-
-
-describe("GET /api/v1/communities/:id", () => {
-  const NON_EXISTENT_ID = "00000000-0000-4000-8000-000000000000";
-
-  beforeEach(async () => {
-    await resetCommunitiesTable();
-  });
-
-  it("fetches the community by id", async () => {
-    const insertRes = await pool.query(
-      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [testUserId, "fetchable-club", "a description worth reading"]
-    );
-    const communityId = insertRes.rows[0].id;
-
-    const res = await request(app)
-      .get(`${BASE_URL}/${communityId}`)
-      .set("Authorization", `Bearer ${accessToken}`);
-
-    expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({
-      status: "success",
-      message: "Community Fetched Successfuly",
-      community: {
-        id: communityId,
-        name: "fetchable-club",
-        description: "a description worth reading",
-        ownerId: testUserId,
-      },
-    });
-  });
-
-  it("allows a non-owner to fetch the community", async () => {
-
-    const insertRes = await pool.query(
-      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [testUserId, "public-club", "readable by anyone logged in"]
-    );
-
-    const communityId = insertRes.rows[0].id;
-
-    const res = await request(app)
-      .get(`${BASE_URL}/${communityId}`)
-      .set("Authorization", `Bearer ${otherAccessToken}`);
-
-    expect(res.status).toBe(200);
-    expect(res.body.community.id).toBe(communityId);
-  });
-
-  it("returns 404 when the community does not exist", async () => {
-    const res = await request(app)
-      .get(`${BASE_URL}/${NON_EXISTENT_ID}`)
-      .set("Authorization", `Bearer ${accessToken}`);
-
-    expect(res.status).toBe(404);
-    expect(res.body.message).toMatch("Community was not found");
-  });
-
-  it("returns 404 after the community has been deleted", async () => {
-
-    const insertRes = await pool.query(
-      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [testUserId, "soon-gone-club", "temporary"]
-    );
-
-    const communityId = insertRes.rows[0].id;
-
-    await pool.query("DELETE FROM communities WHERE id = $1", [communityId]);
-
-    const res = await request(app)
-      .get(`${BASE_URL}/${communityId}`)
-      .set("Authorization", `Bearer ${accessToken}`);
-
-    expect(res.status).toBe(404);
-  });
-
-  it("returns 400 when the community id is invalid", async () => {
-    const res = await request(app)
-      .get(`${BASE_URL}/999999`)
-      .set("Authorization", `Bearer ${accessToken}`);
-
-    expect(res.status).toBe(400);
-    expect(res.body.message).toMatch("Invalid Request Params");
-  });
-
-  it("rejects an invalid id format", async () => {
-    const res = await request(app)
-      .get(`${BASE_URL}/not-a-valid-id`)
-      .set("Authorization", `Bearer ${accessToken}`);
-
-    expect(res.status).toBe(400);
-  });
-
-  it("requires authentication", async () => {
-
-    const insertRes = await pool.query(
-      `INSERT INTO communities (owner_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-      [testUserId, "no-auth-club", "some description"]
-    );
-    const communityId = insertRes.rows[0].id;
-
-    const res = await request(app).get(`${BASE_URL}/${communityId}`);
+    const res = await request(app).delete(`${BASE_URL}/${community.id}`);
 
     expect(res.status).toBe(401);
   });

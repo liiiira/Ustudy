@@ -9,6 +9,7 @@ export type PostInput = {
 export type PostUpdate = {
   title?: string;
   textContent?: string;
+  imageUrl?: string;
 }
 
 export type Post = PostInput & {

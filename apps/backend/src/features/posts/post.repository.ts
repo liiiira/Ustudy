@@ -1,12 +1,12 @@
 import pool from "../../config/postgres.ts";
 import type { PostInput, Post , PostJoined, PostUpdate} from "./post.schema.ts";
 
-export async function create (ownerId: string, communityId: string, {title, textContent}: PostInput): Promise<Post | null>{
+export async function create (ownerId: string, communityId: string, {title, textContent, imageUrl}: PostInput): Promise<Post | null>{
 
   const response = await pool.query(
     `INSERT INTO 
-      posts(title, text_content, owner_id, community_id) 
-      VALUES($1, $2, $3, $4)
+      posts(title, text_content, owner_id, community_id, image_url) 
+      VALUES($1, $2, $3, $4, $5)
       RETURNING
         title,
         text_content AS "textContent",
@@ -14,7 +14,7 @@ export async function create (ownerId: string, communityId: string, {title, text
         community_id AS "communityId",
         owner_id AS "ownerId",
         created_at AS "createdAt"`,
-    [title, textContent, ownerId, communityId]
+    [title, textContent, ownerId, communityId, imageUrl]
   );
 
   return response.rows[0] ?? null
@@ -29,7 +29,8 @@ export async function findById(postId: string): Promise<Post | null>{
         id,
         community_id AS "communityId",
         owner_id AS "ownerId",
-        created_at AS "createdAt"
+        created_at AS "createdAt",
+        image_url AS "imageUrl"
       FROM posts
       WHERE id = $1`,
     [postId]
@@ -48,6 +49,7 @@ export async function findByIdJoin(postId: string): Promise<PostJoined | null>{
         community_id AS "communityId",
         posts.owner_id AS "ownerId",
         posts.created_at AS "createdAt",
+        posts.image_url AS "imageUrl",
         communities.name AS "communityName",
         username AS "ownerName"
       FROM posts
@@ -73,6 +75,7 @@ export async function findAllCommunity(communityId: string): Promise<Post[]>{
         community_id AS "communityId",
         posts.owner_id AS "ownerId",
         posts.created_at AS "createdAt",
+        posts.image_url AS "imageUrl",
         name
     FROM posts
     INNER JOIN communities 
@@ -86,7 +89,7 @@ export async function findAllCommunity(communityId: string): Promise<Post[]>{
 
 export async function updateById(id: string, communityData: PostUpdate): Promise<Post | null>{
 
-  const {title, textContent} = communityData;
+  const {title, textContent, imageUrl} = communityData;
   
   // contains the qeury split into strings
   let updates = []
@@ -104,6 +107,11 @@ export async function updateById(id: string, communityData: PostUpdate): Promise
     values.push(textContent);
   }
 
+  if (imageUrl){
+    updates.push(`image_url = $${values.length + 1}`);
+    values.push(imageUrl);
+  }
+
 
   // forming the query
   const query: string = `UPDATE posts
@@ -115,7 +123,8 @@ export async function updateById(id: string, communityData: PostUpdate): Promise
       text_content AS "textContent",
       owner_id AS "ownerId",
       created_at AS "createdAt",
-      community_id AS "communityId"
+      community_id AS "communityId",
+      image_url AS "imageUrl"
   `;
 
   values.push(id);
@@ -130,7 +139,8 @@ export async function deleteById(postId: string): Promise<{id: string} | null>{
   const response = await pool.query(
     `DELETE FROM posts
       WHERE id = $1 
-      RETURNING id`,
+      RETURNING 
+        id`,
     [postId]
   );
 

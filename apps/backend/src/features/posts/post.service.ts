@@ -46,7 +46,7 @@ export async function findAllCommunity(communityId: string): Promise<Post[]>{
 
 export async function updateById(userId: string, postId: string, postData: PostUpdate) : Promise<Post | null>{
 
-  const {title, textContent} = postData;
+  const {title, textContent, imageUrl} = postData;
 
   const post: Post | null = await findById(postId);
 
@@ -56,7 +56,7 @@ export async function updateById(userId: string, postId: string, postData: PostU
   if(userId !== post.ownerId) 
     throw new AppError("You are not allowed to update this post", 403)
 
-  if(!title && !textContent)
+  if(!title && !textContent && !imageUrl)
     throw new AppError("Body is Empty", 400);
 
   const modifiedAttributes: Record<string, string> = {}
@@ -68,6 +68,11 @@ export async function updateById(userId: string, postId: string, postData: PostU
   // Check if post text content exists and changed 
   if (textContent && post.textContent !== textContent)
     modifiedAttributes["textContent"] = textContent;
+  
+  // Check if post image changed
+  if (imageUrl && post.imageUrl !== imageUrl)
+    modifiedAttributes["imageUrl"] = imageUrl;
+  
 
   // Check if nothing changed  
   if (Object.keys(modifiedAttributes).length === 0)

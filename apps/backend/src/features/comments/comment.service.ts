@@ -1,12 +1,12 @@
 import * as commentRepository from "./comment.repository.ts";
-import * as postRepository from "../posts/post.repository.ts"
+import * as postService from "../posts/post.service.ts"
 import { type CommentInput, type CommentDB, type CommentJoinUser, type CommentUpdate } from "./comment.schema.ts";
 import { AppError } from "../../errors/appError";
 import { type Post } from "../posts/post.schema.ts";
 
 export async function create(ownerId: string, postId: string, commentInput: CommentInput): Promise<CommentJoinUser>{
 
-  const postExists: Post | null = await postRepository.findById(postId)
+  const postExists: Post | null = await postService.findById(postId)
 
   if(!postExists)
     throw new AppError("Post was not found", 404);
@@ -21,7 +21,7 @@ export async function create(ownerId: string, postId: string, commentInput: Comm
 
 export async function findAllPost(postId: string): Promise<CommentJoinUser[]>{
 
-   const postExists: Post | null = await postRepository.findById(postId)
+   const postExists: Post | null = await postService.findById(postId)
 
   if(!postExists)
     throw new AppError("Post was not found", 404); 

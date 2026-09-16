@@ -3,7 +3,7 @@ import userRouter from './features/users/user.route.ts'
 import authRouter from './features/auth/auth.route.ts';
 import communityRouter from "./features/communities/community.route.ts"
 import postRouter from "./features/posts/post.route.ts"
-import commentRouter from "./features/comments/comment.router.ts" 
+import commentRouter from "./features/comments/comment.route.ts" 
 
 const router = Router();
 

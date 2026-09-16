@@ -49,9 +49,9 @@ export async function updateById(req: Request<{communityId: string, postId: stri
 
   const userId: string = req.user!.id;
   const {postId} = req.params;
-  const {title, textContent} = req.body;
+  const {title, textContent, imageUrl} = req.body;
 
-  const updatedPost: Post | null = await postService.updateById(userId, postId, {title, textContent})
+  const updatedPost: Post | null = await postService.updateById(userId, postId, {title, textContent, imageUrl})
 
   if(!updatedPost)
     return res.status(204).json();

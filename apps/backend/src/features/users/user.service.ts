@@ -5,7 +5,7 @@ import { AppError } from "../../errors/appError";
 
 export async function create(userData: UserRegister): Promise<User>{
 
-  const {username, email, password} = userData;
+  const {username, email, password, avatarUrl} = userData;
 
   // Check if email is already used
   const emailExists: User | null = await findByEmail(email);
@@ -23,11 +23,10 @@ export async function create(userData: UserRegister): Promise<User>{
   const hashedPassword = await hashPassword(password);
   
   return await userRepository.create({
-
     username: username,
     hashedPassword: hashedPassword,
     email: email,
-
+    avatarUrl: avatarUrl
   });
 } 
 
@@ -66,7 +65,7 @@ export async function findById(id: string): Promise<UserAuth>{
 
 export async function updateById(requesterId: string, id: string, userData:UserUpdate) : Promise<User | null>{
 
-  const {username, password, email} = userData;
+  const {username, password, email, avatarUrl} = userData;
   const user: User  = await findById(id);
 
   if(requesterId !== id)
@@ -99,6 +98,10 @@ export async function updateById(requesterId: string, id: string, userData:UserU
 
     modifiedAttributes["username"] = username;
   }
+  
+  // check if the avatar changed
+  if (avatarUrl && user.avatarUrl !== avatarUrl)
+    modifiedAttributes["avatarUrl"] = avatarUrl;
 
 
   if(password){
@@ -107,7 +110,6 @@ export async function updateById(requesterId: string, id: string, userData:UserU
 
     if(user.hashedPassword !== hashedPassword)
       modifiedAttributes["hashedPassword"] = hashedPassword;
-    
   }
   
   // Check if nothing changed  

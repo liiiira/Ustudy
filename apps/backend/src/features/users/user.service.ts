@@ -64,11 +64,14 @@ export async function findById(id: string): Promise<UserAuth>{
 }
 
 
-export async function updateById(id: string, userData:UserUpdate) : Promise<User | null>{
+export async function updateById(requesterId: string, id: string, userData:UserUpdate) : Promise<User | null>{
 
   const {username, password, email} = userData;
   const user: User  = await findById(id);
-  
+
+  if(requesterId !== id)
+    throw new AppError("You are not allowed to update this user", 403);
+
   if(!username && !password && !email)
     throw new AppError("Body is Empty", 400);
 
@@ -120,12 +123,18 @@ export async function updateById(id: string, userData:UserUpdate) : Promise<User
 }
 
 
-export async function delelteById(id: string){
-  
+export async function delelteById(requesterId: string, id: string){
+
+  // check existence before ownership, same order as updateById/post.service/comment.service
+  await findById(id);
+
+  if(requesterId !== id)
+    throw new AppError("You are not allowed to delete this user", 403);
+
   const user: {id: string} | null = await userRepository.deleteById(id);
 
   if(!user)
     throw new AppError("User Not Found", 404);
-  
+
   return user;
 }

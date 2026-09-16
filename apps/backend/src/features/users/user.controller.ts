@@ -44,15 +44,16 @@ export async function findById(req: Request<{ id: string} >, res: Response) {
 
 export async function updateById(req: Request<{id: string}>, res: Response){
 
+  const requesterId: string = req.user!.id;
   const {id} = req.params;
   const {username, password, email } = req.body;
-  const updatedUser: User | null = await userService.updateById(id, {username, password, email})
+  const updatedUser: User | null = await userService.updateById(requesterId, id, {username, password, email})
 
   // Nothing changed
   if (!updatedUser)
     return res.status(204).json({})
 
- 
+
   return res.status(200).json({
     status: "success",
     user: updatedUser,
@@ -61,9 +62,10 @@ export async function updateById(req: Request<{id: string}>, res: Response){
 }
 
 export async function deleteById (req: Request<{id: string}>, res: Response){
+  const requesterId: string = req.user!.id;
   const {id} = req.params;
-  
-  const deletedUser: {id: string} = await userService.delelteById(id);
+
+  const deletedUser: {id: string} = await userService.delelteById(requesterId, id);
 
   return res.status(200).json({
     status: "success",

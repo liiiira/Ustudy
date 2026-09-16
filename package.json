@@ -3,6 +3,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "migrate": "./migrate.sh",
     "test": "./test.sh" ,
     "dev": "./dev.sh",
     "dev-script": "concurrently \"pnpm dev:db\" \"pnpm dev:backend\" \"pnpm dev:frontend\"",

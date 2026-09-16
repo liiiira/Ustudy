@@ -97,5 +97,6 @@ redisdata
 # Agent logs / local agent context
 # ==========================
 agent-logs/
+agent-docs/
 /CLAUDE.md
 

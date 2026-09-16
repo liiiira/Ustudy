@@ -54,7 +54,7 @@ export default function NavbarDropDownMenu({logout}: NavbarDropDownMenuProps){
   }
 
   return(
-    <div className="relative w-max h-max">
+    <div className="relative w-max h-max" ref={ref}>
       <div 
         onClick={toggleOpen}
         className="hover:cursor-pointer"
@@ -73,7 +73,6 @@ export default function NavbarDropDownMenu({logout}: NavbarDropDownMenuProps){
             "Logout": handleLogout,
           }}
           size="xl"
-          ref={ref}
         />
       </div>
     </div>

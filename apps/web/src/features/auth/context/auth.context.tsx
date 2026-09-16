@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {AuthContext} from './auth.context.ts'
 import * as authApi from '../api/auth.api.ts'
-import { setAccessToken, removeAccessToken, getAccessToken } from "../token.ts";
+import { setAccessToken, removeAccessToken} from "../token.ts";
 import type { User } from "../../users/types.ts";
 export function AuthProvider({children}: {children: React.ReactNode}){
 
@@ -17,7 +17,6 @@ export function AuthProvider({children}: {children: React.ReactNode}){
       try{
         const token: string = await authApi.refresh();
         setAccessToken(token);
-        console.log("The acess token: ", getAccessToken())
         const user: User = await authApi.getMe();
         setUser(user);
         setIsAuthenticated(true);

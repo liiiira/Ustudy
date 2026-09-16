@@ -32,7 +32,11 @@ export default function KebabMenu({options}: KebabMenuProps){
   if(Object.keys(options).length === 0) return <></> 
 
   return(
-    <div className="relative w-max h-max">
+    <div 
+      className="relative w-max h-max"
+      ref={ref}
+    >
+
       <EllipsisVertical 
         className="w-5 h-5 hover:cursor-pointer" 
         onClick={toggleOpen}
@@ -45,7 +49,6 @@ export default function KebabMenu({options}: KebabMenuProps){
                 : "opacity-0 scale-95 pointer-events-none"}`}
         >
             <DropdownMenu 
-              ref={ref}
               options={options}
               size="xs"
             />

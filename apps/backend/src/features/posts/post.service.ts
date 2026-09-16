@@ -2,7 +2,7 @@ import * as postRepository from "./post.repository.ts"
 import * as communityService from "../communities/community.service.ts"
 import type { PostInput, Post, PostJoined, PostUpdate } from "./post.schema.ts";
 import {AppError} from "../../errors/appError.ts"
-import { CommunityDB } from "../communities/community.schema.ts";
+import { type CommunityDB } from "../communities/community.schema.ts";
 
 
 export async function create(ownerId: string, communityId: string,  postData: PostInput): Promise<Post>{

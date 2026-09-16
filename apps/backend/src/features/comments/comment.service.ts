@@ -1,8 +1,8 @@
 import * as commentRepository from "./comment.repository.ts";
 import * as postRepository from "../posts/post.repository.ts"
-import { CommentInput, CommentDB, CommentJoinUser, CommentUpdate } from "./comment.schema.ts";
+import { type CommentInput, type CommentDB, type CommentJoinUser, type CommentUpdate } from "./comment.schema.ts";
 import { AppError } from "../../errors/appError";
-import { Post } from "../posts/post.schema.ts";
+import { type Post } from "../posts/post.schema.ts";
 
 export async function create(ownerId: string, postId: string, commentInput: CommentInput): Promise<CommentJoinUser>{
 

@@ -1,5 +1,5 @@
 import pool from "../../config/postgres";
-import { CommmunityJoinUser, type CommunityCreate, type CommunityDB, type UpdateCommunityRepository } from "./community.schema";
+import { type CommmunityJoinUser, type CommunityCreate, type CommunityDB, type UpdateCommunityRepository } from "./community.schema";
 
 export async function create( {name, description, ownerId} : CommunityCreate): Promise<CommunityDB | null>{
 

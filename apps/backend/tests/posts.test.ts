@@ -21,7 +21,6 @@ const OTHER_USER = {
 };
 
 let testUserId: string;
-let otherUserId: string;
 let accessToken: string;
 let otherAccessToken: string;
 let community;
@@ -32,7 +31,7 @@ let otherCommunityId: string;
 beforeAll(async () => {
     await resetTables();
     testUserId = await createUser(TEST_USER);
-    otherUserId = await createUser(OTHER_USER);
+    await createUser(OTHER_USER);
     accessToken = await loginUser({email: TEST_USER.email, password: TEST_USER.password})
     otherAccessToken = await loginUser({email: OTHER_USER.email, password: OTHER_USER.password})
     community = await createCommunity(accessToken, {name: "algorithms_club", description: "A place to discuss algorithms"});

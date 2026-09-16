@@ -1,11 +1,11 @@
 import { AppError } from "../../errors/appError.ts";
-import { UserLogin, UserAuth } from "../users/user.schema";
+import { type UserLogin, type UserAuth } from "../users/user.schema";
 import * as userService from "../users/user.service.ts"
 import { comparePassword } from "../../utils/password.ts";
 import * as tokenUtils from '../../utils/token.ts'
 import * as authRepository from './auth.repository.ts'
-import { JwtPayload } from "jsonwebtoken";
-import { DbRefreshToken, UserToken } from "./auth.schema.ts";
+import { type JwtPayload } from "jsonwebtoken";
+import { type DbRefreshToken, type UserToken } from "./auth.schema.ts";
 
 
 export async function login(userData: UserLogin): Promise<{refreshToken: string, accessToken: string}>{
@@ -61,8 +61,8 @@ export async function refresh(refreshToken: string): Promise<string>{
 
 export async function revokeRefreshToken (refreshToken: string): Promise<UserToken>{
   
-  // Check if it is a valid refresh token
-  const payload: JwtPayload = tokenUtils.verifyRefreshToken(refreshToken);
+  // Check if it is a valid refresh token (throws if not)
+  tokenUtils.verifyRefreshToken(refreshToken);
 
   // hash it and revoke the refresh token that has the same hash  
   const hashedRefreshToken: string = tokenUtils.hashRefreshToken(refreshToken);

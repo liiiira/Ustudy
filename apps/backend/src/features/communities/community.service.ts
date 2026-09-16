@@ -1,6 +1,6 @@
 import { AppError } from "../../errors/appError.ts";
 import * as communityRepository from "./community.repository.ts";
-import { CommmunityJoinUser, UpdateCommunityRepository, type CommunityCreate, type CommunityDB } from "./community.schema.ts";
+import { type CommmunityJoinUser, type UpdateCommunityRepository, type CommunityCreate, type CommunityDB } from "./community.schema.ts";
 
 export async function create(CommunityCreate: CommunityCreate): Promise<CommunityDB>{
    

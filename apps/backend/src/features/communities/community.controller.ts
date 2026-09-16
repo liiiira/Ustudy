@@ -1,6 +1,6 @@
 import * as communityService from "./community.service.ts";
 import {type Request, type Response} from "express"
-import { CommmunityJoinUser, type CommunityDB } from "./community.schema";
+import { type CommmunityJoinUser, type CommunityDB } from "./community.schema";
 
 export async function create(req: Request, res: Response){
 
@@ -16,7 +16,7 @@ export async function create(req: Request, res: Response){
   })
 }
 
-export async function findAll(req: Request, res: Response){
+export async function findAll(_req: Request, res: Response){
 
   const foundCommunities: CommunityDB[] = await communityService.findAll();
 

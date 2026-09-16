@@ -1,5 +1,5 @@
 import * as userRepository from "./user.repository";
-import { UserRegister, User, UserUpdate, UserAuth } from "./user.schema";
+import type { UserRegister, User, UserUpdate, UserAuth } from "./user.schema";
 import { hashPassword } from "../../utils/password";
 import { AppError } from "../../errors/appError";
 

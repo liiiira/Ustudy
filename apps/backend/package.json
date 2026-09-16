@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "pnpm tsx watch src/server.ts",
     "migrate": "pnpm exec tsx scripts/migration.ts",
-    "test": "vitest"
+    "test": "vitest",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
@@ -36,11 +37,13 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.13.3",
     "@types/pg": "^8.23.1",
     "@types/supertest": "^7.2.1",
     "node-pg-migrate": "^9.0.0",
     "supertest": "^7.2.2",
     "tsx": "^4.23.12",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.11"
   }
 }

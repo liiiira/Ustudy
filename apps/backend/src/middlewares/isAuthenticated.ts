@@ -1,9 +1,9 @@
-import { NextFunction, Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import { AppError } from "../errors/appError";
 import { verifyAccessToken} from "../utils/token";
-import { JwtPayload } from "jsonwebtoken";
+import type { JwtPayload } from "jsonwebtoken";
 
-export default function isAuthenticated(req: Request, res: Response, next: NextFunction) {
+export default function isAuthenticated(req: Request, _res: Response, next: NextFunction) {
 
   const authHeader: string | undefined = req.headers["authorization"];
 

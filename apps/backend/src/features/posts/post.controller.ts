@@ -1,6 +1,6 @@
 import * as postService from "./post.service.ts";
-import { communityIdSchema, PostUpdate, type Post, type PostInput, type PostJoined } from "./post.schema.ts";
-import { Request, Response } from "express";
+import { type Post, type PostInput, type PostJoined } from "./post.schema.ts";
+import type { Request, Response } from "express";
 
 
 

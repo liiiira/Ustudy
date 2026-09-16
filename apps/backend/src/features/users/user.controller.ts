@@ -1,4 +1,4 @@
-import { type UserRegister, User, UserAuth} from "./user.schema.ts";
+import { type UserRegister, type User} from "./user.schema.ts";
 import * as userService from "./user.service.ts";
 import {type Request, type Response} from 'express';
 

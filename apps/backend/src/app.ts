@@ -1,4 +1,4 @@
-import express, {type Express, type Request, type Response} from 'express';
+import express, {type Express} from 'express';
 import 'dotenv/config';
 import cors from 'cors';
 import errorMiddleware from './middlewares/errorMiddleware.ts';

@@ -4,14 +4,14 @@ import { type CommmunityJoinUser, type UpdateCommunityRepository, type Community
 
 export async function create(CommunityCreate: CommunityCreate): Promise<CommunityDB>{
    
-  const {ownerId, name, description} = CommunityCreate;
+  const {ownerId, name, description, imageUrl} = CommunityCreate;
 
   const nameExists = await findByName(name);
 
   if(nameExists)
     throw new AppError("Community name already taken", 409);
 
-  const createdCommunity: CommunityDB | null = await communityRepository.create({ownerId, name, description})
+  const createdCommunity: CommunityDB | null = await communityRepository.create({ownerId, name, description, imageUrl})
 
   if (!createdCommunity)
     throw new AppError("Unexpected Failure, failed to created community", 500);
@@ -57,7 +57,7 @@ export async function findAll(): Promise<CommunityDB[]>{
 
 export async function updateById(userId: string, id: string, communityData:UpdateCommunityRepository) : Promise<CommunityDB | null>{
 
-  const {name, description} = communityData;
+  const {name, description, imageUrl} = communityData;
   const community: CommunityDB | null = await findById(id);
 
   if(!community)
@@ -66,7 +66,7 @@ export async function updateById(userId: string, id: string, communityData:Updat
   if(userId !== community.ownerId) 
     throw new AppError("You are not allowed to update this community", 403)
 
-  if(!name && !description)
+  if(!name && !description && !imageUrl)
     throw new AppError("Body is Empty", 400);
 
   const modifiedAttributes: Record<string, string> = {}
@@ -86,6 +86,9 @@ export async function updateById(userId: string, id: string, communityData:Updat
   if (description && community.description !== description)
     modifiedAttributes["description"] = description;
 
+  if (imageUrl && community.imageUrl !== imageUrl)
+    modifiedAttributes["imageUrl"] = imageUrl;
+
   // Check if nothing changed  
   if (Object.keys(modifiedAttributes).length === 0)
     return null;
@@ -98,7 +101,7 @@ export async function updateById(userId: string, id: string, communityData:Updat
   return updatedCommunity;
 }
 
-export async function delelteById(userId: string, id: string){
+export async function delelteById(userId: string, id: string): Promise<{id: string}>{
 
   const community: CommunityDB | null = await findById(id);
 
@@ -114,5 +117,4 @@ export async function delelteById(userId: string, id: string){
     throw new AppError("User Not Found", 404);
   
   return deletedCommunity;
-
 }

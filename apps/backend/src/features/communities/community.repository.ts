@@ -1,18 +1,19 @@
 import pool from "../../config/postgres";
 import { type CommmunityJoinUser, type CommunityCreate, type CommunityDB, type UpdateCommunityRepository } from "./community.schema";
 
-export async function create( {name, description, ownerId} : CommunityCreate): Promise<CommunityDB | null>{
+export async function create( {name, description, ownerId, imageUrl} : CommunityCreate): Promise<CommunityDB | null>{
 
   const result = await pool.query(
-    `INSERT INTO communities(owner_id, name, description)
-      VALUES ($1, $2, $3) 
+    `INSERT INTO communities(owner_id, name, description, image_url)
+      VALUES ($1, $2, $3, $4) 
       RETURNING
         id,
         owner_id AS "ownerId",
         name,
         created_at AS "createdAt",
+        image_url AS "imageUrl",
         description`,
-    [ownerId, name, description]
+    [ownerId, name, description, imageUrl]
   );
 
   return result.rows[0] ?? null;
@@ -27,7 +28,8 @@ export async function findByName(name: string) : Promise<CommunityDB | null>{
         owner_id AS "ownerId",
         name,
         created_at AS "createdAt",
-        description
+        description,
+        image_url AS "imageUrl"
       FROM 
         communities
       WHERE name = $1`,
@@ -45,7 +47,8 @@ export async function findById(id: string) : Promise<CommunityDB | null>{
         owner_id AS "ownerId",
         name,
         created_at AS "createdAt",
-        description
+        description,
+        image_url AS "imageUrl"
         
       FROM 
         communities
@@ -64,7 +67,8 @@ export async function findAll(): Promise<CommunityDB[]>{
         owner_id AS "ownerId",
         name,
         created_at AS "createdAt",
-        description
+        description,
+        image_url AS "imageUrl"
         FROM communities`
   );
   return result.rows;
@@ -72,7 +76,7 @@ export async function findAll(): Promise<CommunityDB[]>{
 
 export async function updateById(id: string, communityData: UpdateCommunityRepository): Promise<CommunityDB | null>{
 
-  const {name, description} = communityData;
+  const {name, description, imageUrl} = communityData;
   
   // contains the qeury split into strings
   let updates = []
@@ -90,12 +94,23 @@ export async function updateById(id: string, communityData: UpdateCommunityRepos
     values.push(description);
   }
 
+  if (imageUrl){
+    updates.push(`image_url = $${values.length + 1}`);
+    values.push(imageUrl);
+  }
+
 
   // forming the query
   const query: string = `UPDATE communities
     SET ${updates.join(", ")}
     WHERE id = $${values.length + 1}
-    RETURNING id, name, description, owner_id AS "ownerId", created_at AS "createdAt"
+    RETURNING 
+      id, 
+      name,
+      description,
+      owner_id AS "ownerId",
+      created_at AS "createdAt",
+      image_url AS "imageUrl"
   `
   values.push(id);
 
@@ -125,7 +140,8 @@ export async function findByIdJoinUser(id: string): Promise<CommmunityJoinUser |
         owner_id AS "ownerId",
         communities.created_at AS "createdAt",
         description,
-        name,
+        communities.name AS "name",
+        communities.image_url AS "imageUrl",
         users.username AS "ownerName"
       FROM communities
       INNER JOIN users 

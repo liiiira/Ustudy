@@ -3,6 +3,7 @@ import {z} from "zod"
 export type PostInput = {
   title: string;
   textContent: string;
+  imageUrl?: string;
 }
 
 export type PostUpdate = {
@@ -10,34 +11,32 @@ export type PostUpdate = {
   textContent?: string;
 }
 
-export type Post = {
-  id: string;
-  title: string;
-  textContent: string;
+export type Post = PostInput & {
+  postId: string;
   ownerId: string;
   communityId: string;
   createdAt: Date,
 }
 
-export type PostJoined = {
-  postId: string;
-  title: string;
-  textContent: string;
-  ownerId: string;
+
+export type PostJoined = Post & {
   ownerName: string;
-  communityId: string;
-  communityName: string;
-  createdAt: Date,
 }
 
 export const postInputSchema = z.object({
+
   title: z.string().min(1).max(100),
-  textContent: z.string().min(1).max(1000)
+  textContent: z.string().min(1).max(1000),
+  imageUrl: z.url().optional(),
+
 });
 
 export const postUpdateSchema = z.object({
-   title: z.string().min(1).max(100).optional(),
+
+  title: z.string().min(1).max(100).optional(),
   textContent: z.string().min(1).max(1000).optional(), 
+  imageUrl: z.url().optional()
+
 })
 
 export const communityIdSchema = z.object({

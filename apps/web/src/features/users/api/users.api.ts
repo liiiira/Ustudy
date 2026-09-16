@@ -17,7 +17,8 @@ export async function updateUser(userId: string, UserData: {email?: string, user
     body: UserData,
     method: "PATCH",
   })
-  return data.user ?? null;
+
+  return data ?  data.user : null;
 }
 
 export async function getUser(userId: string): Promise<User>{

@@ -33,7 +33,7 @@ export async function getById(id: string): Promise<CommunityJoinUser>{
   return data.community;
 }
 
-export async function updateById(id: string, community: CommunityUpdate){
+export async function updateById(id: string, community: CommunityUpdate): Promise<CommunityUpdate | null>{
 
   const data = await authFetch(`/communities/${id}`, 
     {
@@ -41,7 +41,7 @@ export async function updateById(id: string, community: CommunityUpdate){
       body: community,
     })
 
-  return data.community ?? null;
+  return data ? data.community : null;
 }
 
 export async function deleteById(id: string): Promise<{id: string}>{

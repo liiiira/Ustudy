@@ -16,12 +16,13 @@ const s3 = new S3Client({
   },
 })
 
-export async function createPresignedUrl(key: string, contentType: string, expiresInSeconds: number,): Promise<string> {
+export async function createPresignedUrl(key: string, contentType: string, size: number, expiresInSeconds: number,): Promise<string> {
 
   const command = new PutObjectCommand({
     Bucket: S3_BUCKET,
     Key: key,
     ContentType: contentType,
+    ContentLength: size,
   });
 
   return getSignedUrl(s3, command, { expiresIn: expiresInSeconds });

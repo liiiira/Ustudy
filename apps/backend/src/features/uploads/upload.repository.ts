@@ -31,7 +31,7 @@ export async function findByPublicUrl(publicUrl: string): Promise<Upload | null>
         object_key AS "objectKey",
         created_at AS "createdAt"
       FROM uploads
-      WHERE publi_url = $1`,
+      WHERE public_url = $1`,
     [publicUrl]
   );
 

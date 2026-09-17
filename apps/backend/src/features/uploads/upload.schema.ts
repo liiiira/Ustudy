@@ -12,20 +12,20 @@ export const FOLDER_BY_KIND: Record<UploadKind, string> = {
 } as const;
 
 export const EXTENSION_BY_TYPE: Record<UploadContentType, string> = {
-  "image/jpg": "jpg",
+  "image/jpeg": "jpeg",
   "image/png": "png",
   "image/webp": "webp",
 }
 
 export const presignRequestSchema = z.object({
   kind: z.enum(["avatar", "post", "community"]),
-  contentType: z.enum(["image/png", "image/jpg", "image/webp"]),
+  contentType: z.enum(["image/png", "image/jpeg", "image/webp"]),
   size: z.number().positive().max(MAX_UPLOAD_BYTES),
 });
 
 export type PresignType = {
   kind: "avatar" | "post" | "community";
-  contentType: "image/png" | "image/jpg" | "image/webp";
+  contentType: "image/png" | "image/jpeg" | "image/webp";
   size: number;
 }
 

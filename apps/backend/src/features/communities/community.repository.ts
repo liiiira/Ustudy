@@ -1,19 +1,25 @@
 import pool from "../../config/postgres";
-import { type CommmunityJoinUser, type CommunityCreate, type CommunityDB, type UpdateCommunityRepository } from "./community.schema";
+import { type CommmunityJoinUser, type CommunityDB, type CommunityCreateRepository, type CommunityUpdateRepository } from "./community.schema";
 
-export async function create( {name, description, ownerId, imageUrl} : CommunityCreate): Promise<CommunityDB | null>{
+export async function create({name, description, ownerId, uploadId}: CommunityCreateRepository): Promise<CommunityDB | null>{
 
   const result = await pool.query(
-    `INSERT INTO communities(owner_id, name, description, image_url)
-      VALUES ($1, $2, $3, $4) 
-      RETURNING
-        id,
-        owner_id AS "ownerId",
-        name,
-        created_at AS "createdAt",
-        image_url AS "imageUrl",
-        description`,
-    [ownerId, name, description, imageUrl]
+    `WITH inserted AS (
+      INSERT INTO communities(owner_id, name, description, image_id)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id, owner_id, name, description, created_at, image_id
+    )
+    SELECT
+      inserted.id,
+      inserted.owner_id AS "ownerId",
+      inserted.name,
+      inserted.description,
+      inserted.created_at AS "createdAt",
+      uploads.public_url AS "imageUrl"
+    FROM inserted
+    LEFT JOIN uploads
+      ON inserted.image_id = uploads.id`,
+    [ownerId, name, description, uploadId ?? null]
   );
 
   return result.rows[0] ?? null;
@@ -21,18 +27,20 @@ export async function create( {name, description, ownerId, imageUrl} : Community
 
 
 export async function findByName(name: string) : Promise<CommunityDB | null>{
-  
+
   const result = await pool.query(
-    `SELECT 
-        id,
-        owner_id AS "ownerId",
-        name,
-        created_at AS "createdAt",
-        description,
-        image_url AS "imageUrl"
-      FROM 
-        communities
-      WHERE name = $1`,
+    `SELECT
+        c.id,
+        c.owner_id AS "ownerId",
+        c.name,
+        c.created_at AS "createdAt",
+        c.description,
+        uploads.public_url AS "imageUrl"
+      FROM
+        communities c
+      LEFT JOIN uploads
+        ON c.image_id = uploads.id
+      WHERE c.name = $1`,
     [name]
   );
 
@@ -40,19 +48,20 @@ export async function findByName(name: string) : Promise<CommunityDB | null>{
 }
 
 export async function findById(id: string) : Promise<CommunityDB | null>{
-  
+
   const result = await pool.query(
-    `SELECT 
-        communities.id,
-        owner_id AS "ownerId",
-        name,
-        created_at AS "createdAt",
-        description,
-        image_url AS "imageUrl"
-        
-      FROM 
-        communities
-      WHERE id = $1`,
+    `SELECT
+        c.id,
+        c.owner_id AS "ownerId",
+        c.name,
+        c.created_at AS "createdAt",
+        c.description,
+        uploads.public_url AS "imageUrl"
+      FROM
+        communities c
+      LEFT JOIN uploads
+        ON c.image_id = uploads.id
+      WHERE c.id = $1`,
     [id]
   );
 
@@ -62,22 +71,24 @@ export async function findById(id: string) : Promise<CommunityDB | null>{
 export async function findAll(): Promise<CommunityDB[]>{
 
   const result = await pool.query(
-    `SELECT 
-        id,
-        owner_id AS "ownerId",
-        name,
-        created_at AS "createdAt",
-        description,
-        image_url AS "imageUrl"
-        FROM communities`
+    `SELECT
+        c.id,
+        c.owner_id AS "ownerId",
+        c.name,
+        c.created_at AS "createdAt",
+        c.description,
+        uploads.public_url AS "imageUrl"
+      FROM communities c
+      LEFT JOIN uploads
+        ON c.image_id = uploads.id`
   );
   return result.rows;
 }
 
-export async function updateById(id: string, communityData: UpdateCommunityRepository): Promise<CommunityDB | null>{
+export async function updateById(id: string, communityData: CommunityUpdateRepository): Promise<CommunityDB | null>{
 
-  const {name, description, imageUrl} = communityData;
-  
+  const {name, description, uploadId} = communityData;
+
   // contains the qeury split into strings
   let updates = []
 
@@ -94,24 +105,29 @@ export async function updateById(id: string, communityData: UpdateCommunityRepos
     values.push(description);
   }
 
-  if (imageUrl){
-    updates.push(`image_url = $${values.length + 1}`);
-    values.push(imageUrl);
+  if (uploadId){
+    updates.push(`image_id = $${values.length + 1}`);
+    values.push(uploadId);
   }
 
 
   // forming the query
-  const query: string = `UPDATE communities
+  const query: string = `WITH updated AS (
+    UPDATE communities
     SET ${updates.join(", ")}
     WHERE id = $${values.length + 1}
-    RETURNING 
-      id, 
-      name,
-      description,
-      owner_id AS "ownerId",
-      created_at AS "createdAt",
-      image_url AS "imageUrl"
-  `
+    RETURNING id, owner_id, name, description, created_at, image_id
+  )
+  SELECT
+    updated.id,
+    updated.name,
+    updated.description,
+    updated.owner_id AS "ownerId",
+    updated.created_at AS "createdAt",
+    uploads.public_url AS "imageUrl"
+  FROM updated
+  LEFT JOIN uploads
+    ON updated.image_id = uploads.id`
   values.push(id);
 
   const result = await pool.query(query, values)
@@ -120,11 +136,11 @@ export async function updateById(id: string, communityData: UpdateCommunityRepos
 }
 
 export async function deleteById(id: string): Promise<{id: string} | null> {
-  
+
   const response = await  pool.query(
     `DELETE FROM communities
       WHERE id = $1
-      RETURNING 
+      RETURNING
         id`,
     [id]
   );
@@ -135,20 +151,22 @@ export async function deleteById(id: string): Promise<{id: string} | null> {
 export async function findByIdJoinUser(id: string): Promise<CommmunityJoinUser | null>{
 
   const response = await pool.query(
-    `SELECT 
-        communities.id AS "id",
-        owner_id AS "ownerId",
-        communities.created_at AS "createdAt",
-        description,
-        communities.name AS "name",
-        communities.image_url AS "imageUrl",
+    `SELECT
+        c.id AS "id",
+        c.owner_id AS "ownerId",
+        c.created_at AS "createdAt",
+        c.description,
+        c.name AS "name",
+        uploads.public_url AS "imageUrl",
         users.username AS "ownerName"
-      FROM communities
-      INNER JOIN users 
-      ON communities.owner_id = users.id 
-      WHERE communities.id = $1`, 
+      FROM communities c
+      INNER JOIN users
+        ON c.owner_id = users.id
+      LEFT JOIN uploads
+        ON c.image_id = uploads.id
+      WHERE c.id = $1`,
     [id]);
 
   return response.rows[0] ?? null;
-  
+
 }

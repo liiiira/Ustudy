@@ -1,5 +1,6 @@
 import * as postRepository from "./post.repository.ts"
 import * as communityService from "../communities/community.service.ts"
+import * as uploadService from "../uploads/upload.service.ts"
 import type { PostInput, Post, PostJoined, PostUpdate } from "./post.schema.ts";
 import {AppError} from "../../errors/appError.ts"
 import { type CommunityDB } from "../communities/community.schema.ts";
@@ -12,7 +13,14 @@ export async function create(ownerId: string, communityId: string,  postData: Po
   if(!communityExists)
     throw new AppError("Community was not found", 404);
   
-  const createdPost: Post | null = await postRepository.create(ownerId, communityId, postData)
+  let uploadId: string | undefined;
+
+  if(postData.imageUrl){
+    const upload = await uploadService.verifyUploadOwnerShip(ownerId, {postUrl: postData.imageUrl})
+    uploadId = upload.id;
+  }
+
+  const createdPost: Post | null = await postRepository.create(ownerId, communityId, {title: postData.title, textContent: postData.textContent, uploadId})
 
   if(!createdPost)
     throw new AppError("Failed to create post", 500);
@@ -70,8 +78,10 @@ export async function updateById(userId: string, postId: string, postData: PostU
     modifiedAttributes["textContent"] = textContent;
   
   // Check if post image changed
-  if (imageUrl && post.imageUrl !== imageUrl)
-    modifiedAttributes["imageUrl"] = imageUrl;
+  if (imageUrl && post.imageUrl !== imageUrl){
+    const upload = await uploadService.verifyUploadOwnerShip(userId, {postUrl: imageUrl});
+    modifiedAttributes["uploadId"] = upload.id;
+  }
   
 
   // Check if nothing changed  

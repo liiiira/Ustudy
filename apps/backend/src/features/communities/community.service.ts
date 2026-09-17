@@ -1,9 +1,10 @@
 import { AppError } from "../../errors/appError.ts";
 import * as communityRepository from "./community.repository.ts";
-import { type CommmunityJoinUser, type UpdateCommunityRepository, type CommunityCreate, type CommunityDB } from "./community.schema.ts";
+import * as uploadService from "../uploads/upload.service.ts";
+import { type CommmunityJoinUser, type CommunityUpdate, type CommunityCreate, type CommunityDB } from "./community.schema.ts";
 
 export async function create(CommunityCreate: CommunityCreate): Promise<CommunityDB>{
-   
+
   const {ownerId, name, description, imageUrl} = CommunityCreate;
 
   const nameExists = await findByName(name);
@@ -11,7 +12,14 @@ export async function create(CommunityCreate: CommunityCreate): Promise<Communit
   if(nameExists)
     throw new AppError("Community name already taken", 409);
 
-  const createdCommunity: CommunityDB | null = await communityRepository.create({ownerId, name, description, imageUrl})
+  let uploadId: string | undefined;
+
+  if(imageUrl){
+    const upload = await uploadService.verifyUploadOwnerShip(ownerId, {communityUrl: imageUrl});
+    uploadId = upload.id;
+  }
+
+  const createdCommunity: CommunityDB | null = await communityRepository.create({ownerId, name, description, uploadId})
 
   if (!createdCommunity)
     throw new AppError("Unexpected Failure, failed to created community", 500);
@@ -55,7 +63,7 @@ export async function findAll(): Promise<CommunityDB[]>{
   return await communityRepository.findAll();
 }
 
-export async function updateById(userId: string, id: string, communityData:UpdateCommunityRepository) : Promise<CommunityDB | null>{
+export async function updateById(userId: string, id: string, communityData:CommunityUpdate) : Promise<CommunityDB | null>{
 
   const {name, description, imageUrl} = communityData;
   const community: CommunityDB | null = await findById(id);
@@ -86,8 +94,10 @@ export async function updateById(userId: string, id: string, communityData:Updat
   if (description && community.description !== description)
     modifiedAttributes["description"] = description;
 
-  if (imageUrl && community.imageUrl !== imageUrl)
-    modifiedAttributes["imageUrl"] = imageUrl;
+  if (imageUrl && community.imageUrl !== imageUrl){
+    const upload = await uploadService.verifyUploadOwnerShip(userId, {communityUrl: imageUrl});
+    modifiedAttributes["uploadId"] = upload.id;
+  }
 
   // Check if nothing changed  
   if (Object.keys(modifiedAttributes).length === 0)

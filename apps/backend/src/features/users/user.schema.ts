@@ -49,14 +49,14 @@ export interface CreateUserRepository {
   username: string,
   hashedPassword: string,
   email: string,
-  avatarUrl?: string;
+  uploadId?: string;
 }
 
 export interface UpdateUserRepository{
   username?: string,
   email?: string,
   hashedPassword?: string
-  avatarUrl?: string;
+  uploadId?: string;
 }
 
 

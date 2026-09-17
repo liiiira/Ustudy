@@ -46,8 +46,8 @@ export async function updateById(req: Request<{id: string}>, res: Response){
 
   const requesterId: string = req.user!.id;
   const {id} = req.params;
-  const {username, password, email } = req.body;
-  const updatedUser: User | null = await userService.updateById(requesterId, id, {username, password, email})
+  const {username, password, email, avatarUrl } = req.body;
+  const updatedUser: User | null = await userService.updateById(requesterId, id, {username, password, email, avatarUrl})
 
   // Nothing changed
   if (!updatedUser)

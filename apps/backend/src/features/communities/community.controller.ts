@@ -43,8 +43,8 @@ export async function updateById(req: Request<{id: string}>, res: Response){
   
   const userId: string = req.user!.id;
   const {id} = req.params;
-  const {name, description } = req.body;
-  const updatedCommunity: CommunityDB | null = await communityService.updateById(userId, id, {name, description})
+  const {name, description, imageUrl } = req.body;
+  const updatedCommunity: CommunityDB | null = await communityService.updateById(userId, id, {name, description, imageUrl})
 
   // Nothing changed
   if (!updatedCommunity)

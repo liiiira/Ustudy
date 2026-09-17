@@ -1,4 +1,5 @@
 import * as userRepository from "./user.repository";
+import * as uploadService from "../uploads/upload.service.ts";
 import type { UserRegister, User, UserUpdate, UserAuth } from "./user.schema";
 import { hashPassword } from "../../utils/password";
 import { AppError } from "../../errors/appError";
@@ -7,28 +8,36 @@ export async function create(userData: UserRegister): Promise<User>{
 
   const {username, email, password, avatarUrl} = userData;
 
+  // An avatar can't be verified as owned by this account at registration
+  // time: /uploads/presign requires an authenticated caller, and there is
+  // no account (and so no token) yet to have called it with. Reject
+  // explicitly rather than silently dropping a submitted avatarUrl — set
+  // it via PATCH /users/:id once the account exists and the user is
+  // authenticated.
+  if (avatarUrl)
+    throw new AppError("avatarUrl cannot be set at registration — update your profile after signing up instead", 400);
+
   // Check if email is already used
   const emailExists: User | null = await findByEmail(email);
 
   if (emailExists)
-    throw new AppError("Email Already Exists", 409); 
-  
+    throw new AppError("Email Already Exists", 409);
+
   // Check if username is already used
   const usernameExists: User | null = await findByUsername(username);
-  
+
   if (usernameExists)
       throw new AppError("Username Already Exists", 409);
 
 
   const hashedPassword = await hashPassword(password);
-  
+
   return await userRepository.create({
     username: username,
     hashedPassword: hashedPassword,
     email: email,
-    avatarUrl: avatarUrl
   });
-} 
+}
 
 
 export async function findAll() : Promise<User[]>{
@@ -100,8 +109,10 @@ export async function updateById(requesterId: string, id: string, userData:UserU
   }
   
   // check if the avatar changed
-  if (avatarUrl && user.avatarUrl !== avatarUrl)
-    modifiedAttributes["avatarUrl"] = avatarUrl;
+  if (avatarUrl && user.avatarUrl !== avatarUrl){
+    const upload = await uploadService.verifyUploadOwnerShip(requesterId, {avatarUrl});
+    modifiedAttributes["uploadId"] = upload.id;
+  }
 
 
   if(password){

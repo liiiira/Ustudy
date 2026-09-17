@@ -24,6 +24,17 @@ export type PostJoined = Post & {
   ownerName: string;
 }
 
+export type PostInputRepository = {
+  title: string;
+  textContent: string;
+  uploadId?: string;
+}
+
+export type PostUpdateRepository = {
+  title?: string;
+  textContent?: string;
+  uploadId?: string;
+}
 export const postInputSchema = z.object({
 
   title: z.string().min(1).max(100),

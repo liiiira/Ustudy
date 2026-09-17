@@ -28,3 +28,47 @@ export async function createPresignUpload(userId: string, presignData: PresignTy
   return {uploadUrl, publicUrl};
 
 }
+
+type UploadUrl =
+  | { avatarUrl: string; postUrl?: never; communityUrl?: never }
+  | { postUrl: string; avatarUrl?: never; communityUrl?: never }
+  | { communityUrl: string; avatarUrl?: never; postUrl?: never };
+
+export async function verifyUploadOwnerShip(requesterId: string, uploadUrl: UploadUrl): Promise<Upload>{
+  
+  const {avatarUrl, postUrl, communityUrl} = uploadUrl;
+    
+  const count = [avatarUrl, postUrl, communityUrl].filter(Boolean).length;
+
+  if (count !== 1) {
+    throw new AppError("Provide exactly one of avatarUrl, postUrl, communityUrl", 400);
+  }
+
+  let publicUrl: string;
+  let kind: string;
+
+  if(avatarUrl){
+    publicUrl  = avatarUrl;
+    kind = "avatar";
+  }
+
+  if(postUrl){
+    publicUrl = postUrl;
+    kind = "post";
+  }
+  
+  if(communityUrl){
+    publicUrl = communityUrl;
+    kind = "community";
+  }
+  
+  const upload: Upload | null = await uploadRepository.findByPublicUrl(publicUrl!)
+
+  if(!upload) throw new AppError("Upload not found", 404);
+  
+  if(upload.ownerId !== requesterId) throw new AppError("Not your upload", 403);
+  
+  if(upload.kind !== kind!) throw new AppError(`Upload is not ${kind!}`, 403);
+
+  return upload;
+}

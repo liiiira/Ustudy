@@ -3,13 +3,14 @@ import type {User, UserAuth, CreateUserRepository, UpdateUserRepository} from '.
 
 export async function create(userData: CreateUserRepository) : Promise<User>{
 
-  const {username, hashedPassword, email, uploadId} = userData;
+  const {username, hashedPassword, email} = userData;
 
   const result = await pool.query(
-    `WITH inserted AS (
-      INSERT INTO users(username, hashed_password, email, avatar_id)
+    `
+    WITH inserted AS (
+      INSERT INTO users(username, hashed_password, email)
       VALUES($1, $2, $3, $4)
-      RETURNING id, username, email, created_at, avatar_id
+      RETURNING id, username, email, created_at
     )
     SELECT
       inserted.id,
@@ -17,10 +18,8 @@ export async function create(userData: CreateUserRepository) : Promise<User>{
       inserted.email,
       inserted.created_at AS "createdAt",
       uploads.public_url AS "avatarUrl"
-    FROM inserted
-    LEFT JOIN uploads
-      ON inserted.avatar_id = uploads.id`,
-    [username, hashedPassword, email, uploadId ?? null],
+    FROM inserted`,
+    [username, hashedPassword, email],
   );
 
   return result.rows[0];

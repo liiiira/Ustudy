@@ -6,16 +6,7 @@ import { AppError } from "../../errors/appError";
 
 export async function create(userData: UserRegister): Promise<User>{
 
-  const {username, email, password, avatarUrl} = userData;
-
-  // An avatar can't be verified as owned by this account at registration
-  // time: /uploads/presign requires an authenticated caller, and there is
-  // no account (and so no token) yet to have called it with. Reject
-  // explicitly rather than silently dropping a submitted avatarUrl — set
-  // it via PATCH /users/:id once the account exists and the user is
-  // authenticated.
-  if (avatarUrl)
-    throw new AppError("avatarUrl cannot be set at registration — update your profile after signing up instead", 400);
+  const {username, email, password} = userData;
 
   // Check if email is already used
   const emailExists: User | null = await findByEmail(email);

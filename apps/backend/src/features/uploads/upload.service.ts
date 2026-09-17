@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import {EXTENSION_BY_TYPE, FOLDER_BY_KIND} from "./upload.schema.ts"
 import { AppError } from "../../errors/appError.ts";
 
-const S3_PUBLIC_BASE_URL: string = process.env.S3_BASE_URL!;
+const S3_PUBLIC_BASE_URL: string = process.env.S3_PUBLIC_BASE_URL!;
 const UPLOAD_URL_EXPIRY_SECONDS = 5 * 60;
 
 function buildObjectKey(ownerId: string, kind: UploadKind, contentType: UploadContentType): string{

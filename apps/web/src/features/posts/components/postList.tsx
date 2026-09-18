@@ -9,7 +9,7 @@ export default function PostList({posts} : {posts: Post[]}){
   <div className="w-2xl h-full flex flex-col gap-4 rounded-2xl">
       {
         posts.map((p: Post) =>
-          (<PostCard key={p.id} postId={p.id} title={p.title} textContent={p.textContent} communityId={p.communityId} />)
+          (<PostCard key={p.id} postId={p.id} title={p.title} textContent={p.textContent} communityId={p.communityId} imageUrl={p.imageUrl} />)
         )
       }
   </div>

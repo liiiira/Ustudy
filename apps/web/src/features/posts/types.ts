@@ -8,11 +8,13 @@ export type CreatePostData = {
 export type CreatePostError = {
   title: string[];
   textContent: string[];
+  imageUrl?: string[];
 }
 
 export type PostProps = {
   title?: string;
   textContent?:string;
+  imageUrl?: string;
 }
 
 export type PostUpdate = {
@@ -28,17 +30,12 @@ export type Post = {
   ownerId: string;
   communityId: string;
   createdAt: Date,
+  imageUrl?: string;
 }
 
-export type PostJoined = {
-  postId: string;
-  title: string;
-  textContent: string;
-  ownerId: string;
+export type PostJoined = Post &{
   ownerName: string;
-  communityId: string;
   communityName: string;
-  createdAt: Date,
 }
 
 

@@ -5,7 +5,7 @@ import KebabMenu from "../../../components/ui/kebabMenu";
 
 
 
-export default function PostView({communityId, postId, title, textContent, ownerId, ownerName, communityName, createdAt}: PostJoined){
+export default function PostView({communityId, postId, title, textContent, ownerId, ownerName, communityName, createdAt, imageUrl}: PostJoined){
   
   const navigate = useNavigate();
   
@@ -20,7 +20,7 @@ export default function PostView({communityId, postId, title, textContent, owner
 
   return(
 
-    <div className="bg-white px-8 pt-4 pb-10 flex flex-col gap-2 rounded-2xl w-full h-max shadow-xl" >
+    <div className="bg-white px-8 pt-4 pb-10 flex flex-col gap-4 rounded-2xl w-full h-max shadow-xl" >
       
       <div className="flex w-full flex-row justify-between">
 
@@ -47,6 +47,14 @@ export default function PostView({communityId, postId, title, textContent, owner
         <div className="font-bold text-black text-xl whitespace-pre-wrap wrap-break-word">{title}</div>
         <div className="font-light text-black whitespace-pre-wrap wrap-break-word">{textContent}</div>
       </div>
+
+      {imageUrl &&
+        <img
+          src={imageUrl}
+          className="w-full h-auto object-cover rounded"
+        />
+      }
+
     </div>
   )
 }

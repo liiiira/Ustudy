@@ -15,11 +15,11 @@ export default function UpdatePostPage(){
   if(error)
     return <p>error</p>
 
-  const {title, textContent} = post!;
+  const {title, textContent, imageUrl} = post!;
 
   return (
     <FormBg>
-      <PostForm mode="Update" communityId={communityId!} textContent={textContent} title={title} postId={postId} />
+      <PostForm mode="Update" communityId={communityId!} textContent={textContent} title={title} postId={postId} imageUrl={imageUrl}/>
     </FormBg>
   )
 }

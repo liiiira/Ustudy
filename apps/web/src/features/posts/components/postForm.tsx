@@ -145,7 +145,7 @@ export default function PostForm({title = "", textContent = "", mode = "Create",
       {post.imageUrl && 
           <img 
             src={post.imageUrl} 
-            className="w-20 h-20 object-cover rounded"
+            className="w-full h-auto object-cover rounded"
           />
         }
     

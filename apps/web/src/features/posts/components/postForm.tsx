@@ -51,8 +51,6 @@ export default function PostForm({title = "", textContent = "", mode = "Create",
     }finally{
       setUploading(false);
     }
-    console.log("Image url: ", post.imageUrl)
-
   }
 
 

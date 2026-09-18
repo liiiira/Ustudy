@@ -28,7 +28,7 @@ export default function CommunityPage(){
   if(communityLoading || postsLoading)
     return (<p>loading...</p>)
 
-  const {name, description, createdAt, ownerName, ownerId} = community!;
+  const {name, description, createdAt, ownerName, ownerId, imageUrl} = community!;
   
   async function handleDeleteCommunity(){
 
@@ -41,12 +41,23 @@ export default function CommunityPage(){
 
     <div className="bg-white px-8 py-4 flex flex-row justify-between rounded-2xl">
       
-      <div className="flex flex-col">
-        <div className="font-bold text-2xl wrap-break-word whitespace-break-spaces">{name}</div>
-        <div className="font-medium wrap-break-word whitespace-break-spaces">{description}</div>
-        <div className="flex flex-row gap-1">
-          <div className="text-center">Created by: {ownerName} At {createdAt}</div>
+      <div className="grid grid-cols-[4rem_1fr] gap-4">  
+        <div className="flex justify-center items-center">
+            {imageUrl &&
+              <img
+                src={imageUrl}
+                className="w-full aspect-square object-cover rounded"
+              />
+            }
+        </div>
+        <div className="flex flex-col">
           
+          <div className="font-bold text-2xl wrap-break-word whitespace-break-spaces">{name}</div>
+          <div className="font-medium wrap-break-word whitespace-break-spaces">{description}</div>
+          <div className="flex flex-row gap-1">
+            <div className="text-center">Created by: {ownerName} At {createdAt}</div>
+            
+          </div>
         </div>
       </div>
     
@@ -61,6 +72,8 @@ export default function CommunityPage(){
       }
 
     </div>
+
+
     <div>
       <div className="flex w-full flex-row-reverse">
           <Button onClick={() => navigate(`/communities/${communityId}/posts/create`)}>Create post</Button>

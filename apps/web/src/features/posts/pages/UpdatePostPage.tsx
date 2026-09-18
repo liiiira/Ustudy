@@ -19,7 +19,14 @@ export default function UpdatePostPage(){
 
   return (
     <FormBg>
-      <PostForm mode="Update" communityId={communityId!} textContent={textContent} title={title} postId={postId} imageUrl={imageUrl}/>
+      <PostForm 
+        mode="Update" 
+        communityId={communityId!} 
+        textContent={textContent} 
+        title={title} 
+        postId={postId} 
+        imageUrl={imageUrl}
+      />
     </FormBg>
   )
 }

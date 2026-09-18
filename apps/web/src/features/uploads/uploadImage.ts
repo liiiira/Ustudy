@@ -12,8 +12,6 @@ export async function uploadImage(file: File, kind: UploadKind){
 
   const {uploadUrl, publicUrl} = await presignUpload(kind, file.type as ContentType, file.size);
 
-  console.log("file type: ", file.type)
-  console.log("File size: ", file.size)
 
   const putResponse = await fetch(uploadUrl, {
     method: "PUT",
@@ -26,7 +24,6 @@ export async function uploadImage(file: File, kind: UploadKind){
   if(!putResponse.ok)
     throw new Error("Failed to uplaod image");
 
-  console.log("image uploaded")
 
   return publicUrl;
 }

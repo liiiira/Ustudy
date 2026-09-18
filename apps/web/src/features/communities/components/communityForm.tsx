@@ -2,6 +2,7 @@ import { useNavigate } from "react-router";
 import React, { useState } from "react";
 import {type CreateCommunityData, type CreateCommunityError } from "../types";
 import { validateLength } from "../../../utils/validators";
+import { uploadImage } from "../../uploads/uploadImage";
 import * as communityApi from "../api/communities.api";
 import Button from "../../../components/ui/button";
 import FormField from "../../../components/ui/formField";
@@ -12,15 +13,18 @@ type CommunityFormProps = {
   name?: string;
   description?: string;
   mode: "Create" | "Update",
+  imageUrl?: string;
 }
-export default function CommunityForm({name = "", description = "", mode = "Create", id}: CommunityFormProps){
+export default function CommunityForm({name = "", description = "", mode = "Create", id, imageUrl}: CommunityFormProps){
   
   const navigate = useNavigate();
 
-  const [community, setCommunity] = useState<CreateCommunityData>({name: name, description: description});
+  const [community, setCommunity] = useState<CreateCommunityData>({name: name, description: description, imageUrl: imageUrl});
   const [apiError, setApiError] = useState<string>("");
-  const [inputError, setInputError] = useState<CreateCommunityError>({name: [], description: []});
+  const [uploadError, setUploadError] = useState<string>("");
+  const [inputError, setInputError] = useState<CreateCommunityError>({name: [], description: [], imageUrl: []});
   const [valid, setValid] = useState<boolean>(false);
+  const [uploading, setUploading] = useState<boolean>(false);
 
   function handleChange(e: React.ChangeEvent<HTMLTextAreaElement> | React.ChangeEvent<HTMLInputElement>){
     
@@ -28,7 +32,23 @@ export default function CommunityForm({name = "", description = "", mode = "Crea
     setCommunity(newCommunity)
     setValid(validateCommunity(newCommunity));
   }
+  async function  handleFileChange(e: React.ChangeEvent<HTMLInputElement>){
 
+    const file = e.target.files?.[0];
+
+    if(!file) return;
+
+    setUploading(true);
+    try{
+      const url = await uploadImage(file, "community");
+      setCommunity((prev: CreateCommunityData): CreateCommunityData => ({...prev, imageUrl: url}));
+    }catch(e){
+      if(e instanceof Error)
+        setUploadError(e.message)
+    }finally{
+      setUploading(false);
+    }
+  }
 
   function validateCommunity(community: CreateCommunityData): boolean{
     
@@ -37,7 +57,8 @@ export default function CommunityForm({name = "", description = "", mode = "Crea
     const nameErrors: string[] = validateLength("Community Name", name, 3, 40);
     const descriptionErrors: string[] = validateLength("Community Description", description, 3, 100);
 
-    setInputError({name: nameErrors, description: descriptionErrors  })
+    //HACK: image error handling is not real
+    setInputError({name: nameErrors, description: descriptionErrors, imageUrl: []  })
 
     return ![nameErrors, descriptionErrors].some((error: string[]) => error.length > 0);
   }  
@@ -84,31 +105,50 @@ export default function CommunityForm({name = "", description = "", mode = "Crea
 
     </div>
      
-    <div id="form-body" className="flex flex-col gap-2">
+    <div id="form-body" className="flex flex-col gap-4">
 
-      <FormField 
-          id="name" 
-          name="name" 
-          value={community.name} 
-          charLimit={40} 
-          type="text" 
-          placeholder="Enter your community name" 
-          label="Community Name" 
-          inputError={inputError.name} 
-          handleChange={handleChange} 
-      />
+      <div className="flex flex-col gap-2">
+        <FormField 
+            id="name" 
+            name="name" 
+            value={community.name} 
+            charLimit={40} 
+            type="text" 
+            placeholder="Enter your community name" 
+            label="Community Name" 
+            inputError={inputError.name} 
+            handleChange={handleChange} 
+        />
+        
+        <TextField
+            id="description" 
+            name="description" 
+            value={community.description} 
+            charLimit={100} 
+            placeholder="Enter your community description" 
+            label="Community description"
+            inputError={inputError.description}
+            handleChange={handleChange} 
+            rows={4} 
+        />
+
+      </div>
+
+      <div className="flex flex-col gap-2">
+          <input 
+            type="file" 
+            accept="image/jpeg, image/png, image/webp"
+            onChange={handleFileChange}
+          />
+          {community.imageUrl && 
+            <img 
+              src={community.imageUrl}
+              className="w-full h-auto object-cover rounded"
+            />
+          }
+      </div>
+
       
-      <TextField
-          id="description" 
-          name="description" 
-          value={community.description} 
-          charLimit={100} 
-          placeholder="Enter your community description" 
-          label="Community description"
-          inputError={inputError.description}
-          handleChange={handleChange} 
-          rows={4} 
-      />
     
     </div>
 
@@ -116,7 +156,7 @@ export default function CommunityForm({name = "", description = "", mode = "Crea
 
       <Button 
           variant="Primary"
-          disabled={!valid}
+          disabled={!valid || uploading}
           type="submit"
       > 
           {mode === "Create" ? "Create Community" : mode === "Update" ? "Update Community" : ""} 

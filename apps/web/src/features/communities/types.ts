@@ -1,23 +1,27 @@
-
 export type CreateCommunityData = {
   name: string;
   description: string;
+  imageUrl?: string;
 }
 
 
 export type CreateCommunityError = {
   name: string[];
   description: string[];
+  imageUrl: string[];
 }
 
+
 export type CommunityProps = {
-  name?: string;
-  description?:string;
+  name: string;
+  description:string;
+  imageUrl?: string;
 }
 
 export type CommunityUpdate = {
   name?: string;
   description?: string;
+  imageUrl?: string;
 }
 
 export type Community = {
@@ -26,14 +30,10 @@ export type Community = {
   name: string;
   description: string;
   createdAt: string;
+  imageUrl?: string;
 }
 
-export type CommunityJoinUser = {
-  id: string;
-  ownerId: string;
-  name: string; 
-  description: string;
-  createdAt: string;
+export type CommunityJoinUser = Community &{
   ownerName: string;
 }
 

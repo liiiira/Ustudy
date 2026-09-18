@@ -16,11 +16,11 @@ export default function UpdateCommunityPage(){
   if(loading)
     return (<p>loading...</p>)
 
-  const {name, description} = community!;
+  const {name, description, imageUrl} = community!;
 
   return (
     <FormBg>
-      <CommunityForm id={communityId} name={name} description={description} mode="Update"/>
+      <CommunityForm id={communityId} name={name} description={description} imageUrl={imageUrl} mode="Update"/>
     </FormBg>
   )
 }

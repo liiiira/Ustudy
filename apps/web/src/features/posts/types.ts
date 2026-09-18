@@ -1,6 +1,7 @@
 export type CreatePostData = {
   title: string;
   textContent: string;
+  imageUrl?: string;
 }
 
 
@@ -17,6 +18,7 @@ export type PostProps = {
 export type PostUpdate = {
   title?: string;
   textContent?: string;
+  imageUrl?: string;
 }
 
 export type Post = {

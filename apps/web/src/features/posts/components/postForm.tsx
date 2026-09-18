@@ -6,21 +6,25 @@ import * as postApi from "../api/posts.api";
 import Button from "../../../components/ui/button";
 import FormField from "../../../components/ui/formField";
 import TextField from "../../../components/ui/textField";
+import { uploadImage } from "../../uploads/uploadImage";
 
 type PostFormProps = {
   postId?: string;
   communityId: string;
   title?: string;
+  imageUrl?: string;
   textContent?: string;
   mode: "Create" | "Update",
 }
 
-export default function PostForm({title = "", textContent = "", mode = "Create", postId, communityId}: PostFormProps){
+export default function PostForm({title = "", textContent = "", mode = "Create", postId, communityId, imageUrl}: PostFormProps){
   
   const navigate = useNavigate();
 
-  const [post, setPost] = useState<CreatePostData>({title: title, textContent: textContent});
+  const [post, setPost] = useState<CreatePostData>({title: title, textContent: textContent, imageUrl: imageUrl});
+  const [uploading, setUploading] = useState<boolean>(false);
   const [apiError, setApiError] = useState<string>("");
+  const [uploadError, setUploadError] = useState<string>("");
   const [inputError, setInputError] = useState<CreatePostError>({title: [], textContent: []});
   const [valid, setValid] = useState<boolean>(false);
 
@@ -28,11 +32,31 @@ export default function PostForm({title = "", textContent = "", mode = "Create",
     
     const newPost: CreatePostData = {...post, [e.target.name]: e.target.value};
     setPost(newPost)
-    setValid(validateCommunity(newPost));
+    setValid(validatePost(newPost));
+  }
+
+  async function  handleFileChange(e: React.ChangeEvent<HTMLInputElement>){
+
+    const file = e.target.files?.[0];
+
+    if(!file) return;
+
+    setUploading(true);
+    try{
+      const url = await uploadImage(file, "post");
+      setPost((prev: CreatePostData): CreatePostData => ({...prev, imageUrl: url}));
+    }catch(e){
+      if(e instanceof Error)
+        setUploadError(e.message)
+    }finally{
+      setUploading(false);
+    }
+    console.log("Image url: ", post.imageUrl)
+
   }
 
 
-  function validateCommunity(post: CreatePostData): boolean{
+  function validatePost(post: CreatePostData): boolean{
     
     const {title, textContent} = post;
 
@@ -113,6 +137,17 @@ export default function PostForm({title = "", textContent = "", mode = "Create",
           handleChange={handleChange} 
           rows={4} 
       />
+      <input 
+          type="file" 
+          accept="image/png, image/webp, image/jpeg" 
+          onChange={handleFileChange}
+      />
+      {post.imageUrl && 
+          <img 
+            src={post.imageUrl} 
+            className="w-20 h-20 object-cover rounded"
+          />
+        }
     
     </div>
 
@@ -120,7 +155,7 @@ export default function PostForm({title = "", textContent = "", mode = "Create",
 
       <Button 
           variant="Primary"
-          disabled={!valid}
+          disabled={!valid || uploading}
           type="submit"
       > 
           {mode === "Create" ? "Share the post" : mode === "Update" ? "Update the post" : ""} 

@@ -1,7 +1,7 @@
 import { getAccessToken, setAccessToken } from "../features/auth/token";
 import concatQueryParams from "../utils/concatQueryParams";
 type PublicOptionsType = {
-  body?: Record<string, string>,
+  body?: Record<string, string | number>,
   method?: "POST" | "GET" | "PATCH" | "DELETE" | "PUT",
   queryParams?: Record<string, string>, 
 }

@@ -13,7 +13,7 @@ export async function createUser(userData: {email: string, username: string, pas
 
 export async function updateUser(
   userId: string, 
-  UserData: {email?: string, usernmae?: string, password?: string, imageUrl?: string}):
+  UserData: {email?: string, username?: string, password?: string, avatarUrl?: string}):
 Promise<User | null>{
 
   const data = await authFetch(`/users/${userId}`, {

@@ -1,9 +1,11 @@
 import { useState } from "react";
 import {type UpdateUserAccountErrors, type UpdateUserAccount, type User } from "../types";
 import FormField from "../../../components/ui/formField";
-import { validateLength } from "../../../utils/validators"; 
+import ImageField from "../../../components/ui/imageField";
+import { validateLength } from "../../../utils/validators";
 import Button from "../../../components/ui/button";
 import { updateUser } from "../api/users.api";
+import useImageUpload from "../../uploads/hooks/useImageUpload";
 
 type AccountFormProps = {
   userId: string;
@@ -12,48 +14,54 @@ type AccountFormProps = {
 }
 
 export default function AccountForm({userId, avatarUrl, username}: AccountFormProps){
-  
-  const [user, setUser] = useState<UpdateUserAccount>({imageUrl: avatarUrl, username: username!})
-  const [userError, setUserError] = useState<UpdateUserAccountErrors>({imageUrl: [], username: []});
-  const [valid, setValid] = useState<boolean>(false);
+
+  const [user, setUser] = useState<UpdateUserAccount>({avatarUrl, username});
+  const [userError, setUserError] = useState<UpdateUserAccountErrors>({username: []});
+  const [valid, setValid] = useState<boolean>(true);
   const [apiError, setApiError] = useState<string>("");
+  const {upload, uploading, error: uploadError} = useImageUpload("avatar");
 
   function validateUserAccount(user: UpdateUserAccount){
     const usernameErrors = validateLength("Username", user.username, 3, 25);
 
-    setUserError({username: usernameErrors, imageUrl: []})
+    setUserError({username: usernameErrors})
 
-    return !([usernameErrors].some((inputError: Array<string>) => inputError.length > 0))
-
+    return usernameErrors.length === 0;
   }
 
-  function handleChange(e: React.ChangeEvent<HTMLTextAreaElement> | React.ChangeEvent<HTMLInputElement>){
-    
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>){
+
     const newUser: UpdateUserAccount = {...user, [e.target.name]: e.target.value};
     setUser(newUser)
     setValid(validateUserAccount(newUser));
   }
 
-  async function handleSubmit(){
+  async function handleAvatarSelect(file: File){
+    const url = await upload(file);
+    if(url)
+      setUser((prev: UpdateUserAccount): UpdateUserAccount => ({...prev, avatarUrl: url}));
+  }
+
+  async function handleSubmit(e: React.SubmitEvent){
+    e.preventDefault();
+    setApiError("");
 
     try{
 
       const updatedUser: User | null = await updateUser(userId, user);
 
       if(updatedUser)
-        setUser(updatedUser)
+        setUser({username: updatedUser.username, avatarUrl: updatedUser.avatarUrl});
 
     }catch(e){
 
       if(e instanceof Error)
         setApiError(e.message)
     }
-    
-    
   }
 
   return(
-    <div className="w-full px-4 py-2 flex flex-col gap-2 rounded-xl bg-white">
+    <form className="w-full px-4 py-2 flex flex-col gap-2 rounded-xl bg-white" onSubmit={handleSubmit}>
       <div className="text-lg font-bold">
         Account preferences
       </div>
@@ -63,37 +71,39 @@ export default function AccountForm({userId, avatarUrl, username}: AccountFormPr
       </div>
 
       <div className="w-full max-w-md flex flex-col gap-4">
-        <div className="w-full flex items-center justify-start">
-         
-        </div>
-        <div className="flex-col">
 
-          <FormField 
-            id="username"
-            name="username"
-            label="Username"
-            type="text"
-            value={user.username}
-            handleChange={handleChange} 
-            inputError={userError.username}
-            charLimit={25}
-          />
+        <ImageField
+          id="avatar"
+          label="Avatar"
+          variant="avatar"
+          value={user.avatarUrl}
+          onFileSelect={handleAvatarSelect}
+          uploading={uploading}
+          error={uploadError}
+        />
 
-        </div>
+        <FormField
+          id="username"
+          name="username"
+          label="Username"
+          type="text"
+          value={user.username}
+          handleChange={handleChange}
+          inputError={userError.username}
+          charLimit={25}
+        />
 
- 
-          
       </div>
+
       <div className="w-full flex flex-row-reverse">
         <Button
           type="submit"
           variant="Primary"
-          onClick={handleSubmit}
-          disabled={!valid}
+          disabled={!valid || uploading}
         >
          Apply Changes
         </Button>
       </div>
-    </div>
+    </form>
   )
 }

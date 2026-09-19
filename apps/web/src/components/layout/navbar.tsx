@@ -4,7 +4,7 @@ import NavbarDropDownMenu from "../ui/navbarDropdownMenu";
 
 export function Navbar(){
   
-  const {isAuthenticated, logout, loading} = useAuth();
+  const {isAuthenticated, logout, loading, user} = useAuth();
   
   if(loading)
     return(
@@ -38,7 +38,8 @@ export function Navbar(){
               Communities
             </Link>
           </div>
-          <NavbarDropDownMenu 
+          <NavbarDropDownMenu
+            imageUrl={user?.avatarUrl} 
             logout={logout} 
           />
         </div>

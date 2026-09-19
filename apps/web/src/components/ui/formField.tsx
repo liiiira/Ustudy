@@ -4,14 +4,14 @@ type FieldProps = {
   name: string;
   type: "text" | "email" | "password";
   value: string;
-  placeholder: string;
+  placeholder?: string;
   label: string;
   handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   inputError: string[];
   charLimit: number;
 } 
 
-export default function FormField({id, name, type,  value, label, placeholder, handleChange, inputError,  charLimit} : FieldProps){
+export default function FormField({id, name, type,  value, label, placeholder="", handleChange, inputError,  charLimit} : FieldProps){
 
   return (
       <div className="flex flex-col gap-1">

@@ -3,7 +3,7 @@ type TextFieldProps = {
   id: string;
   name: string;
   value: string;
-  placeholder: string;
+  placeholder?: string;
   label: string;
   handleChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   inputError: string[];
@@ -11,7 +11,7 @@ type TextFieldProps = {
   rows: number;
 } 
 
-export default function TextField({id, name,  value, placeholder, label, handleChange, inputError,  charLimit, rows}: TextFieldProps){
+export default function TextField({id, name,  value, placeholder="", label, handleChange, inputError,  charLimit, rows}: TextFieldProps){
   return (
     <div className="flex flex-col gap-1 bg-gray">
 

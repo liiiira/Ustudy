@@ -1,5 +1,6 @@
 import { getAccessToken, setAccessToken } from "../features/auth/token";
 import concatQueryParams from "../utils/concatQueryParams";
+
 type PublicOptionsType = {
   body?: Record<string, string | number>,
   method?: "POST" | "GET" | "PATCH" | "DELETE" | "PUT",
@@ -15,7 +16,7 @@ type ErrorResponse = {
   message: string;
 }
 
-// it's  
+// Used for fetching api endpints that doesn't require access token
 export async function publicFetch(endPointPath: string, options?: PublicOptionsType){
 
   options = options ?? {}
@@ -33,6 +34,7 @@ export async function publicFetch(endPointPath: string, options?: PublicOptionsT
 
 }
 
+// Used for fetching api endpoints that requires access token
 export async function authFetch(endPointPath: string, options?: PublicOptionsType){
   
   const accessToken: string | null = getAccessToken();

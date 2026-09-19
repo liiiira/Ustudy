@@ -20,12 +20,11 @@ export type SignupError = {
 
 export type UpdateUserAccount = {
   username: string;
-  imageUrl?: string;
+  avatarUrl?: string;
 }
 
 export type UpdateUserAccountErrors = {
   username: string[];
-  imageUrl?: string[];
 }
 
 export type ActiveIdType = "account" | "security"

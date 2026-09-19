@@ -6,7 +6,8 @@ import * as postApi from "../api/posts.api";
 import Button from "../../../components/ui/button";
 import FormField from "../../../components/ui/formField";
 import TextField from "../../../components/ui/textField";
-import { uploadImage } from "../../uploads/uploadImage";
+import ImageField from "../../../components/ui/imageField";
+import useImageUpload from "../../uploads/hooks/useImageUpload";
 
 type PostFormProps = {
   postId?: string;
@@ -22,35 +23,23 @@ export default function PostForm({title = "", textContent = "", mode = "Create",
   const navigate = useNavigate();
 
   const [post, setPost] = useState<CreatePostData>({title: title, textContent: textContent, imageUrl: imageUrl});
-  const [uploading, setUploading] = useState<boolean>(false);
   const [apiError, setApiError] = useState<string>("");
-  const [uploadError, setUploadError] = useState<string>("");
   const [inputError, setInputError] = useState<CreatePostError>({title: [], textContent: []});
   const [valid, setValid] = useState<boolean>(false);
 
+  const {upload, uploading, error: uploadError} = useImageUpload("post");
+
   function handleChange(e: React.ChangeEvent<HTMLTextAreaElement> | React.ChangeEvent<HTMLInputElement>){
-    
+
     const newPost: CreatePostData = {...post, [e.target.name]: e.target.value};
     setPost(newPost)
     setValid(validatePost(newPost));
   }
 
-  async function  handleFileChange(e: React.ChangeEvent<HTMLInputElement>){
-
-    const file = e.target.files?.[0];
-
-    if(!file) return;
-
-    setUploading(true);
-    try{
-      const url = await uploadImage(file, "post");
+  async function handleImageSelect(file: File){
+    const url = await upload(file);
+    if(url)
       setPost((prev: CreatePostData): CreatePostData => ({...prev, imageUrl: url}));
-    }catch(e){
-      if(e instanceof Error)
-        setUploadError(e.message)
-    }finally{
-      setUploading(false);
-    }
   }
 
 
@@ -135,18 +124,15 @@ export default function PostForm({title = "", textContent = "", mode = "Create",
           handleChange={handleChange} 
           rows={4} 
       />
-      <input 
-          type="file" 
-          accept="image/png, image/webp, image/jpeg" 
-          onChange={handleFileChange}
+      <ImageField
+          id="image"
+          label="Post image"
+          value={post.imageUrl}
+          onFileSelect={handleImageSelect}
+          uploading={uploading}
+          error={uploadError}
       />
-      {post.imageUrl && 
-          <img 
-            src={post.imageUrl} 
-            className="w-full h-auto object-cover rounded"
-          />
-        }
-    
+
     </div>
 
     <div id="form-footer" className="flex justify-center items-center">

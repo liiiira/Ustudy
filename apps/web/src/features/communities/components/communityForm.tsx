@@ -2,11 +2,12 @@ import { useNavigate } from "react-router";
 import React, { useState } from "react";
 import {type CreateCommunityData, type CreateCommunityError } from "../types";
 import { validateLength } from "../../../utils/validators";
-import { uploadImage } from "../../uploads/uploadImage";
+import useImageUpload from "../../uploads/hooks/useImageUpload";
 import * as communityApi from "../api/communities.api";
 import Button from "../../../components/ui/button";
 import FormField from "../../../components/ui/formField";
 import TextField from "../../../components/ui/textField";
+import ImageField from "../../../components/ui/imageField";
 
 type CommunityFormProps = {
   id?: string;
@@ -21,44 +22,31 @@ export default function CommunityForm({name = "", description = "", mode = "Crea
 
   const [community, setCommunity] = useState<CreateCommunityData>({name: name, description: description, imageUrl: imageUrl});
   const [apiError, setApiError] = useState<string>("");
-  const [uploadError, setUploadError] = useState<string>("");
-  const [inputError, setInputError] = useState<CreateCommunityError>({name: [], description: [], imageUrl: []});
+  const [inputError, setInputError] = useState<CreateCommunityError>({name: [], description: []});
   const [valid, setValid] = useState<boolean>(false);
-  const [uploading, setUploading] = useState<boolean>(false);
+  const {upload, uploading, error: uploadError} = useImageUpload("community");
 
   function handleChange(e: React.ChangeEvent<HTMLTextAreaElement> | React.ChangeEvent<HTMLInputElement>){
-    
+
     const newCommunity: CreateCommunityData = {...community, [e.target.name]: e.target.value};
     setCommunity(newCommunity)
     setValid(validateCommunity(newCommunity));
   }
-  async function  handleFileChange(e: React.ChangeEvent<HTMLInputElement>){
 
-    const file = e.target.files?.[0];
-
-    if(!file) return;
-
-    setUploading(true);
-    try{
-      const url = await uploadImage(file, "community");
+  async function handleImageSelect(file: File){
+    const url = await upload(file);
+    if(url)
       setCommunity((prev: CreateCommunityData): CreateCommunityData => ({...prev, imageUrl: url}));
-    }catch(e){
-      if(e instanceof Error)
-        setUploadError(e.message)
-    }finally{
-      setUploading(false);
-    }
   }
 
   function validateCommunity(community: CreateCommunityData): boolean{
-    
+
     const {name, description} = community;
 
     const nameErrors: string[] = validateLength("Community Name", name, 3, 40);
     const descriptionErrors: string[] = validateLength("Community Description", description, 3, 100);
 
-    //HACK: image error handling is not real
-    setInputError({name: nameErrors, description: descriptionErrors, imageUrl: []  })
+    setInputError({name: nameErrors, description: descriptionErrors})
 
     return ![nameErrors, descriptionErrors].some((error: string[]) => error.length > 0);
   }  
@@ -134,19 +122,14 @@ export default function CommunityForm({name = "", description = "", mode = "Crea
 
       </div>
 
-      <div className="flex flex-col gap-2">
-          <input 
-            type="file" 
-            accept="image/jpeg, image/png, image/webp"
-            onChange={handleFileChange}
-          />
-          {community.imageUrl && 
-            <img 
-              src={community.imageUrl}
-              className="w-full h-auto object-cover rounded"
-            />
-          }
-      </div>
+      <ImageField
+          id="image"
+          label="Community image"
+          value={community.imageUrl}
+          onFileSelect={handleImageSelect}
+          uploading={uploading}
+          error={uploadError}
+      />
 
       
     

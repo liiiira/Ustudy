@@ -8,7 +8,6 @@ export type CreatePostData = {
 export type CreatePostError = {
   title: string[];
   textContent: string[];
-  imageUrl?: string[];
 }
 
 export type PostProps = {

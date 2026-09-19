@@ -8,7 +8,6 @@ export type CreateCommunityData = {
 export type CreateCommunityError = {
   name: string[];
   description: string[];
-  imageUrl: string[];
 }
 
 

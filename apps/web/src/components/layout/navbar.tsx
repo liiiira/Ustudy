@@ -1,8 +1,10 @@
 import { useAuth} from "../../features/auth/hooks/useAuth";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import NavbarDropDownMenu from "../ui/navbarDropdownMenu";
+import Button from "../ui/button";
 
 export function Navbar(){
+  const navigate = useNavigate()
   
   const {isAuthenticated, logout, loading, user} = useAuth();
   
@@ -25,12 +27,11 @@ export function Navbar(){
         <Link to="/">Ustudy</Link>
       </div>
 
-      {isAuthenticated &&
+      {isAuthenticated 
 
-        <div id="navbar-right-side" className="flex flex-row gap-20">
+        ? (<div id="navbar-right-side" className="flex flex-row gap-20">
 
           <div className="flex flex-row items-center gap-4">
-            
             <Link 
               to="/communities" 
               className="font-light transition-colors hover:text-blue-700"
@@ -38,11 +39,19 @@ export function Navbar(){
               Communities
             </Link>
           </div>
-          <NavbarDropDownMenu
-            imageUrl={user?.avatarUrl} 
-            logout={logout} 
-          />
-        </div>
+            <NavbarDropDownMenu
+              imageUrl={user?.avatarUrl} 
+              logout={logout} 
+            />
+        </div>)
+        
+        : <div className="flex flex-row justify-center items-center">
+            <Button
+              onClick={() => navigate("/login")}
+            >
+            Log In
+            </Button>
+          </div>
       }
     
 

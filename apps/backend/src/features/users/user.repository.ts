@@ -9,15 +9,14 @@ export async function create(userData: CreateUserRepository) : Promise<User>{
     `
     WITH inserted AS (
       INSERT INTO users(username, hashed_password, email)
-      VALUES($1, $2, $3, $4)
+      VALUES($1, $2, $3)
       RETURNING id, username, email, created_at
     )
     SELECT
       inserted.id,
       inserted.username,
       inserted.email,
-      inserted.created_at AS "createdAt",
-      uploads.public_url AS "avatarUrl"
+      inserted.created_at AS "createdAt"
     FROM inserted`,
     [username, hashedPassword, email],
   );

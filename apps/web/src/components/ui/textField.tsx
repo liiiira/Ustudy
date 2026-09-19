@@ -22,9 +22,12 @@ export default function TextField({id, name,  value, placeholder="", label, hand
           ${value.length > 0  && inputError.length > 0 ?  "focus:ring-2 focus:ring-red-500 border-red-500 bg-red-50" : ""}`}
             id={id} name={name}  value={value} placeholder={placeholder}  onChange={handleChange} rows={rows} maxLength={charLimit} required />
 
+
         <div className="flex flex-row items-center justify-between"> 
+
           <div className=" min-h-5 text-red-500 text-xs">{value.length > 0 && inputError[0]}</div>
           <div className="text-sm text-gray-500 font-medium">{value.length}/{charLimit}</div>
+
         </div>
     </div>
   )

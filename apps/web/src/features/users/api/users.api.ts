@@ -11,9 +11,12 @@ export async function createUser(userData: {email: string, username: string, pas
   return data.user;
 }
 
-export async function updateUser(userId: string, UserData: {email?: string, usernmae?: string, password?: string}): Promise<User | null>{
+export async function updateUser(
+  userId: string, 
+  UserData: {email?: string, usernmae?: string, password?: string, imageUrl?: string}):
+Promise<User | null>{
 
-  const data = await authFetch(`users/${userId}`, {
+  const data = await authFetch(`/users/${userId}`, {
     body: UserData,
     method: "PATCH",
   })
@@ -23,7 +26,7 @@ export async function updateUser(userId: string, UserData: {email?: string, user
 
 export async function getUser(userId: string): Promise<User>{
 
-  const data = await authFetch(`users/${userId}`);
+  const data = await authFetch(`/users/${userId}`);
   
   return data.user;
 }

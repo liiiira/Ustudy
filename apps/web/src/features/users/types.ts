@@ -3,6 +3,7 @@ export type User = {
   username: string;
   createdAt: Date;
   email: string;
+  avatarUrl?: string;
 }
 
 export type SignupUser = {
@@ -16,3 +17,16 @@ export type SignupError = {
   password: string[];
   email: string[];
 }
+
+export type UpdateUserAccount = {
+  username: string;
+  imageUrl?: string;
+}
+
+export type UpdateUserAccountErrors = {
+  username: string[];
+  imageUrl?: string[];
+}
+
+export type ActiveIdType = "account" | "security"
+export const ACTIVE_IDS = ["account" , "security"] as const;

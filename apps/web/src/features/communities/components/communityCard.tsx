@@ -18,7 +18,7 @@ export default function CommunityCard({name, description, id, imageUrl}: Communi
 
   return(
     <div className="bg-white px-8 py-4 grid grid-cols-[4rem_1fr] gap-2 rounded-2xl w-lg hover:cursor-pointer hover:bg-gray-100 transform-color" onClick={handleClick}>
-      <div className="flex w-full h-max items-center justify-center">
+      <div className="w-full aspect-square">
         {imageUrl &&
            <img 
               src={imageUrl}

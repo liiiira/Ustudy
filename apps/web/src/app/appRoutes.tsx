@@ -3,7 +3,7 @@ import Layout from '../components/layout/layout';
 import TestPage from '../TestPage.tsx'
 import LoginPage from '../features/auth/pages/loginPage.tsx';
 import SignupPage from "../features/users/pages/signupPage.tsx";
-import ProfilePage from '../features/users/components/profilePage.tsx';
+import ProfilePage from '../features/users/pages/settingsPage.tsx';
 import ProtectedRoute from "../components/protectedRoute.tsx";
 import CreateCommunityPage from "../features/communities/pages/createCommunityPage.tsx";
 import CommunitiesPage from "../features/communities/pages/communitiesPage.tsx";

@@ -4,6 +4,8 @@ import type { UserRegister, User, UserUpdate, UserAuth } from "./user.schema";
 import { hashPassword } from "../../utils/password";
 import { AppError } from "../../errors/appError";
 
+
+
 export async function create(userData: UserRegister): Promise<User>{
 
   const {username, email, password} = userData;
@@ -60,6 +62,14 @@ export async function findById(id: string): Promise<UserAuth>{
     throw new AppError("User Not Found", 404);
 
   return user;
+}
+
+
+export async function findExistingIds(userIds: string[]): Promise<string[]>{
+
+  const existingIds: string[] = await userRepository.findExistingIds(userIds);
+
+  return existingIds;
 }
 
 
@@ -142,3 +152,4 @@ export async function delelteById(requesterId: string, id: string){
 
   return user;
 }
+

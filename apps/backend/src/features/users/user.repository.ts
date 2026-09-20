@@ -163,3 +163,16 @@ export async function deleteById(id: string): Promise<{id: string} | null>{
   );
   return result.rows[0] ?? null;
 }
+
+export async function findExistingIds(userIds: string[]): Promise<string[]>{
+
+  const result = await pool.query(
+    `
+    SELECT id 
+    FROM users 
+    WHERE id = ANY($1::uuid[])`,
+    [userIds]
+  );
+
+  return result.rows.map((user) => user.id);
+}

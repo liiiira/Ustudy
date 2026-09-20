@@ -19,6 +19,11 @@ export type GroupConversationInput = {
   imageUrl?: string;
 }
 
+export type ConversationUpdate = {
+  name?: string;
+  imageUrl?: string;
+}
+
 export type GroupConversation = {
   id: string;
   type: string;
@@ -68,6 +73,11 @@ export const createConversationSchema = z.discriminatedUnion("type", [
   createDirectConversationSchema,
   createGroupConversationSchema,
 ]);
+
+export const updateConversationSchema = z.object({
+  name: z.string().min(3).max(100).optional(),
+  imageUrl: z.url().optional(),
+});
 
 export const conversationIdSchema = z.object({
   conversationId: z.uuid(),

@@ -4,7 +4,7 @@ import * as userService from "../users/user.service.ts";
 import * as uploadService from "../uploads/upload.service.ts"
 import * as conversationRepository from  "./conversation.repository.ts";
 
-import type { Conversation, CreateConversationInput, DirectConversation, GroupConversation, GroupConversationInput } from "./conversation.schema.ts";
+import type { Conversation, ConversationMember, ConversationUpdate, CreateConversationInput, DirectConversation, GroupConversation, GroupConversationInput } from "./conversation.schema.ts";
 
 
 export async function createOrFindConversation(requesterId: string, body: CreateConversationInput): Promise<{created: boolean, conversation: Conversation}>{
@@ -83,7 +83,50 @@ export async function findMemberIds(conversationId: string): Promise<string[]>{
   return conversationRepository.findMemberIds(conversationId);
 }
 
-async function findMember(conversationId: string, memberId: string){
+export async function findMember(conversationId: string, memberId: string){
   return conversationRepository.findMember(conversationId, memberId);
+}
+
+export async function updateById(requesterId: string, conversationId: string, body: ConversationUpdate): Promise<Conversation>{
+
+  const conversation = await findById(conversationId);
+  if(!conversation) throw new AppError("Conversation not found", 404);
+
+  const requesterMember: ConversationMember | null = await findMember(conversationId, requesterId);
+  if(!requesterMember) throw new AppError("You are not a member of this conversation", 403);
+
+  switch(conversation.type){
+    case "group":
+      return updateGroup(requesterId, requesterMember, conversation as GroupConversation, body);
+
+    case "direct":
+      return updateDirect(requesterId, requesterMember, conversation as DirectConversation, body);
+
+    default:
+      throw new AppError("Unknown conversation type", 500);
+  }
+}
+
+async function updateGroup(requesterId: string, requesterMember: ConversationMember, group: GroupConversation, {name, imageUrl}: ConversationUpdate): Promise<GroupConversation>{
+
+  if(!name && !imageUrl) throw new AppError("Nothing to update", 400);
+
+  if(requesterMember.role !== "admin") throw new AppError("Only an admin can update this conversation", 403);
+
+  let uploadId: string | undefined;
+  if(imageUrl){
+    const upload = await uploadService.verifyUploadOwnerShip(requesterId, {conversationUrl: imageUrl});
+    uploadId = upload.id;
+  }
+
+  const updatedGroup: GroupConversation | null = await conversationRepository.updateGroup(group.id, {uploadId, name});
+  if(!updatedGroup)
+    throw new AppError("Group didn't update unexpected error", 500);
+
+  return updatedGroup;
+}
+
+async function updateDirect(_requesterId: string, _requesterMember: ConversationMember, _direct: DirectConversation, _body: ConversationUpdate): Promise<DirectConversation>{
+  throw new AppError("Direct conversations cannot be updated", 400);
 }
 

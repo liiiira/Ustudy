@@ -24,11 +24,26 @@ export async function  getById(req: Request<{conversationId: string}>, res: Resp
   const userId = req.user!.id;
   const {conversationId} = req.params;
 
-  const conversation: Conversation = await conversationService.getById(userId, conversationId!)
+  const conversation: Conversation = await conversationService.getById(userId, conversationId)
 
   return res.status(200).json({
     status: "success",
     message: "Conversation fetched successfuly",
     conversation: conversation
+  })
+}
+
+export async function  updateById(req: Request<{conversationId: string}>, res: Response){
+
+  const userId = req.user!.id;
+  const {conversationId} = req.params;
+  const requestBody = req.body;
+
+  const updatedConversation: Conversation = await conversationService.updateById(userId, conversationId, requestBody)
+
+  return res.status(200).json({
+    status: "success",
+    message: "Conversation updated successfuly",
+    conversation: updatedConversation
   })
 }

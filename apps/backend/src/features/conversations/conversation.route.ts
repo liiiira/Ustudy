@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { validateBody, validateParams } from "../../middlewares/validate";
-import { conversationIdSchema, createConversationSchema } from "./conversation.schema";
+import { conversationIdSchema, createConversationSchema, updateConversationSchema } from "./conversation.schema";
 import isAuthenticated from "../../middlewares/isAuthenticated";
 import * as conversationController from "./conversation.controller.ts"
 
@@ -19,6 +19,12 @@ router.get("/:conversationId",
   conversationController.getById
 );
 
+router.patch("/:conversationId",
+  isAuthenticated,
+  validateParams(conversationIdSchema),
+  validateBody(updateConversationSchema),
+  conversationController.updateById
+);
 
 export default router;
 

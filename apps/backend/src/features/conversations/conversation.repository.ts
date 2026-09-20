@@ -9,6 +9,11 @@ type GroupConversationInputRepository= {
   uploadId?: string;
 }
 
+type GroupConversationUpdateRepository= {
+  name?: string;
+  uploadId?: string;
+}
+
 export async function findOrCreateDirect({directKey, requesterId, otherUserId}: DirectConversationInput): Promise<{created: boolean, conversation: DirectConversation} | null>{
   const result = await pool.query(
     `
@@ -94,6 +99,7 @@ export async function findMemberIds(conversationId: string): Promise<string[]>{
   return result.rows.map((row) => row.memberId);
 }
 
+
 export async function findById(conversationId: string): Promise<GroupConversation | DirectConversation | null>{
   const result = await pool.query(
     `
@@ -133,4 +139,44 @@ export async function findMember(conversationId: string, memberId: string): Prom
   return result.rows[0] ?? null;
 }
 
+export async function updateGroup(conversationId: string, {name, uploadId}: GroupConversationUpdateRepository): Promise<GroupConversation | null>{
+
+
+  let updateQuery: string[] = [];
+  let queryValues: string[] = [];
+
+  if(name){
+    queryValues.push(name);
+    updateQuery.push(` name = $${queryValues.length} `)
+  }
+
+  if(uploadId){
+    queryValues.push(uploadId);
+    updateQuery.push(` upload_id = $${queryValues.length} `)
+  }
+
+  queryValues.push(conversationId);
+  const result = await pool.query(`
+    WITH updated AS (
+      UPDATE conversations
+      SET
+        ${updateQuery.join(',')}
+      WHERE id = $${queryValues.length}
+      RETURNING id, name, type, created_at, owner_id, upload_id
+    )
+    SELECT
+      updated.id AS "id",
+      updated.name AS "name",
+      updated.type AS "type",
+      updated.created_at AS "createdAt",
+      updated.owner_id AS "ownerId",
+      uploads.public_url AS "imageUrl"
+    FROM updated
+    LEFT JOIN uploads
+      ON updated.upload_id = uploads.id`,
+    queryValues
+  );
+
+  return result.rows[0] ?? null;
+}
 

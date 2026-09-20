@@ -64,6 +64,19 @@ async function createGroup(requesterId: string, {memberIds, name, imageUrl}: Gro
   return {created: true, conversation: groupConversation};
 }
 
+export async function getById(requesterId: string, conversationId: string): Promise<GroupConversation | DirectConversation>{
+
+  const conversation = await findById(conversationId);
+
+  if(!conversation) throw new AppError("Conversation doesn't exist", 404);
+
+  const memberIds = await findMemberIds(conversationId)
+
+  if(!memberIds.includes(requesterId)) throw new AppError("You are not a member of this conversation", 403);
+
+  return conversation;
+}
+
 export async function findById(conversationId: string): Promise<GroupConversation | DirectConversation | null> {
 
   return conversationRepository.findById(conversationId);

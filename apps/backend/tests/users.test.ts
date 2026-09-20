@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import app from '../src/app';
 import pool from '../src/config/postgres';
-import { createUser, registerAndLogin, resetUsersTable } from './utils.ts';
+import { createUser, registerAndLogin, resetUsersTable, presignUpload } from './utils.ts';
 
 const BASE_URL = "/api/v1/users";
 
@@ -351,5 +351,168 @@ describe("DELETE /api/v1/users/:id", () => {
     const res = await request(app).delete(`${BASE_URL}/${id}`);
 
     expect(res.status).toBe(401);
+  });
+});
+
+describe("users (avatars)", () => {
+
+  beforeEach(resetUsersTable);
+
+  it("sets the caller's avatar from their own avatar upload", async () => {
+    const { id, accessToken } = await registerAndLogin(TEST_USER);
+    const avatarUrl = await presignUpload(accessToken, "avatar");
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ avatarUrl });
+
+    expect(res.status).toBe(200);
+    expect(res.body.user.avatarUrl).toBe(avatarUrl);
+
+    const row = await pool.query(
+      `SELECT up.public_url FROM users u JOIN uploads up ON u.avatar_id = up.id WHERE u.id = $1`,
+      [id]
+    );
+    expect(row.rows[0].public_url).toBe(avatarUrl);
+  });
+
+  it("sets the avatar alongside a username change", async () => {
+    const { id, accessToken } = await registerAndLogin(TEST_USER);
+    const avatarUrl = await presignUpload(accessToken, "avatar");
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ username: "renamed", avatarUrl });
+
+    expect(res.status).toBe(200);
+    expect(res.body.user).toMatchObject({ username: "renamed", avatarUrl });
+  });
+
+  it("returns the avatar on /me and /:id after it is set", async () => {
+    const { id, accessToken } = await registerAndLogin(TEST_USER);
+    const avatarUrl = await presignUpload(accessToken, "avatar");
+
+    await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ username: TEST_USER.username, avatarUrl });
+
+    const me = await request(app).get(`${BASE_URL}/me`).set("Authorization", `Bearer ${accessToken}`);
+    expect(me.status).toBe(200);
+    expect(me.body.user.avatarUrl).toBe(avatarUrl);
+
+    const byId = await request(app).get(`${BASE_URL}/${id}`).set("Authorization", `Bearer ${accessToken}`);
+    expect(byId.status).toBe(200);
+    expect(byId.body.user.avatarUrl).toBe(avatarUrl);
+  });
+
+  it("returns a null avatarUrl for a user who has not set one", async () => {
+    const { accessToken } = await registerAndLogin(TEST_USER);
+
+    const me = await request(app).get(`${BASE_URL}/me`).set("Authorization", `Bearer ${accessToken}`);
+    expect(me.status).toBe(200);
+    expect(me.body.user.avatarUrl).toBeNull();
+  });
+
+  it("replaces an existing avatar", async () => {
+    const { id, accessToken } = await registerAndLogin(TEST_USER);
+    const first = await presignUpload(accessToken, "avatar");
+    const second = await presignUpload(accessToken, "avatar");
+
+    await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ username: TEST_USER.username, avatarUrl: first });
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ username: TEST_USER.username, avatarUrl: second });
+
+    expect(res.status).toBe(200);
+    expect(res.body.user.avatarUrl).toBe(second);
+  });
+
+  it("returns 204 when the same avatar is sent again", async () => {
+    const { id, accessToken } = await registerAndLogin(TEST_USER);
+    const avatarUrl = await presignUpload(accessToken, "avatar");
+
+    await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ username: TEST_USER.username, avatarUrl });
+
+    const again = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ username: TEST_USER.username, avatarUrl });
+
+    expect(again.status).toBe(204);
+  });
+
+  it("returns 404 for an avatarUrl that was never presigned", async () => {
+    const { id, accessToken } = await registerAndLogin(TEST_USER);
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ username: TEST_USER.username, avatarUrl: "https://example.com/avatars/nope.png" });
+
+    expect(res.status).toBe(404);
+
+    const row = await pool.query("SELECT avatar_id FROM users WHERE id = $1", [id]);
+    expect(row.rows[0].avatar_id).toBeNull();
+  });
+
+  it("does not allow using another user's upload as an avatar", async () => {
+    const { id, accessToken } = await registerAndLogin(TEST_USER);
+    const { accessToken: otherToken } = await registerAndLogin(OTHER_USER);
+    const someoneElsesAvatar = await presignUpload(otherToken, "avatar");
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ username: TEST_USER.username, avatarUrl: someoneElsesAvatar });
+
+    expect(res.status).toBe(403);
+
+    const row = await pool.query("SELECT avatar_id FROM users WHERE id = $1", [id]);
+    expect(row.rows[0].avatar_id).toBeNull();
+  });
+
+  it("does not allow an upload of a different kind as an avatar", async () => {
+    const { id, accessToken } = await registerAndLogin(TEST_USER);
+    const postImage = await presignUpload(accessToken, "post");
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ username: TEST_USER.username, avatarUrl: postImage });
+
+    expect(res.status).toBe(403);
+  });
+
+  it("returns 400 when avatarUrl is not a URL", async () => {
+    const { id, accessToken } = await registerAndLogin(TEST_USER);
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ username: TEST_USER.username, avatarUrl: "not a url" });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("ignores avatarUrl at registration", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .send({ ...TEST_USER, avatarUrl: "https://example.com/avatars/nope.png" });
+
+    expect(res.status).toBe(201);
+
+    const row = await pool.query("SELECT avatar_id FROM users WHERE id = $1", [res.body.user.id]);
+    expect(row.rows[0].avatar_id).toBeNull();
   });
 });

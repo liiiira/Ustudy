@@ -81,7 +81,7 @@ export async function updateById(requesterId: string, id: string, userData:UserU
   if(requesterId !== id)
     throw new AppError("You are not allowed to update this user", 403);
 
-  if(!username && !password && !email)
+  if(!username && !password && !email && !avatarUrl)
     throw new AppError("Body is Empty", 400);
 
   const modifiedAttributes: Record<string, string> = {}

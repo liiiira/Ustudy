@@ -1,6 +1,6 @@
 import request from "supertest";
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
-import { createUser, loginUser, createCommunity, resetCommunitiesTable, resetTables } from "./utils.ts";
+import { createUser, loginUser, createCommunity, resetCommunitiesTable, resetTables, presignUpload } from "./utils.ts";
 import app from "../src/app.ts";
 import pool from "../src/config/postgres.ts";
 
@@ -461,5 +461,160 @@ describe("DELETE /api/v1/communities/:id", () => {
     const res = await request(app).delete(`${BASE_URL}/${community.id}`);
 
     expect(res.status).toBe(401);
+  });
+});
+
+describe("communities (images)", () => {
+
+  beforeEach(resetCommunitiesTable);
+
+  it("creates a community with the requester's own community upload and returns its URL", async () => {
+    const imageUrl = await presignUpload(accessToken, "community");
+
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ name: "with-image", description: "has a picture", imageUrl });
+
+    expect(res.status).toBe(201);
+    expect(res.body.community.imageUrl).toBe(imageUrl);
+
+    const row = await pool.query(
+      `SELECT u.public_url FROM communities c JOIN uploads u ON c.image_id = u.id WHERE c.id = $1`,
+      [res.body.community.id]
+    );
+    expect(row.rows[0].public_url).toBe(imageUrl);
+  });
+
+  it("returns a null imageUrl when no image is given", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ name: "no-image", description: "plain" });
+
+    expect(res.status).toBe(201);
+    expect(res.body.community.imageUrl).toBeNull();
+  });
+
+  it("returns 404 for an imageUrl that was never presigned and creates nothing", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ name: "unknown-image", description: "plain", imageUrl: "https://example.com/communities/nope.png" });
+
+    expect(res.status).toBe(404);
+    const count = await pool.query("SELECT count(*)::int AS n FROM communities");
+    expect(count.rows[0].n).toBe(0);
+  });
+
+  it("does not allow attaching another user's upload", async () => {
+    const someoneElsesImage = await presignUpload(otherAccessToken, "community");
+
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ name: "stolen-image", description: "plain", imageUrl: someoneElsesImage });
+
+    expect(res.status).toBe(403);
+    const count = await pool.query("SELECT count(*)::int AS n FROM communities");
+    expect(count.rows[0].n).toBe(0);
+  });
+
+  it("does not allow an upload of a different kind", async () => {
+    const postImage = await presignUpload(accessToken, "post");
+
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ name: "wrong-kind", description: "plain", imageUrl: postImage });
+
+    expect(res.status).toBe(403);
+  });
+
+  it("returns 400 when imageUrl is not a URL", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ name: "bad-url", description: "plain", imageUrl: "not a url" });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("includes imageUrl in the detail and list reads", async () => {
+    const imageUrl = await presignUpload(accessToken, "community");
+    const created = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ name: "readable", description: "plain", imageUrl });
+
+    const detail = await request(app)
+      .get(`${BASE_URL}/${created.body.community.id}`)
+      .set("Authorization", `Bearer ${accessToken}`);
+    expect(detail.status).toBe(200);
+    expect(detail.body.community.imageUrl).toBe(imageUrl);
+
+    const list = await request(app)
+      .get(BASE_URL)
+      .set("Authorization", `Bearer ${accessToken}`);
+    expect(list.status).toBe(200);
+    expect(list.body.communities[0].imageUrl).toBe(imageUrl);
+  });
+
+  it("replaces the image on update", async () => {
+    const first = await presignUpload(accessToken, "community");
+    const second = await presignUpload(accessToken, "community");
+    const community = await createCommunity(accessToken, { name: "updatable", description: "plain" });
+
+    const setFirst = await request(app)
+      .patch(`${BASE_URL}/${community.id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ imageUrl: first });
+    expect(setFirst.status).toBe(200);
+    expect(setFirst.body.community.imageUrl).toBe(first);
+
+    const setSecond = await request(app)
+      .patch(`${BASE_URL}/${community.id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ imageUrl: second });
+    expect(setSecond.status).toBe(200);
+    expect(setSecond.body.community.imageUrl).toBe(second);
+
+    const row = await pool.query(
+      `SELECT u.public_url FROM communities c JOIN uploads u ON c.image_id = u.id WHERE c.id = $1`,
+      [community.id]
+    );
+    expect(row.rows[0].public_url).toBe(second);
+  });
+
+  it("returns 204 when the same image is sent again", async () => {
+    const imageUrl = await presignUpload(accessToken, "community");
+    const community = await createCommunity(accessToken, { name: "same-image", description: "plain" });
+
+    await request(app)
+      .patch(`${BASE_URL}/${community.id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ imageUrl });
+
+    const again = await request(app)
+      .patch(`${BASE_URL}/${community.id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ imageUrl });
+
+    expect(again.status).toBe(204);
+  });
+
+  it("does not allow another user's upload on update and leaves the community unchanged", async () => {
+    const someoneElsesImage = await presignUpload(otherAccessToken, "community");
+    const community = await createCommunity(accessToken, { name: "guarded", description: "plain" });
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${community.id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ imageUrl: someoneElsesImage });
+
+    expect(res.status).toBe(403);
+
+    const row = await pool.query("SELECT image_id FROM communities WHERE id = $1", [community.id]);
+    expect(row.rows[0].image_id).toBeNull();
   });
 });

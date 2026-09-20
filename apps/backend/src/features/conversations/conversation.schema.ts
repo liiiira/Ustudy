@@ -57,6 +57,10 @@ export type ConversationMember = {
   lastReadMessageId: string | null;
 }
 
+export type AddMembersBody = {
+  memberIds: string[];
+}
+
 export const createDirectConversationSchema = z.object({
   otherUserId: z.uuid(),
   type: z.literal("direct"), 
@@ -79,6 +83,9 @@ export const updateConversationSchema = z.object({
   imageUrl: z.url().optional(),
 });
 
+export const addMembersSchema = z.object({
+  memberIds: z.array(z.uuid()).min(1),
+})
 export const conversationIdSchema = z.object({
   conversationId: z.uuid(),
 })

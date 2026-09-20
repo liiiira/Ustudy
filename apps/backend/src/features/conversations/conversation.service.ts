@@ -130,3 +130,29 @@ async function updateDirect(_requesterId: string, _requesterMember: Conversation
   throw new AppError("Direct conversations cannot be updated", 400);
 }
 
+
+export async function addMembers(requesterId: string, conversationId: string, { memberIds } :{memberIds: string[]}){
+
+  const conversation = await findById(conversationId)
+  if(!conversation) throw new AppError("Conversation not found", 404);
+  if(conversation.type === "direct") throw new AppError("Cannot add members to a direct conversation", 400);
+
+  const requesterMember: ConversationMember | null = await findMember(conversationId, requesterId)
+
+  if(!requesterMember) throw new AppError("You are not a member of this conversation", 404);
+  if(requesterMember.role !== "admin") throw new AppError("Only an admin can add members to this conversation", 403);
+
+  const uniqueMemberIds = [...new Set(memberIds)];
+  const existingUserIds: string[] = await userService.findExistingIds(uniqueMemberIds);
+  const missingUserIds: string[] = uniqueMemberIds.filter((memberId) => !existingUserIds.includes(memberId));
+
+  if(missingUserIds.length > 0)
+    throw new AppError("Some users were not found", 400, {missingUserIds});
+
+  const addedMembers: string[] = await conversationRepository.addMembers(conversationId, uniqueMemberIds);
+
+  return addedMembers;
+
+}
+
+

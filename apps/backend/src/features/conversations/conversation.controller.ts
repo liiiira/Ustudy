@@ -47,3 +47,19 @@ export async function  updateById(req: Request<{conversationId: string}>, res: R
     conversation: updatedConversation
   })
 }
+
+
+export async function addMembers(req: Request<{conversationId: string}>, res: Response){
+
+  const userId = req.user!.id;
+  const {conversationId} = req.params;
+  const requestBody = req.body;
+
+  const addedMembers: string[] = await conversationService.addMembers(userId, conversationId, requestBody);
+
+  return res.status(200).json({
+    status: "success",
+    message: "Members added successfuly",
+    members: addedMembers
+  })
+}

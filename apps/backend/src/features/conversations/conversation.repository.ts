@@ -180,3 +180,19 @@ export async function updateGroup(conversationId: string, {name, uploadId}: Grou
   return result.rows[0] ?? null;
 }
 
+
+export async function addMembers(conversationId: string, memberIds: string[]): Promise<string[]> {
+
+  const result = await pool.query(
+    `
+    INSERT INTO conversation_members (conversation_id, member_id, role)
+    SELECT $1, m.member_id, 'member'
+    FROM unnest($2::uuid[]) AS m(member_id)
+    ON CONFLICT (conversation_id, member_id) DO NOTHING
+    RETURNING member_id
+    `,
+    [conversationId, memberIds]
+  );
+
+  return result.rows.map((row) => row.member_id);
+}

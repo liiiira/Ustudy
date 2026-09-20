@@ -30,15 +30,16 @@ export async function createPresignUpload(userId: string, presignData: PresignTy
 }
 
 type UploadUrl =
-  | { avatarUrl: string; postUrl?: never; communityUrl?: never }
-  | { postUrl: string; avatarUrl?: never; communityUrl?: never }
-  | { communityUrl: string; avatarUrl?: never; postUrl?: never };
+  | { avatarUrl: string; postUrl?: never; communityUrl?: never; conversationUrl?: never; }
+  | { postUrl: string; avatarUrl?: never; communityUrl?: never; conversationUrl?: never; }
+  | { communityUrl: string; avatarUrl?: never; postUrl?: never; conversationUrl?: never; }
+  | { conversationUrl: string; avatarUrl?: never; postUrl?: never; communityUrl?: never; };
 
 export async function verifyUploadOwnerShip(requesterId: string, uploadUrl: UploadUrl): Promise<Upload>{
   
-  const {avatarUrl, postUrl, communityUrl} = uploadUrl;
+  const {avatarUrl, postUrl, communityUrl, conversationUrl} = uploadUrl;
     
-  const count = [avatarUrl, postUrl, communityUrl].filter(Boolean).length;
+  const count = [avatarUrl, postUrl, communityUrl, conversationUrl].filter(Boolean).length;
 
   if (count !== 1) {
     throw new AppError("Provide exactly one of avatarUrl, postUrl, communityUrl", 400);
@@ -60,6 +61,11 @@ export async function verifyUploadOwnerShip(requesterId: string, uploadUrl: Uplo
   if(communityUrl){
     publicUrl = communityUrl;
     kind = "community";
+  }
+
+  if(conversationUrl){
+    publicUrl = conversationUrl;
+    kind = "conversation"
   }
   
   const upload: Upload | null = await uploadRepository.findByPublicUrl(publicUrl!)

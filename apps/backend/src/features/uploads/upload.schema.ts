@@ -9,6 +9,7 @@ export const FOLDER_BY_KIND: Record<UploadKind, string> = {
   "avatar": "avatars",
   "community": "communities",
   "post": "posts",
+  "conversation": "conversations"
 } as const;
 
 export const EXTENSION_BY_TYPE: Record<UploadContentType, string> = {
@@ -24,13 +25,13 @@ export const presignRequestSchema = z.object({
 });
 
 export type PresignType = {
-  kind: "avatar" | "post" | "community";
+  kind: "avatar" | "post" | "community" | "conversation";
   contentType: "image/png" | "image/jpeg" | "image/webp";
   size: number;
 }
 
 export type UploadInput = {
-  kind: "avatar" | "post" | "community";
+  kind: "avatar" | "post" | "community" |"conversation";
   objectKey: string;
   publicUrl: string;
   contentType: string;

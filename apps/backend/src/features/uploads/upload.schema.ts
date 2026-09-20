@@ -19,7 +19,7 @@ export const EXTENSION_BY_TYPE: Record<UploadContentType, string> = {
 }
 
 export const presignRequestSchema = z.object({
-  kind: z.enum(["avatar", "post", "community"]),
+  kind: z.enum(["avatar", "post", "community", "conversation"]),
   contentType: z.enum(["image/png", "image/jpeg", "image/webp"]),
   size: z.number().positive().max(MAX_UPLOAD_BYTES),
 });

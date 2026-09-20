@@ -35,7 +35,7 @@ export async function findOrCreateDirect({directKey, requesterId, otherUserId}: 
         conv.id AS "id",
         conv.type AS "type",
         conv.created_at AS "createdAt",
-        conv.created AS "created",
+        conv.created AS "created"
       FROM conv`,
       [directKey, [requesterId, otherUserId]]
   );

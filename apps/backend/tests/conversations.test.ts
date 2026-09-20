@@ -2,7 +2,7 @@ import request from "supertest";
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import app from "../src/app.ts";
 import pool from "../src/config/postgres.ts";
-import { resetTables, resetConversationsTable, registerAndLogin } from "./utils.ts";
+import { resetTables, resetConversationsTable, registerAndLogin, presignUpload } from "./utils.ts";
 
 const BASE_URL = "/api/v1/conversations";
 const MEMBERS_TABLE = "conversation_members";
@@ -263,6 +263,110 @@ describe("POST /api/v1/conversations (group)", () => {
       .send({ type: "group", name: "Bad ids", memberIds: ["nope"] });
 
     expect(res.status).toBe(400);
+  });
+});
+
+describe("POST /api/v1/conversations (group image)", () => {
+
+  beforeEach(async () => {
+    await resetConversationsTable();
+  });
+
+  it("attaches the requester's own conversation upload and returns its URL", async () => {
+    const imageUrl = await presignUpload(ownerToken, "conversation");
+
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "group", name: "With image", memberIds: [memberId], imageUrl });
+
+    expect(res.status).toBe(201);
+    expect(res.body.conversation.imageUrl).toBe(imageUrl);
+
+    const row = await pool.query(
+      `SELECT c.upload_id, u.public_url
+       FROM conversations c JOIN uploads u ON c.upload_id = u.id
+       WHERE c.id = $1`,
+      [res.body.conversation.id]
+    );
+    expect(row.rows).toHaveLength(1);
+    expect(row.rows[0].public_url).toBe(imageUrl);
+  });
+
+  it("returns a null imageUrl when no image is given", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "group", name: "No image", memberIds: [memberId] });
+
+    expect(res.status).toBe(201);
+    expect(res.body.conversation.imageUrl).toBeNull();
+
+    const row = await pool.query("SELECT upload_id FROM conversations WHERE id = $1", [res.body.conversation.id]);
+    expect(row.rows[0].upload_id).toBeNull();
+  });
+
+  it("returns 404 for an imageUrl that was never presigned and creates nothing", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({
+        type: "group",
+        name: "Unknown image",
+        memberIds: [memberId],
+        imageUrl: "https://example.com/conversations/not-an-upload.png",
+      });
+
+    expect(res.status).toBe(404);
+    expect(await countRows("conversations", "true", [])).toBe(0);
+  });
+
+  it("does not allow attaching another user's upload", async () => {
+    const someoneElsesImage = await presignUpload(memberToken, "conversation");
+
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "group", name: "Stolen image", memberIds: [memberId], imageUrl: someoneElsesImage });
+
+    expect(res.status).toBe(403);
+    expect(await countRows("conversations", "true", [])).toBe(0);
+  });
+
+  it("does not allow an upload of a different kind", async () => {
+    const postImage = await presignUpload(ownerToken, "post");
+
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "group", name: "Wrong kind", memberIds: [memberId], imageUrl: postImage });
+
+    expect(res.status).toBe(403);
+    expect(await countRows("conversations", "true", [])).toBe(0);
+  });
+
+  it("returns 400 when imageUrl is not a URL", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "group", name: "Bad url", memberIds: [memberId], imageUrl: "not a url" });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("ignores imageUrl on a direct conversation", async () => {
+    const imageUrl = await presignUpload(ownerToken, "conversation");
+
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "direct", otherUserId: memberId, imageUrl });
+
+    expect(res.status).toBe(201);
+    expect(res.body.conversation.imageUrl).toBeUndefined();
+
+    const row = await pool.query("SELECT upload_id FROM conversations WHERE id = $1", [res.body.conversation.id]);
+    expect(row.rows[0].upload_id).toBeNull();
   });
 });
 

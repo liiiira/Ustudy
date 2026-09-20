@@ -103,6 +103,19 @@ export async function resetUsersTable(){
   await pool.query("TRUNCATE users CASCADE");
 }
 
+// Creates a real uploads row owned by the caller (the S3 presigner signs
+// locally, so this never touches R2) and returns its public URL — the value
+// a client would then submit as imageUrl/avatarUrl.
+export async function presignUpload(accessToken: string, kind: "avatar" | "post" | "community" | "conversation"): Promise<string> {
+
+  const res = await request(app)
+    .post("/api/v1/uploads/presign")
+    .set("Authorization", `Bearer ${accessToken}`)
+    .send({ kind, contentType: "image/png", size: 1024 });
+
+  return res.body.urls.publicUrl;
+}
+
 // cascades to members and messages
 export async function resetConversationsTable(){
   await pool.query("TRUNCATE conversations CASCADE");

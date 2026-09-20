@@ -5,6 +5,7 @@
   "scripts": {
     "migrate": "./migrate.sh",
     "test": "./test.sh" ,
+    "loc": "./loc.sh",
     "dev": "./dev.sh",
     "dev-script": "concurrently \"pnpm dev:db\" \"pnpm dev:backend\" \"pnpm dev:frontend\"",
     "dev:db": "docker compose up -d",

@@ -5,7 +5,7 @@ import * as conversationRepository from  "./conversation.repository.ts";
 import type { CreateConversationInput, DirectConversation, GroupConversation, GroupConversationInput } from "./conversation.schema.ts";
 
 
-export async function createOrFindConversation(requesterId: string, body: CreateConversationInput): Promise<GroupConversation | DirectConversation>{
+export async function createOrFindConversation(requesterId: string, body: CreateConversationInput): Promise<{created: boolean, conversation: GroupConversation | DirectConversation}>{
 
   switch(body.type){
     case "direct": return findOrCreateDirect(requesterId, body.otherUserId);
@@ -19,7 +19,7 @@ export async function createOrFindConversation(requesterId: string, body: Create
 }
 
 
-async function findOrCreateDirect(requesterId: string, otherUserId: string): Promise<DirectConversation>{
+async function findOrCreateDirect(requesterId: string, otherUserId: string): Promise<{created: boolean, conversation: DirectConversation}>{
 
   if(requesterId === otherUserId) throw new AppError("Cannot message yourself", 400);
 
@@ -30,13 +30,13 @@ async function findOrCreateDirect(requesterId: string, otherUserId: string): Pro
   const [a, b] = [requesterId, otherUserId].sort();
   const directKey = `${a}:${b}`;
 
-  const conversation: DirectConversation | null = await conversationRepository.findOrCreateDirect({directKey, requesterId, otherUserId})
-  if(!conversation) throw new AppError("Failed to create or find the direct conversation", 500);
+  const response = await conversationRepository.findOrCreateDirect({directKey, requesterId, otherUserId})
+  if(!response) throw new AppError("Failed to create or find the direct conversation", 500);
 
-  return conversation;
+  return response;
 }
 
-async function createGroup(requesterId: string, {memberIds, name, uploadId}: GroupConversationInput): Promise<GroupConversation>{
+async function createGroup(requesterId: string, {memberIds, name, uploadId}: GroupConversationInput): Promise<{created: boolean, conversation: GroupConversation}>{
   
   const ownerId = requesterId;
 
@@ -54,7 +54,7 @@ async function createGroup(requesterId: string, {memberIds, name, uploadId}: Gro
   if(!groupConversation)
     throw new AppError("Couldn't create group conversation due to internal error", 500);
 
-  return groupConversation;
+  return {created: true, conversation: groupConversation};
 }
 
 

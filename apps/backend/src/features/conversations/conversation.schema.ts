@@ -57,4 +57,4 @@ export const createGroupConversationSchema = z.object({
 export const createConversationSchema = z.discriminatedUnion("type", [
   createDirectConversationSchema,
   createGroupConversationSchema,
-])
+]);

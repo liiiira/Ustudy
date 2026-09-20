@@ -9,7 +9,7 @@ type GroupConversationInputRepository= {
   uploadId?: string;
 }
 
-export async function findOrCreateDirect({directKey, requesterId, otherUserId}: DirectConversationInput): Promise<DirectConversation | null>{
+export async function findOrCreateDirect({directKey, requesterId, otherUserId}: DirectConversationInput): Promise<{created: boolean, conversation: DirectConversation} | null>{
   const result = await pool.query(
     `
       WITH inserted AS (
@@ -20,9 +20,9 @@ export async function findOrCreateDirect({directKey, requesterId, otherUserId}: 
         RETURNING id, direct_key, created_at
       ),
       WITH conv AS (
-        SELECT id, type, created_at FROM inserted
+        SELECT id, type, created_at, true AS created FROM inserted
         UNION ALL 
-        SELECT id, direct_key, created_at 
+        SELECT id, direct_key, created_at, false AS created
         WHERE direct_key = $1 AND NOT EXITS (SELECT 1 FROM inserted)
       ),
       WITH members AS (
@@ -32,14 +32,19 @@ export async function findOrCreateDirect({directKey, requesterId, otherUserId}: 
           ($3, conv.id)
       )
       SELECT 
-        id,
-        type, 
-        created_at AS "createdAt"
+        inserted.id AS "id",
+        inseretd.type AS "type", 
+        inserted.created_at AS "createdAt",
+        conv.created AS "created",
       FROM inserted,`,
       [directKey, requesterId, otherUserId]
   );
 
-  return result.rows[0] ?? null;
+  if(result.rows[0]){
+    const {created, ...conversation} = result.rows[0];
+    return {created, conversation}
+  }
+  return null;
 }
 
 export async function createGroup({memberIds, uploadId, name, ownerId}: GroupConversationInputRepository): Promise<GroupConversation | null>{

@@ -691,3 +691,158 @@ describe("PATCH /api/v1/conversations/:conversationId", () => {
     expect(res.status).toBe(401);
   });
 });
+
+describe("POST /api/v1/conversations/:conversationId/members", () => {
+
+  beforeEach(async () => {
+    await resetConversationsTable();
+  });
+
+  async function createGroup(token: string, name: string, memberIds: string[]): Promise<string> {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ type: "group", name, memberIds });
+    return res.body.conversation.id;
+  }
+
+  async function createDirect(token: string, otherUserId: string): Promise<string> {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ type: "direct", otherUserId });
+    return res.body.conversation.id;
+  }
+
+  it("lets the admin add members", async () => {
+    const id = await createGroup(ownerToken, "Growing", [memberId]);
+
+    const res = await request(app)
+      .post(`${BASE_URL}/${id}/members`)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ memberIds: [thirdId] });
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("success");
+    expect(res.body.members).toEqual([thirdId]);
+
+    const row = await pool.query(
+      `SELECT role FROM ${MEMBERS_TABLE} WHERE conversation_id = $1 AND member_id = $2`,
+      [id, thirdId]
+    );
+    expect(row.rows).toHaveLength(1);
+    expect(row.rows[0].role).toBe("member");
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(3);
+  });
+
+  it("is idempotent — already-present members are skipped and only new ones returned", async () => {
+    const id = await createGroup(ownerToken, "Idempotent", [memberId]);
+
+    const res = await request(app)
+      .post(`${BASE_URL}/${id}/members`)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ memberIds: [memberId, thirdId] });
+
+    expect(res.status).toBe(200);
+    expect(res.body.members).toEqual([thirdId]);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(3);
+
+    const again = await request(app)
+      .post(`${BASE_URL}/${id}/members`)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ memberIds: [thirdId] });
+
+    expect(again.status).toBe(200);
+    expect(again.body.members).toEqual([]);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(3);
+  });
+
+  it("does not allow a non-admin member to add members", async () => {
+    const id = await createGroup(ownerToken, "Locked", [memberId]);
+
+    const res = await request(app)
+      .post(`${BASE_URL}/${id}/members`)
+      .set("Authorization", `Bearer ${memberToken}`)
+      .send({ memberIds: [thirdId] });
+
+    expect(res.status).toBe(403);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(2);
+  });
+
+  it("does not allow a non-member to add members", async () => {
+    const id = await createGroup(ownerToken, "Private", [memberId]);
+
+    const res = await request(app)
+      .post(`${BASE_URL}/${id}/members`)
+      .set("Authorization", `Bearer ${tokenFor(thirdId)}`)
+      .send({ memberIds: [thirdId] });
+
+    expect([403, 404]).toContain(res.status);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(2);
+  });
+
+  it("rejects adding members to a direct conversation", async () => {
+    const id = await createDirect(ownerToken, memberId);
+
+    const res = await request(app)
+      .post(`${BASE_URL}/${id}/members`)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ memberIds: [thirdId] });
+
+    expect(res.status).toBe(400);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(2);
+  });
+
+  it("returns 400 when any member does not exist and adds nothing", async () => {
+    const id = await createGroup(ownerToken, "Ghost", [memberId]);
+
+    const res = await request(app)
+      .post(`${BASE_URL}/${id}/members`)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ memberIds: [thirdId, NONEXISTENT_ID] });
+
+    expect(res.status).toBe(400);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(2);
+  });
+
+  it("returns 400 for an empty memberIds list", async () => {
+    const id = await createGroup(ownerToken, "Empty", [memberId]);
+
+    const res = await request(app)
+      .post(`${BASE_URL}/${id}/members`)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ memberIds: [] });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when memberIds contains a non-uuid", async () => {
+    const id = await createGroup(ownerToken, "Bad ids", [memberId]);
+
+    const res = await request(app)
+      .post(`${BASE_URL}/${id}/members`)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ memberIds: ["nope"] });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 404 for a conversation that does not exist", async () => {
+    const res = await request(app)
+      .post(`${BASE_URL}/${NONEXISTENT_ID}/members`)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ memberIds: [thirdId] });
+
+    expect(res.status).toBe(404);
+  });
+
+  it("requires authentication", async () => {
+    const id = await createGroup(ownerToken, "Auth", [memberId]);
+
+    const res = await request(app)
+      .post(`${BASE_URL}/${id}/members`)
+      .send({ memberIds: [thirdId] });
+
+    expect(res.status).toBe(401);
+  });
+});

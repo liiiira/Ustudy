@@ -119,12 +119,12 @@ export async function findMember(conversationId: string, memberId: string): Prom
   
   const result = await pool.query(
     `
-      SEELECT 
+      SELECT 
         member_id AS "memberId",
         conversation_id AS "conversationId",
         role,
         joined_at AS "joinedAt",
-        last_read_message AS "lastReadMessage"
+        last_read_message_id AS "lastReadMessageId"
       FROM conversation_members
       WHERE conversation_id = $1 AND member_id = $2`,
     [conversationId, memberId]

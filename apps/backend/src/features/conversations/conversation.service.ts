@@ -1,7 +1,9 @@
 import { AppError } from "../../errors/appError";
 import type { UserAuth } from "../users/user.schema";
 import * as userService from "../users/user.service.ts";
+import * as uploadService from "../uploads/upload.service.ts"
 import * as conversationRepository from  "./conversation.repository.ts";
+
 import type { CreateConversationInput, DirectConversation, GroupConversation, GroupConversationInput } from "./conversation.schema.ts";
 
 
@@ -13,7 +15,7 @@ export async function createOrFindConversation(requesterId: string, body: Create
       {
         memberIds: body.memberIds, 
         name: body.name, 
-        uploadId: body.uploadId
+        imageUrl: body.imageUrl
       });
   }
 }
@@ -36,7 +38,7 @@ async function findOrCreateDirect(requesterId: string, otherUserId: string): Pro
   return response;
 }
 
-async function createGroup(requesterId: string, {memberIds, name, uploadId}: GroupConversationInput): Promise<{created: boolean, conversation: GroupConversation}>{
+async function createGroup(requesterId: string, {memberIds, name, imageUrl}: GroupConversationInput): Promise<{created: boolean, conversation: GroupConversation}>{
   
   const ownerId = requesterId;
   const uniqueMemberIds: string[] = [...new Set([...memberIds, ownerId])];
@@ -46,6 +48,13 @@ async function createGroup(requesterId: string, {memberIds, name, uploadId}: Gro
 
   if(missingUserIds.length > 0)
     throw new AppError("Some users were not found", 400, {missingUserIds})
+
+  let uploadId: string | undefined;
+
+  if(imageUrl){
+    const upload = await uploadService.verifyUploadOwnerShip(ownerId, {conversationUrl: imageUrl});
+    uploadId = upload.id;
+  } 
 
   const groupConversation: GroupConversation | null = await conversationRepository.createGroup({memberIds: uniqueMemberIds, uploadId, name, ownerId});
 

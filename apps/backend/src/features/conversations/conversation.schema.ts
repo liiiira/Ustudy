@@ -16,7 +16,7 @@ export type DirectConversationInput = {
 export type GroupConversationInput = {
   memberIds: string[];
   name: string;
-  uploadId?: string;
+  imageUrl?: string;
 }
 
 export type GroupConversation = {
@@ -24,7 +24,7 @@ export type GroupConversation = {
   type: string;
   name: string;
   ownerId?: string;
-  uploadId?: string;
+  imageUrl?: string;
   createdAt: Date; 
 }
 
@@ -35,7 +35,7 @@ export type CreateDirectConversationInput = {
 
 export type CreateGroupConversationInput = {
   memberIds: string[];
-  uploadId?: string;
+  imageUrl?: string;
   type: "group";
   name: string;
 }
@@ -51,7 +51,7 @@ export const createGroupConversationSchema = z.object({
   memberIds: z.array(z.uuid()),
   type: z.literal("group"),
   name: z.string().min(3).max(100),
-  uploadId: z.uuid().optional(),
+  imageUrl: z.url().optional(),
 })
 
 export const createConversationSchema = z.discriminatedUnion("type", [

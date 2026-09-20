@@ -35,7 +35,7 @@ export async function findOrCreateDirect({directKey, requesterId, otherUserId}: 
         conv.id AS "id",
         conv.type AS "type",
         conv.created_at AS "createdAt",
-        conv.created AS "created"
+        conv.created AS "created",
       FROM conv`,
       [directKey, [requesterId, otherUserId]]
   );
@@ -68,11 +68,13 @@ export async function createGroup({memberIds, uploadId, name, ownerId}: GroupCon
       SELECT 
         inserted.id AS "id",
         inserted.name AS "name",
-        inserted.upload_id AS "uploadId",
         inserted.type AS "type",
         inserted.created_at AS "createdAt",
-        inserted.owner_id AS "ownerId" 
-      FROM inserted`,
+        inserted.owner_id AS "ownerId",
+        uploads.public_url AS "imageUrl"
+      FROM inserted
+      LEFT JOIN uploads
+      ON inserted.upload_id = uploads.id`,
     [ownerId, name, uploadId, memberIds]
   );
 

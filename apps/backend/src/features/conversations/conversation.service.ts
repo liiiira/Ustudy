@@ -2,7 +2,7 @@ import { AppError } from "../../errors/appError";
 import type { UserAuth } from "../users/user.schema";
 import * as userService from "../users/user.service.ts";
 import * as conversationRepository from  "./conversation.repository.ts";
-import type { DirectConversation } from "./conversation.schema.ts";
+import type { DirectConversation, GroupConversation, GroupConversationInput } from "./conversation.schema.ts";
 
 
 export async function findOrCreateDirect(requesterId: string, otherUserId: string): Promise<DirectConversation>{
@@ -21,6 +21,26 @@ export async function findOrCreateDirect(requesterId: string, otherUserId: strin
 
   return conversation;
 }
+
+export async function createGroup({ownerId, memberIds, name, uploadId}: GroupConversationInput): Promise<GroupConversation>{
+  
+  if(!memberIds.includes(ownerId))
+    memberIds.push(ownerId);
+
+  const existingUserIds: string[] = await userService.findExistingIds(memberIds);
+  const missingUserIds: string[] = memberIds.filter((memberId) => !existingUserIds.includes(memberId))
+
+  if(missingUserIds.length > 0)
+    throw new AppError("Some users were not found", 400, {missingUserIds})
+
+  const groupConversation: GroupConversation | null = await conversationRepository.createGroup({memberIds, uploadId, name, ownerId});
+
+  if(!groupConversation)
+    throw new AppError("Couldn't create group conversation due to internal error", 500);
+
+  return groupConversation;
+}
+
 
 
 

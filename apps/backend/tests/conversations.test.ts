@@ -1,0 +1,296 @@
+import request from "supertest";
+import { describe, it, expect, beforeAll, beforeEach } from "vitest";
+import app from "../src/app.ts";
+import pool from "../src/config/postgres.ts";
+import { resetTables, resetConversationsTable, registerAndLogin } from "./utils.ts";
+
+const BASE_URL = "/api/v1/conversations";
+const MEMBERS_TABLE = "conversation_members";
+
+const OWNER = {
+  email: "conv-owner@example.com",
+  username: "conv-owner",
+  password: "SuperSecret123!",
+};
+
+const MEMBER = {
+  email: "conv-member@example.com",
+  username: "conv-member",
+  password: "SuperSecret123!",
+};
+
+const THIRD = {
+  email: "conv-third@example.com",
+  username: "conv-third",
+  password: "SuperSecret123!",
+};
+
+const NONEXISTENT_ID = "00000000-0000-0000-0000-000000000000";
+
+let ownerId: string;
+let ownerToken: string;
+let memberId: string;
+let memberToken: string;
+let thirdId: string;
+
+async function countRows(table: string, where: string, params: unknown[]): Promise<number> {
+  const result = await pool.query(`SELECT count(*)::int AS n FROM ${table} WHERE ${where}`, params);
+  return result.rows[0].n;
+}
+
+beforeAll(async () => {
+  await resetTables();
+  ({ id: ownerId, accessToken: ownerToken } = await registerAndLogin(OWNER));
+  ({ id: memberId, accessToken: memberToken } = await registerAndLogin(MEMBER));
+  ({ id: thirdId } = await registerAndLogin(THIRD));
+});
+
+describe("POST /api/v1/conversations (direct)", () => {
+
+  beforeEach(async () => {
+    await resetConversationsTable();
+  });
+
+  it("creates a direct conversation between the requester and another user", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "direct", otherUserId: memberId });
+
+    expect(res.status).toBe(201);
+    expect(res.body.status).toBe("success");
+    expect(res.body.conversation).toMatchObject({ type: "direct" });
+    expect(res.body.conversation.id).toBeDefined();
+    expect(res.body.conversation.createdAt).toBeDefined();
+
+    const conversationId = res.body.conversation.id;
+
+    const conv = await pool.query("SELECT type, direct_key FROM conversations WHERE id = $1", [conversationId]);
+    expect(conv.rows).toHaveLength(1);
+    expect(conv.rows[0].type).toBe("direct");
+    expect(conv.rows[0].direct_key).toBe([ownerId, memberId].sort().join(":"));
+
+    const members = await pool.query(
+      `SELECT member_id FROM ${MEMBERS_TABLE} WHERE conversation_id = $1 ORDER BY member_id`,
+      [conversationId]
+    );
+    expect(members.rows.map(r => r.member_id).sort()).toEqual([ownerId, memberId].sort());
+  });
+
+  it("returns the existing conversation when the same pair asks again", async () => {
+    const first = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "direct", otherUserId: memberId });
+
+    const second = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "direct", otherUserId: memberId });
+
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(200);
+    expect(second.body.conversation.id).toBe(first.body.conversation.id);
+
+    expect(await countRows("conversations", "type = 'direct'", [])).toBe(1);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [first.body.conversation.id])).toBe(2);
+  });
+
+  it("returns the same conversation regardless of which side initiates", async () => {
+    const fromOwner = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "direct", otherUserId: memberId });
+
+    const fromMember = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${memberToken}`)
+      .send({ type: "direct", otherUserId: ownerId });
+
+    expect(fromOwner.status).toBe(201);
+    expect(fromMember.status).toBe(200);
+    expect(fromMember.body.conversation.id).toBe(fromOwner.body.conversation.id);
+    expect(await countRows("conversations", "type = 'direct'", [])).toBe(1);
+  });
+
+  it("does not collide across different pairs", async () => {
+    const withMember = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "direct", otherUserId: memberId });
+
+    const withThird = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "direct", otherUserId: thirdId });
+
+    expect(withMember.status).toBe(201);
+    expect(withThird.status).toBe(201);
+    expect(withThird.body.conversation.id).not.toBe(withMember.body.conversation.id);
+    expect(await countRows("conversations", "type = 'direct'", [])).toBe(2);
+  });
+
+  it("rejects a direct conversation with yourself", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "direct", otherUserId: ownerId });
+
+    expect(res.status).toBe(400);
+    expect(await countRows("conversations", "true", [])).toBe(0);
+  });
+
+  it("returns 404 when the other user does not exist", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "direct", otherUserId: NONEXISTENT_ID });
+
+    expect(res.status).toBe(404);
+    expect(await countRows("conversations", "true", [])).toBe(0);
+  });
+
+  it("returns 400 when otherUserId is not a uuid", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "direct", otherUserId: "not-a-uuid" });
+
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("POST /api/v1/conversations (group)", () => {
+
+  beforeEach(async () => {
+    await resetConversationsTable();
+  });
+
+  it("creates a group with the requester as admin and the others as members", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "group", name: "Study group", memberIds: [memberId, thirdId] });
+
+    expect(res.status).toBe(201);
+    expect(res.body.status).toBe("success");
+    expect(res.body.conversation).toMatchObject({
+      type: "group",
+      name: "Study group",
+      ownerId: ownerId,
+    });
+
+    const conversationId = res.body.conversation.id;
+
+    const conv = await pool.query("SELECT type, name, owner_id, direct_key FROM conversations WHERE id = $1", [conversationId]);
+    expect(conv.rows[0]).toMatchObject({ type: "group", name: "Study group", owner_id: ownerId, direct_key: null });
+
+    const members = await pool.query(
+      `SELECT member_id, role FROM ${MEMBERS_TABLE} WHERE conversation_id = $1`,
+      [conversationId]
+    );
+    const byId = Object.fromEntries(members.rows.map(r => [r.member_id, r.role]));
+    expect(byId).toEqual({
+      [ownerId]: "admin",
+      [memberId]: "member",
+      [thirdId]: "member",
+    });
+  });
+
+  it("adds the requester as a member even when memberIds omits them", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "group", name: "No self", memberIds: [memberId] });
+
+    expect(res.status).toBe(201);
+
+    const owner = await pool.query(
+      `SELECT role FROM ${MEMBERS_TABLE} WHERE conversation_id = $1 AND member_id = $2`,
+      [res.body.conversation.id, ownerId]
+    );
+    expect(owner.rows).toHaveLength(1);
+    expect(owner.rows[0].role).toBe("admin");
+  });
+
+  it("creates a new group every time — groups are never deduplicated", async () => {
+    const body = { type: "group", name: "Same name", memberIds: [memberId] };
+
+    const first = await request(app).post(BASE_URL).set("Authorization", `Bearer ${ownerToken}`).send(body);
+    const second = await request(app).post(BASE_URL).set("Authorization", `Bearer ${ownerToken}`).send(body);
+
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(201);
+    expect(second.body.conversation.id).not.toBe(first.body.conversation.id);
+    expect(await countRows("conversations", "type = 'group'", [])).toBe(2);
+  });
+
+  it("ignores duplicate ids in memberIds", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "group", name: "Dupes", memberIds: [memberId, memberId, ownerId] });
+
+    expect(res.status).toBe(201);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [res.body.conversation.id])).toBe(2);
+  });
+
+  it("rejects the group when any member does not exist and creates nothing", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "group", name: "Ghost member", memberIds: [memberId, NONEXISTENT_ID] });
+
+    expect(res.status).toBe(400);
+    expect(res.body.details).toMatchObject({ missingUserIds: [NONEXISTENT_ID] });
+    expect(await countRows("conversations", "true", [])).toBe(0);
+    expect(await countRows(MEMBERS_TABLE, "true", [])).toBe(0);
+  });
+
+  it("returns 400 when the name is too short", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "group", name: "ab", memberIds: [memberId] });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when memberIds contains a non-uuid", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "group", name: "Bad ids", memberIds: ["nope"] });
+
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("POST /api/v1/conversations (common)", () => {
+
+  it("returns 400 for an unknown type", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ type: "broadcast", name: "x" });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 for an empty body", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({});
+
+    expect(res.status).toBe(400);
+  });
+
+  it("requires authentication", async () => {
+    const res = await request(app)
+      .post(BASE_URL)
+      .send({ type: "direct", otherUserId: memberId });
+
+    expect(res.status).toBe(401);
+  });
+});

@@ -102,6 +102,11 @@ export async function resetCommentsTable(){
 export async function resetUsersTable(){
   await pool.query("TRUNCATE users CASCADE");
 }
+
+// cascades to members and messages
+export async function resetConversationsTable(){
+  await pool.query("TRUNCATE conversations CASCADE");
+}
 export function tokenFor(userId: string) {
   return createAccessToken(userId);
 }

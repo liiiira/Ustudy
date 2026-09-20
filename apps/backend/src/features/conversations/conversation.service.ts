@@ -39,17 +39,15 @@ async function findOrCreateDirect(requesterId: string, otherUserId: string): Pro
 async function createGroup(requesterId: string, {memberIds, name, uploadId}: GroupConversationInput): Promise<{created: boolean, conversation: GroupConversation}>{
   
   const ownerId = requesterId;
+  const uniqueMemberIds: string[] = [...new Set([...memberIds, ownerId])];
 
-  if(!memberIds.includes(ownerId))
-    memberIds.push(ownerId);
-
-  const existingUserIds: string[] = await userService.findExistingIds(memberIds);
-  const missingUserIds: string[] = memberIds.filter((memberId) => !existingUserIds.includes(memberId))
+  const existingUserIds: string[] = await userService.findExistingIds(uniqueMemberIds);
+  const missingUserIds: string[] = uniqueMemberIds.filter((memberId) => !existingUserIds.includes(memberId))
 
   if(missingUserIds.length > 0)
     throw new AppError("Some users were not found", 400, {missingUserIds})
 
-  const groupConversation: GroupConversation | null = await conversationRepository.createGroup({memberIds, uploadId, name, ownerId});
+  const groupConversation: GroupConversation | null = await conversationRepository.createGroup({memberIds: uniqueMemberIds, uploadId, name, ownerId});
 
   if(!groupConversation)
     throw new AppError("Couldn't create group conversation due to internal error", 500);

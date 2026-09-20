@@ -14,30 +14,30 @@ export async function findOrCreateDirect({directKey, requesterId, otherUserId}: 
     `
       WITH inserted AS (
         INSERT INTO conversations(type, direct_key)
-        VALUES
-          ('direct', $1)
-        ON CONFLICT(direct_key) DO NOTHING
-        RETURNING id, direct_key, created_at
+        VALUES ('direct', $1)
+        ON CONFLICT (direct_key) DO NOTHING
+        RETURNING id, type, created_at
       ),
-      WITH conv AS (
+      conv AS (
         SELECT id, type, created_at, true AS created FROM inserted
-        UNION ALL 
-        SELECT id, direct_key, created_at, false AS created
-        WHERE direct_key = $1 AND NOT EXITS (SELECT 1 FROM inserted)
+        UNION ALL
+        SELECT id, type, created_at, false AS created
+        FROM conversations
+        WHERE direct_key = $1 AND NOT EXISTS (SELECT 1 FROM inserted)
       ),
-      WITH members AS (
-        INSERT INTO converation_members(member_id, conversation_id)
-        VALUES 
-          ($2, conv.id),
-          ($3, conv.id)
+      members AS (
+        INSERT INTO conversation_members(conversation_id, member_id)
+        SELECT conv.id, m.member_id
+        FROM conv, unnest($2::uuid[]) AS m(member_id)
+        ON CONFLICT DO NOTHING
       )
-      SELECT 
-        inserted.id AS "id",
-        inseretd.type AS "type", 
-        inserted.created_at AS "createdAt",
-        conv.created AS "created",
-      FROM inserted,`,
-      [directKey, requesterId, otherUserId]
+      SELECT
+        conv.id AS "id",
+        conv.type AS "type",
+        conv.created_at AS "createdAt",
+        conv.created AS "created"
+      FROM conv`,
+      [directKey, [requesterId, otherUserId]]
   );
 
   if(result.rows[0]){

@@ -43,7 +43,7 @@ export type CreateConversationInput = CreateGroupConversationInput | CreateDirec
 
 
 export const createDirectConversationSchema = z.object({
-  otherUser: z.uuid(),
+  otherUserId: z.uuid(),
   type: z.literal("direct"), 
 });
 

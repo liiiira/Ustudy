@@ -1,3 +1,5 @@
+import {z} from "zod";
+
 export type DirectConversation = {
   id: string;
   type: string;
@@ -9,12 +11,7 @@ export type DirectConversationInput = {
   requesterId: string;
   otherUserId: string;
 }
-export type GroupConversationInputRepository= {
-  ownerId: string;
-  memberIds: string[];
-  name: string;
-  uploadId?: string;
-}
+
 
 export type GroupConversationInput = {
   memberIds: string[];
@@ -43,3 +40,21 @@ export type CreateGroupConversationInput = {
   name: string;
 }
 export type CreateConversationInput = CreateGroupConversationInput | CreateDirectConversationInput;
+
+
+export const createDirectConversationSchema = z.object({
+  otherUser: z.uuid(),
+  type: z.literal("direct"), 
+});
+
+export const createGroupConversationSchema = z.object({
+  memberIds: z.array(z.uuid()),
+  type: z.literal("group"),
+  name: z.string().min(3).max(100),
+  uploadId: z.uuid().optional(),
+})
+
+export const createConversationSchema = z.discriminatedUnion("type", [
+  createDirectConversationSchema,
+  createGroupConversationSchema,
+])

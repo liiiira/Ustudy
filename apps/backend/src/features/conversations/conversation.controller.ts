@@ -1,7 +1,9 @@
 import type {Request, Response} from "express";
 import * as conversationService from "./conversation.service.ts";
+import type { Conversation } from "./conversation.schema.ts";
 
 export async function create(req: Request, res: Response){
+
   const userId = req.user!.id;
   const requestBody = req.body;
   const {created, conversation} = await conversationService.createOrFindConversation(userId, requestBody);
@@ -15,4 +17,18 @@ export async function create(req: Request, res: Response){
     conversation: conversation,
   })
   
+}
+
+export async function  getById(req: Request<{conversationId: string}>, res: Response){
+
+  const userId = req.user!.id;
+  const {conversationId} = req.params;
+
+  const conversation: Conversation = await conversationService.getById(userId, conversationId!)
+
+  return res.status(200).json({
+    status: "success",
+    message: "Conversation fetched successfuly",
+    conversation: conversation
+  })
 }

@@ -1,5 +1,5 @@
 import pool from "../../config/postgres";
-import type { DirectConversationInput, DirectConversation, GroupConversation} from "./conversation.schema";
+import type { DirectConversationInput, DirectConversation, GroupConversation, ConversationMember} from "./conversation.schema";
 
 type GroupConversationInputRepository= {
 
@@ -102,7 +102,6 @@ export async function findById(conversationId: string): Promise<GroupConversatio
       c.name AS "name", 
       c.type AS "type",
       c.created_at AS "createdAt",
-      c.direct_key AS "directKey",
       c.owner_id AS "ownerId",
       u.public_url AS "imageUrl"
     FROM conversations c 
@@ -111,6 +110,24 @@ export async function findById(conversationId: string): Promise<GroupConversatio
     WHERE 
       c.id = $1`,
     [conversationId]
+  );
+
+  return result.rows[0] ?? null;
+}
+
+export async function findMember(conversationId: string, memberId: string): Promise<ConversationMember | null>{
+  
+  const result = await pool.query(
+    `
+      SEELECT 
+        member_id AS "memberId",
+        conversation_id AS "conversationId",
+        role,
+        joined_at AS "joinedAt",
+        last_read_message AS "lastReadMessage"
+      FROM conversation_members
+      WHERE conversation_id = $1 AND member_id = $2`,
+    [conversationId, memberId]
   );
 
   return result.rows[0] ?? null;

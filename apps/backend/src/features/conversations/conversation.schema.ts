@@ -28,6 +28,8 @@ export type GroupConversation = {
   createdAt: Date; 
 }
 
+export type Conversation = GroupConversation | DirectConversation;
+
 export type CreateDirectConversationInput = {
   otherUserId: string;
   type: "direct";
@@ -39,8 +41,16 @@ export type CreateGroupConversationInput = {
   type: "group";
   name: string;
 }
+
 export type CreateConversationInput = CreateGroupConversationInput | CreateDirectConversationInput;
 
+export type ConversationMember = {
+  conversationId: string;
+  memberId: string;
+  role: "member" | "admin";
+  joinedAt: Date;
+  lastReadMessageId: string | null;
+}
 
 export const createDirectConversationSchema = z.object({
   otherUserId: z.uuid(),
@@ -58,3 +68,9 @@ export const createConversationSchema = z.discriminatedUnion("type", [
   createDirectConversationSchema,
   createGroupConversationSchema,
 ]);
+
+export const conversationIdSchema = z.object({
+  conversationId: z.uuid(),
+})
+
+

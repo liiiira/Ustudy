@@ -2,10 +2,24 @@ import { AppError } from "../../errors/appError";
 import type { UserAuth } from "../users/user.schema";
 import * as userService from "../users/user.service.ts";
 import * as conversationRepository from  "./conversation.repository.ts";
-import type { DirectConversation, GroupConversation, GroupConversationInput } from "./conversation.schema.ts";
+import type { CreateConversationInput, DirectConversation, GroupConversation, GroupConversationInput } from "./conversation.schema.ts";
 
 
-export async function findOrCreateDirect(requesterId: string, otherUserId: string): Promise<DirectConversation>{
+export async function createOrFindConversation(requesterId: string, body: CreateConversationInput): Promise<GroupConversation | DirectConversation>{
+
+  switch(body.type){
+    case "direct": return findOrCreateDirect(requesterId, body.otherUserId);
+    case "group": return createGroup(requesterId, 
+      {
+        memberIds: body.memberIds, 
+        name: body.name, 
+        uploadId: body.uploadId
+      });
+  }
+}
+
+
+async function findOrCreateDirect(requesterId: string, otherUserId: string): Promise<DirectConversation>{
 
   if(requesterId === otherUserId) throw new AppError("Cannot message yourself", 400);
 
@@ -22,8 +36,10 @@ export async function findOrCreateDirect(requesterId: string, otherUserId: strin
   return conversation;
 }
 
-export async function createGroup({ownerId, memberIds, name, uploadId}: GroupConversationInput): Promise<GroupConversation>{
+async function createGroup(requesterId: string, {memberIds, name, uploadId}: GroupConversationInput): Promise<GroupConversation>{
   
+  const ownerId = requesterId;
+
   if(!memberIds.includes(ownerId))
     memberIds.push(ownerId);
 

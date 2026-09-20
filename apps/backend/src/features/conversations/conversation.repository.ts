@@ -1,5 +1,13 @@
 import pool from "../../config/postgres";
-import type { DirectConversationInput, DirectConversation, GroupConversationInput, GroupConversation } from "./conversation.schema";
+import type { DirectConversationInput, DirectConversation, GroupConversation} from "./conversation.schema";
+
+type GroupConversationInputRepository= {
+
+  ownerId: string;
+  memberIds: string[];
+  name: string;
+  uploadId?: string;
+}
 
 export async function findOrCreateDirect({directKey, requesterId, otherUserId}: DirectConversationInput): Promise<DirectConversation | null>{
   const result = await pool.query(
@@ -34,7 +42,7 @@ export async function findOrCreateDirect({directKey, requesterId, otherUserId}: 
   return result.rows[0] ?? null;
 }
 
-export async function createGroup({memberIds, uploadId, name, ownerId}: GroupConversationInput): Promise<GroupConversation | null>{
+export async function createGroup({memberIds, uploadId, name, ownerId}: GroupConversationInputRepository): Promise<GroupConversation | null>{
   
   const result = await pool.query(
     `

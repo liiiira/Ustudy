@@ -516,3 +516,178 @@ describe("GET /api/v1/conversations/:conversationId", () => {
     expect(res.status).toBe(401);
   });
 });
+
+describe("PATCH /api/v1/conversations/:conversationId", () => {
+
+  beforeEach(async () => {
+    await resetConversationsTable();
+  });
+
+  async function createGroup(token: string, name: string, memberIds: string[]): Promise<string> {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ type: "group", name, memberIds });
+    return res.body.conversation.id;
+  }
+
+  async function createDirect(token: string, otherUserId: string): Promise<string> {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ type: "direct", otherUserId });
+    return res.body.conversation.id;
+  }
+
+  it("lets the admin rename the group", async () => {
+    const id = await createGroup(ownerToken, "Old name", [memberId]);
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ name: "New name" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.conversation).toMatchObject({ id, type: "group", name: "New name", ownerId: ownerId });
+
+    const row = await pool.query("SELECT name FROM conversations WHERE id = $1", [id]);
+    expect(row.rows[0].name).toBe("New name");
+  });
+
+  it("lets the admin set the group image", async () => {
+    const id = await createGroup(ownerToken, "Pic group", [memberId]);
+    const imageUrl = await presignUpload(ownerToken, "conversation");
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ imageUrl });
+
+    expect(res.status).toBe(200);
+    expect(res.body.conversation.imageUrl).toBe(imageUrl);
+    expect(res.body.conversation.name).toBe("Pic group");
+
+    const row = await pool.query(
+      "SELECT u.public_url FROM conversations c JOIN uploads u ON c.upload_id = u.id WHERE c.id = $1",
+      [id]
+    );
+    expect(row.rows[0].public_url).toBe(imageUrl);
+  });
+
+  it("updates name and image together", async () => {
+    const id = await createGroup(ownerToken, "Both", [memberId]);
+    const imageUrl = await presignUpload(ownerToken, "conversation");
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ name: "Both updated", imageUrl });
+
+    expect(res.status).toBe(200);
+    expect(res.body.conversation).toMatchObject({ name: "Both updated", imageUrl });
+  });
+
+  it("does not allow a non-admin member to update the group", async () => {
+    const id = await createGroup(ownerToken, "Locked", [memberId]);
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${memberToken}`)
+      .send({ name: "Hijacked" });
+
+    expect(res.status).toBe(403);
+
+    const row = await pool.query("SELECT name FROM conversations WHERE id = $1", [id]);
+    expect(row.rows[0].name).toBe("Locked");
+  });
+
+  it("does not allow a non-member to update the group", async () => {
+    const id = await createGroup(ownerToken, "Private", [memberId]);
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${tokenFor(thirdId)}`)
+      .send({ name: "Hijacked" });
+
+    expect(res.status).toBe(403);
+  });
+
+  it("does not allow attaching another user's upload", async () => {
+    const id = await createGroup(ownerToken, "Guarded", [memberId]);
+    const someoneElsesImage = await presignUpload(memberToken, "conversation");
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ imageUrl: someoneElsesImage });
+
+    expect(res.status).toBe(403);
+
+    const row = await pool.query("SELECT upload_id FROM conversations WHERE id = $1", [id]);
+    expect(row.rows[0].upload_id).toBeNull();
+  });
+
+  it("rejects updating a direct conversation", async () => {
+    const id = await createDirect(ownerToken, memberId);
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ name: "Not a group" });
+
+    expect(res.status).toBe(400);
+
+    const row = await pool.query("SELECT name FROM conversations WHERE id = $1", [id]);
+    expect(row.rows[0].name).toBeNull();
+  });
+
+  it("returns 400 when there is nothing to update", async () => {
+    const id = await createGroup(ownerToken, "Empty patch", [memberId]);
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({});
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when the name is too short", async () => {
+    const id = await createGroup(ownerToken, "Short", [memberId]);
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ name: "ab" });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 404 for a conversation that does not exist", async () => {
+    const res = await request(app)
+      .patch(`${BASE_URL}/${NONEXISTENT_ID}`)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ name: "Ghost" });
+
+    expect(res.status).toBe(404);
+  });
+
+  it("returns 400 for an invalid conversation id", async () => {
+    const res = await request(app)
+      .patch(`${BASE_URL}/not-a-uuid`)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ name: "Bad id" });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("requires authentication", async () => {
+    const id = await createGroup(ownerToken, "Auth", [memberId]);
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}`)
+      .send({ name: "Anon" });
+
+    expect(res.status).toBe(401);
+  });
+});

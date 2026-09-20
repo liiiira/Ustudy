@@ -2,7 +2,7 @@ import request from "supertest";
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import app from "../src/app.ts";
 import pool from "../src/config/postgres.ts";
-import { resetTables, resetConversationsTable, registerAndLogin, presignUpload } from "./utils.ts";
+import { resetTables, resetConversationsTable, registerAndLogin, presignUpload, tokenFor } from "./utils.ts";
 
 const BASE_URL = "/api/v1/conversations";
 const MEMBERS_TABLE = "conversation_members";
@@ -394,6 +394,124 @@ describe("POST /api/v1/conversations (common)", () => {
     const res = await request(app)
       .post(BASE_URL)
       .send({ type: "direct", otherUserId: memberId });
+
+    expect(res.status).toBe(401);
+  });
+});
+
+describe("GET /api/v1/conversations/:conversationId", () => {
+
+  beforeEach(async () => {
+    await resetConversationsTable();
+  });
+
+  async function createDirect(token: string, otherUserId: string): Promise<string> {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ type: "direct", otherUserId });
+    return res.body.conversation.id;
+  }
+
+  async function createGroup(token: string, name: string, memberIds: string[], imageUrl?: string): Promise<string> {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ type: "group", name, memberIds, imageUrl });
+    return res.body.conversation.id;
+  }
+
+  it("returns a direct conversation to either member", async () => {
+    const id = await createDirect(ownerToken, memberId);
+
+    for (const token of [ownerToken, memberToken]) {
+      const res = await request(app)
+        .get(`${BASE_URL}/${id}`)
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe("success");
+      expect(res.body.conversation).toMatchObject({ id, type: "direct", name: null, ownerId: null, imageUrl: null });
+      expect(res.body.conversation.createdAt).toBeDefined();
+    }
+  });
+
+  it("returns a group conversation with its name, owner and image", async () => {
+    const imageUrl = await presignUpload(ownerToken, "conversation");
+    const id = await createGroup(ownerToken, "Readable group", [memberId], imageUrl);
+
+    const res = await request(app)
+      .get(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${memberToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.conversation).toMatchObject({
+      id,
+      type: "group",
+      name: "Readable group",
+      ownerId: ownerId,
+      imageUrl,
+    });
+  });
+
+  it("does not expose the direct key", async () => {
+    const id = await createDirect(ownerToken, memberId);
+
+    const res = await request(app)
+      .get(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${ownerToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.conversation).not.toHaveProperty("directKey");
+    expect(res.body.conversation).not.toHaveProperty("direct_key");
+  });
+
+  it("returns 403 to a user who is not a member", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    const { accessToken: thirdToken } = await registerAndLogin({
+      email: "conv-outsider@example.com",
+      username: "conv-outsider",
+      password: "SuperSecret123!",
+    });
+
+    const res = await request(app)
+      .get(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${thirdToken}`);
+
+    expect(res.status).toBe(403);
+    expect(res.body.conversation).toBeUndefined();
+  });
+
+  it("returns 403 to a non-member of a group", async () => {
+    const id = await createGroup(ownerToken, "Closed group", [memberId]);
+
+    const res = await request(app)
+      .get(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${tokenFor(thirdId)}`);
+
+    expect(res.status).toBe(403);
+  });
+
+  it("returns 404 for a conversation that does not exist", async () => {
+    const res = await request(app)
+      .get(`${BASE_URL}/${NONEXISTENT_ID}`)
+      .set("Authorization", `Bearer ${ownerToken}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it("returns 400 for an invalid conversation id", async () => {
+    const res = await request(app)
+      .get(`${BASE_URL}/not-a-uuid`)
+      .set("Authorization", `Bearer ${ownerToken}`);
+
+    expect(res.status).toBe(400);
+  });
+
+  it("requires authentication", async () => {
+    const id = await createDirect(ownerToken, memberId);
+
+    const res = await request(app).get(`${BASE_URL}/${id}`);
 
     expect(res.status).toBe(401);
   });

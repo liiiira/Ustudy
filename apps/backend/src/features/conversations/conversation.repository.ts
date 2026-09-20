@@ -81,3 +81,37 @@ export async function createGroup({memberIds, uploadId, name, ownerId}: GroupCon
   return result.rows[0] ?? null;
 }
 
+export async function findMemberIds(conversationId: string): Promise<string[]>{
+  
+  const result = await pool.query(
+    `
+    SELECT member_id AS "memberId"
+    FROM conversation_members
+      WHERE conversation_id = $1`,
+    [conversationId]
+  );
+
+  return result.rows.map((row) => row.memberId);
+}
+
+export async function findById(conversationId: string): Promise<GroupConversation | DirectConversation | null>{
+  const result = await pool.query(
+    `
+    SELECT 
+      c.id AS "id",
+      c.name AS "name", 
+      c.type AS "type",
+      c.created_at AS "createdAt",
+      c.direct_key AS "directKey",
+      c.owner_id AS "ownerId",
+      u.public_url AS "imageUrl"
+    FROM conversations c 
+    LEFT JOIN uploads u 
+      ON c.upload_id = u.id
+    WHERE 
+      c.id = $1`,
+    [conversationId]
+  );
+
+  return result.rows[0] ?? null;
+}

@@ -64,6 +64,13 @@ async function createGroup(requesterId: string, {memberIds, name, imageUrl}: Gro
   return {created: true, conversation: groupConversation};
 }
 
+export async function findById(conversationId: string): Promise<GroupConversation | DirectConversation | null> {
 
+  return conversationRepository.findById(conversationId);
+}
+export async function findMemberIds(conversationId: string): Promise<string[]>{
+  
+  return conversationRepository.findMemberIds(conversationId);
+}
 
 

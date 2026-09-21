@@ -170,6 +170,23 @@ export async function deleteGroup(conversationId: string): Promise<{id: string} 
 
 // Members 
 
+export async function addMembers(conversationId: string, memberIds: string[]): Promise<string[]> {
+
+  const result = await pool.query(
+    `
+    INSERT INTO conversation_members (conversation_id, member_id, role)
+    SELECT $1, m.member_id, 'member'
+    FROM unnest($2::uuid[]) AS m(member_id)
+    ON CONFLICT (conversation_id, member_id) DO NOTHING
+    RETURNING member_id
+    `,
+    [conversationId, memberIds]
+  );
+
+  return result.rows.map((row) => row.member_id);
+}
+
+
 export async function findMember(conversationId: string, memberId: string): Promise<ConversationMember | null>{
   
   const result = await pool.query(
@@ -203,21 +220,6 @@ export async function findMemberIds(conversationId: string): Promise<string[]>{
 }
 
 
-export async function addMembers(conversationId: string, memberIds: string[]): Promise<string[]> {
-
-  const result = await pool.query(
-    `
-    INSERT INTO conversation_members (conversation_id, member_id, role)
-    SELECT $1, m.member_id, 'member'
-    FROM unnest($2::uuid[]) AS m(member_id)
-    ON CONFLICT (conversation_id, member_id) DO NOTHING
-    RETURNING member_id
-    `,
-    [conversationId, memberIds]
-  );
-
-  return result.rows.map((row) => row.member_id);
-}
 
 export async function removeMember(conversationId: string, memberId: string): Promise<{memberId: string} | null> {
 

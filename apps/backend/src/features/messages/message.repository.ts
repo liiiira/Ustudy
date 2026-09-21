@@ -8,6 +8,7 @@ type CreateMessageRepository = {
   uploadId?: string;
 }
 
+
 export async function create({conversationId, senderId, textContent, uploadId}: CreateMessageRepository) : Promise<Message | null>{
 
   const result = await pool.query(`
@@ -35,3 +36,42 @@ export async function create({conversationId, senderId, textContent, uploadId}: 
 
   return result.rows[0] ?? null;
 }
+
+
+export async function findById(conversationId: string, messageId: string): Promise<Message | null>{
+  
+  const result = await pool.query(
+    `
+    SELECT 
+      messages.id AS "id",
+      messages.sender_id AS "senderId",
+      users.username AS "senderUsername",
+      messages.text_content AS "textContent",
+      messages.conversation_id AS "conversationId",
+      messages.created_at AS "createdAt",
+      uploads.public_url AS "imageUrl"
+    FROM messages
+    LEFT JOIN uploads
+      ON inserted.upload_id = uploads.id
+    LEFT JOIN users 
+      ON inserted.sender_id = users.id
+    WHERE messages.conversation_id = $1 AND messages.id = $2`,
+    [conversationId, messageId]
+  );
+
+  return result.rows[0] ?? null;
+}
+export async function deleteById(conversationId: string, messageId: string): Promise<{id: string} | null>{
+  
+  const result = await pool.query(
+    `
+    DELETE messages 
+    WHERE id = $1 AND conversation_id = $2
+    RETURNING 
+      id`,
+    [messageId, conversationId]
+  );
+
+  return result.rows[0] ?? null;
+}
+

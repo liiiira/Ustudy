@@ -240,3 +240,140 @@ describe("POST /api/v1/conversations/:conversationId/messages", () => {
     expect(res.status).toBe(401);
   });
 });
+
+describe("DELETE /api/v1/conversations/:conversationId/messages/:messageId", () => {
+
+  beforeEach(async () => {
+    await resetConversationsTable();
+  });
+
+  async function sendMessage(token: string, conversationId: string, textContent: string): Promise<string> {
+    const res = await request(app)
+      .post(`${BASE_URL}/${conversationId}/messages`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ textContent });
+    return res.body.chatMessage.id;
+  }
+
+  it("lets the sender delete their own message", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    const messageId = await sendMessage(ownerToken, id, "mine");
+
+    const res = await request(app)
+      .delete(`${BASE_URL}/${id}/messages/${messageId}`)
+      .set("Authorization", `Bearer ${ownerToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("success");
+    expect(res.body.chatMessage).toEqual({ id: messageId });
+    expect(await countMessages(id)).toBe(0);
+  });
+
+  it("lets a group admin delete another member's message", async () => {
+    const id = await createGroup(ownerToken, "Moderated", [memberId]);
+    const messageId = await sendMessage(memberToken, id, "from member");
+
+    const res = await request(app)
+      .delete(`${BASE_URL}/${id}/messages/${messageId}`)
+      .set("Authorization", `Bearer ${ownerToken}`);
+
+    expect(res.status).toBe(200);
+    expect(await countMessages(id)).toBe(0);
+  });
+
+  it("does not allow a non-admin member to delete someone else's message", async () => {
+    const id = await createGroup(ownerToken, "Locked", [memberId]);
+    const messageId = await sendMessage(ownerToken, id, "from admin");
+
+    const res = await request(app)
+      .delete(`${BASE_URL}/${id}/messages/${messageId}`)
+      .set("Authorization", `Bearer ${memberToken}`);
+
+    expect(res.status).toBe(403);
+    expect(await countMessages(id)).toBe(1);
+  });
+
+  it("does not allow the other side of a DM to delete your message", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    const messageId = await sendMessage(ownerToken, id, "mine");
+
+    const res = await request(app)
+      .delete(`${BASE_URL}/${id}/messages/${messageId}`)
+      .set("Authorization", `Bearer ${memberToken}`);
+
+    expect(res.status).toBe(403);
+    expect(await countMessages(id)).toBe(1);
+  });
+
+  it("does not allow a non-member to delete", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    const messageId = await sendMessage(ownerToken, id, "mine");
+
+    const res = await request(app)
+      .delete(`${BASE_URL}/${id}/messages/${messageId}`)
+      .set("Authorization", `Bearer ${tokenFor(thirdId)}`);
+
+    expect(res.status).toBe(403);
+    expect(await countMessages(id)).toBe(1);
+  });
+
+  it("returns 404 when the message belongs to a different conversation", async () => {
+    const a = await createDirect(ownerToken, memberId);
+    const b = await createDirect(ownerToken, thirdId);
+    const messageInA = await sendMessage(ownerToken, a, "in a");
+
+    const res = await request(app)
+      .delete(`${BASE_URL}/${b}/messages/${messageInA}`)
+      .set("Authorization", `Bearer ${ownerToken}`);
+
+    expect(res.status).toBe(404);
+    expect(await countMessages(a)).toBe(1);
+  });
+
+  it("returns 404 for a message that does not exist", async () => {
+    const id = await createDirect(ownerToken, memberId);
+
+    const res = await request(app)
+      .delete(`${BASE_URL}/${id}/messages/${NONEXISTENT_ID}`)
+      .set("Authorization", `Bearer ${ownerToken}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it("returns 404 when deleting the same message twice", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    const messageId = await sendMessage(ownerToken, id, "once");
+
+    await request(app).delete(`${BASE_URL}/${id}/messages/${messageId}`).set("Authorization", `Bearer ${ownerToken}`).expect(200);
+    const again = await request(app).delete(`${BASE_URL}/${id}/messages/${messageId}`).set("Authorization", `Bearer ${ownerToken}`);
+
+    expect(again.status).toBe(404);
+  });
+
+  it("returns 404 for a conversation that does not exist", async () => {
+    const res = await request(app)
+      .delete(`${BASE_URL}/${NONEXISTENT_ID}/messages/${NONEXISTENT_ID}`)
+      .set("Authorization", `Bearer ${ownerToken}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it("returns 400 for an invalid message id", async () => {
+    const id = await createDirect(ownerToken, memberId);
+
+    const res = await request(app)
+      .delete(`${BASE_URL}/${id}/messages/not-a-uuid`)
+      .set("Authorization", `Bearer ${ownerToken}`);
+
+    expect(res.status).toBe(400);
+  });
+
+  it("requires authentication", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    const messageId = await sendMessage(ownerToken, id, "mine");
+
+    const res = await request(app).delete(`${BASE_URL}/${id}/messages/${messageId}`);
+
+    expect(res.status).toBe(401);
+  });
+});

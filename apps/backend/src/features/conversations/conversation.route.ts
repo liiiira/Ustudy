@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { validateBody, validateParams } from "../../middlewares/validate";
-import { addMembersSchema, conversationIdSchema, createConversationSchema, updateConversationSchema } from "./conversation.schema";
+import { addMembersSchema, conversationIdSchema, conversationMemberIdSchema, createConversationSchema, updateConversationSchema } from "./conversation.schema";
 import isAuthenticated from "../../middlewares/isAuthenticated";
 import * as conversationController from "./conversation.controller.ts"
 
@@ -31,6 +31,12 @@ router.post("/:conversationId/members",
   validateParams(conversationIdSchema),
   validateBody(addMembersSchema),
   conversationController.addMembers
+);
+
+router.delete("/:conversationId/members/:memberId",
+  isAuthenticated,
+  validateParams(conversationMemberIdSchema),
+  conversationController.removeMember
 );
 
 export default router;

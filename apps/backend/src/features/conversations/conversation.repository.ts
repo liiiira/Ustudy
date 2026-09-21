@@ -196,3 +196,16 @@ export async function addMembers(conversationId: string, memberIds: string[]): P
 
   return result.rows.map((row) => row.member_id);
 }
+
+export async function removeMember(conversationId: string, memberId: string): Promise<{memberId: string} | null> {
+
+  const result = await pool.query(
+    `
+    DELETE FROM conversation_members
+    WHERE conversation_id = $1 AND member_id = $2
+    RETURNING member_id AS "memberId"`,
+    [conversationId, memberId]
+  );
+
+  return result.rows[0] ?? null;
+}

@@ -156,3 +156,29 @@ export async function addMembers(requesterId: string, conversationId: string, { 
 }
 
 
+
+export async function removeMember(requesterId: string, conversationId: string, memberId: string): Promise<{memberId: string}>{
+
+  const conversation = await findById(conversationId);
+  if(!conversation) throw new AppError("Conversation not found", 404);
+  if(conversation.type === "direct") throw new AppError("Cannot remove members from a direct conversation", 400);
+
+  const requesterMember: ConversationMember | null = await findMember(conversationId, requesterId);
+  if(!requesterMember) throw new AppError("You are not a member of this conversation", 403);
+
+  const targetMember: ConversationMember | null = requesterId === memberId
+    ? requesterMember
+    : await findMember(conversationId, memberId);
+  if(!targetMember) throw new AppError("Member not found in this conversation", 404);
+
+  if(targetMember.role === "admin") throw new AppError("An admin cannot be removed from the conversation", 400);
+
+  const isSelf = requesterId === memberId;
+  if(!isSelf && requesterMember.role !== "admin")
+    throw new AppError("Only an admin can remove other members", 403);
+
+  const removed = await conversationRepository.removeMember(conversationId, memberId);
+  if(!removed) throw new AppError("Member was not removed due to an unexpected error", 500);
+
+  return removed;
+}

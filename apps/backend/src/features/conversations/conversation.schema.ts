@@ -90,4 +90,9 @@ export const conversationIdSchema = z.object({
   conversationId: z.uuid(),
 })
 
+export const conversationMemberIdSchema = z.object({
+  conversationId: z.uuid(),
+  memberId: z.uuid(),
+})
+
 

@@ -63,3 +63,17 @@ export async function addMembers(req: Request<{conversationId: string}>, res: Re
     members: addedMembers
   })
 }
+
+export async function removeMember(req: Request<{conversationId: string, memberId: string}>, res: Response){
+
+  const userId = req.user!.id;
+  const {conversationId, memberId} = req.params;
+
+  const removed = await conversationService.removeMember(userId, conversationId, memberId);
+
+  return res.status(200).json({
+    status: "success",
+    message: "Member removed successfuly",
+    member: removed
+  })
+}

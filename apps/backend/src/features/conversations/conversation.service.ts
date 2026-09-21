@@ -79,13 +79,7 @@ export async function findById(conversationId: string): Promise<Conversation | n
   return conversationRepository.findById(conversationId);
 }
 
-export async function findMemberIds(conversationId: string): Promise<string[]>{
-  return conversationRepository.findMemberIds(conversationId);
-}
 
-export async function findMember(conversationId: string, memberId: string){
-  return conversationRepository.findMember(conversationId, memberId);
-}
 
 export async function updateById(requesterId: string, conversationId: string, body: ConversationUpdate): Promise<Conversation>{
 
@@ -97,17 +91,17 @@ export async function updateById(requesterId: string, conversationId: string, bo
 
   switch(conversation.type){
     case "group":
-      return updateGroup(requesterId, requesterMember, conversation as GroupConversation, body);
+      return updateGroup(requesterMember, conversation as GroupConversation, body);
 
     case "direct":
-      return updateDirect(requesterId, requesterMember, conversation as DirectConversation, body);
+      return updateDirect(requesterMember, conversation as DirectConversation, body);
 
     default:
       throw new AppError("Unknown conversation type", 500);
   }
 }
 
-async function updateGroup(requesterId: string, requesterMember: ConversationMember, group: GroupConversation, {name, imageUrl}: ConversationUpdate): Promise<GroupConversation>{
+async function updateGroup(requesterMember: ConversationMember, group: GroupConversation, {name, imageUrl}: ConversationUpdate): Promise<GroupConversation>{
 
   if(!name && !imageUrl) throw new AppError("Nothing to update", 400);
 
@@ -115,7 +109,7 @@ async function updateGroup(requesterId: string, requesterMember: ConversationMem
 
   let uploadId: string | undefined;
   if(imageUrl){
-    const upload = await uploadService.verifyUploadOwnerShip(requesterId, {conversationUrl: imageUrl});
+    const upload = await uploadService.verifyUploadOwnerShip(requesterMember.memberId, {conversationUrl: imageUrl});
     uploadId = upload.id;
   }
 
@@ -126,9 +120,15 @@ async function updateGroup(requesterId: string, requesterMember: ConversationMem
   return updatedGroup;
 }
 
-async function updateDirect(_requesterId: string, _requesterMember: ConversationMember, _direct: DirectConversation, _body: ConversationUpdate): Promise<DirectConversation>{
+async function updateDirect(_requesterMember: ConversationMember, _direct: DirectConversation, _body: ConversationUpdate): Promise<DirectConversation>{
   throw new AppError("Direct conversations cannot be updated", 400);
 }
+
+
+
+
+
+// Members 
 
 
 export async function addMembers(requesterId: string, conversationId: string, { memberIds } :{memberIds: string[]}){
@@ -156,6 +156,14 @@ export async function addMembers(requesterId: string, conversationId: string, { 
 }
 
 
+export async function findMember(conversationId: string, memberId: string){
+  return conversationRepository.findMember(conversationId, memberId);
+}
+
+
+export async function findMemberIds(conversationId: string): Promise<string[]>{
+  return conversationRepository.findMemberIds(conversationId);
+}
 
 export async function removeMember(requesterId: string, conversationId: string, memberId: string): Promise<{memberId: string}>{
 

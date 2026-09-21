@@ -846,3 +846,138 @@ describe("POST /api/v1/conversations/:conversationId/members", () => {
     expect(res.status).toBe(401);
   });
 });
+
+describe("DELETE /api/v1/conversations/:conversationId/members/:memberId", () => {
+
+  beforeEach(async () => {
+    await resetConversationsTable();
+  });
+
+  async function createGroup(token: string, name: string, memberIds: string[]): Promise<string> {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ type: "group", name, memberIds });
+    return res.body.conversation.id;
+  }
+
+  async function createDirect(token: string, otherUserId: string): Promise<string> {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ type: "direct", otherUserId });
+    return res.body.conversation.id;
+  }
+
+  it("lets the admin remove a member", async () => {
+    const id = await createGroup(ownerToken, "Shrinking", [memberId, thirdId]);
+
+    const res = await request(app)
+      .delete(`${BASE_URL}/${id}/members/${thirdId}`)
+      .set("Authorization", `Bearer ${ownerToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("success");
+    expect(res.body.member).toEqual({ memberId: thirdId });
+
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1 AND member_id = $2", [id, thirdId])).toBe(0);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(2);
+  });
+
+  it("lets a member leave", async () => {
+    const id = await createGroup(ownerToken, "Leaving", [memberId]);
+
+    const res = await request(app)
+      .delete(`${BASE_URL}/${id}/members/${memberId}`)
+      .set("Authorization", `Bearer ${memberToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.member).toEqual({ memberId });
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1 AND member_id = $2", [id, memberId])).toBe(0);
+  });
+
+  it("does not allow a non-admin member to remove someone else", async () => {
+    const id = await createGroup(ownerToken, "Locked", [memberId, thirdId]);
+
+    const res = await request(app)
+      .delete(`${BASE_URL}/${id}/members/${thirdId}`)
+      .set("Authorization", `Bearer ${memberToken}`);
+
+    expect(res.status).toBe(403);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(3);
+  });
+
+  it("does not allow removing the admin", async () => {
+    const id = await createGroup(ownerToken, "Owned", [memberId]);
+
+    const byMember = await request(app)
+      .delete(`${BASE_URL}/${id}/members/${ownerId}`)
+      .set("Authorization", `Bearer ${memberToken}`);
+    expect(byMember.status).toBe(400);
+
+    const bySelf = await request(app)
+      .delete(`${BASE_URL}/${id}/members/${ownerId}`)
+      .set("Authorization", `Bearer ${ownerToken}`);
+    expect(bySelf.status).toBe(400);
+
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1 AND member_id = $2", [id, ownerId])).toBe(1);
+  });
+
+  it("does not allow a non-member to remove anyone", async () => {
+    const id = await createGroup(ownerToken, "Private", [memberId]);
+
+    const res = await request(app)
+      .delete(`${BASE_URL}/${id}/members/${memberId}`)
+      .set("Authorization", `Bearer ${tokenFor(thirdId)}`);
+
+    expect(res.status).toBe(403);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(2);
+  });
+
+  it("returns 404 when the target is not a member", async () => {
+    const id = await createGroup(ownerToken, "Missing target", [memberId]);
+
+    const res = await request(app)
+      .delete(`${BASE_URL}/${id}/members/${thirdId}`)
+      .set("Authorization", `Bearer ${ownerToken}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it("rejects removing a member from a direct conversation", async () => {
+    const id = await createDirect(ownerToken, memberId);
+
+    const res = await request(app)
+      .delete(`${BASE_URL}/${id}/members/${memberId}`)
+      .set("Authorization", `Bearer ${ownerToken}`);
+
+    expect(res.status).toBe(400);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(2);
+  });
+
+  it("returns 404 for a conversation that does not exist", async () => {
+    const res = await request(app)
+      .delete(`${BASE_URL}/${NONEXISTENT_ID}/members/${memberId}`)
+      .set("Authorization", `Bearer ${ownerToken}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it("returns 400 for an invalid member id", async () => {
+    const id = await createGroup(ownerToken, "Bad id", [memberId]);
+
+    const res = await request(app)
+      .delete(`${BASE_URL}/${id}/members/not-a-uuid`)
+      .set("Authorization", `Bearer ${ownerToken}`);
+
+    expect(res.status).toBe(400);
+  });
+
+  it("requires authentication", async () => {
+    const id = await createGroup(ownerToken, "Auth", [memberId]);
+
+    const res = await request(app).delete(`${BASE_URL}/${id}/members/${memberId}`);
+
+    expect(res.status).toBe(401);
+  });
+});

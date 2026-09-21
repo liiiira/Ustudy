@@ -1,4 +1,5 @@
 import pool from "../../config/postgres";
+import type { Message } from "./message.schema";
 
 type CreateMessageRepository = {
   conversationId: string;
@@ -7,16 +8,7 @@ type CreateMessageRepository = {
   uploadId?: string;
 }
 
-export type Message = {
-  id: string;
-  senderUsername?: string;
-  senderId?: string;
-  createdAt: Date;
-  imageUrl?: string;
-  textContent?: string;
-  conversationId?: string;
-}
-export async function create({conversationId, senderId, textContent, uploadId}: CreateMessageRepository) {
+export async function create({conversationId, senderId, textContent, uploadId}: CreateMessageRepository) : Promise<Message | null>{
 
   const result = await pool.query(`
     WITH inserted AS(
@@ -28,7 +20,7 @@ export async function create({conversationId, senderId, textContent, uploadId}: 
     SELECT 
       inserted.id AS "id",
       inserted.sender_id AS "senderId",
-      user.username AS "senderUsername",
+      users.username AS "senderUsername",
       inserted.text_content AS "textContent",
       inserted.conversation_id AS "conversationId",
       inserted.created_at AS "createdAt",
@@ -37,7 +29,7 @@ export async function create({conversationId, senderId, textContent, uploadId}: 
     LEFT JOIN uploads
       ON inserted.upload_id = uploads.id
     LEFT JOIN users 
-      ON inserted.send_id = users.id`,
+      ON inserted.sender_id = users.id`,
     [conversationId, senderId, textContent, uploadId]
   );
 

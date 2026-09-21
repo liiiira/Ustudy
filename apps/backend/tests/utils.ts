@@ -106,7 +106,7 @@ export async function resetUsersTable(){
 // Creates a real uploads row owned by the caller (the S3 presigner signs
 // locally, so this never touches R2) and returns its public URL — the value
 // a client would then submit as imageUrl/avatarUrl.
-export async function presignUpload(accessToken: string, kind: "avatar" | "post" | "community" | "conversation"): Promise<string> {
+export async function presignUpload(accessToken: string, kind: "avatar" | "post" | "community" | "conversation" | "message"): Promise<string> {
 
   const res = await request(app)
     .post("/api/v1/uploads/presign")

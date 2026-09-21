@@ -26,6 +26,12 @@ router.patch("/:conversationId",
   conversationController.updateById
 );
 
+router.delete("/:conversationId",
+  isAuthenticated,
+  validateParams(conversationIdSchema),
+  conversationController.deleteById
+);
+
 router.post("/:conversationId/members",
   isAuthenticated,
   validateParams(conversationIdSchema),

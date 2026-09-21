@@ -49,6 +49,24 @@ export async function  updateById(req: Request<{conversationId: string}>, res: R
 }
 
 
+export async function deleteById(req: Request<{conversationId: string}>, res: Response){
+
+  const userId = req.user!.id;
+  const {conversationId} = req.params;
+  
+  const deletedConversation: {id: string} = await conversationService.deleteById(userId, conversationId)
+
+  return res.status(200).json({
+    status: "success",
+    message: "Conversation deleted successfuly",
+    conversation: deletedConversation
+  })
+}
+
+
+
+// Members
+
 export async function addMembers(req: Request<{conversationId: string}>, res: Response){
 
   const userId = req.user!.id;
@@ -69,11 +87,11 @@ export async function removeMember(req: Request<{conversationId: string, memberI
   const userId = req.user!.id;
   const {conversationId, memberId} = req.params;
 
-  const removed = await conversationService.removeMember(userId, conversationId, memberId);
+  const removedMember = await conversationService.removeMember(userId, conversationId, memberId);
 
   return res.status(200).json({
     status: "success",
     message: "Member removed successfuly",
-    member: removed
+    member: removedMember
   })
 }

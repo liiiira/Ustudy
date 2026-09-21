@@ -7,6 +7,9 @@ import * as conversationRepository from  "./conversation.repository.ts";
 import type { Conversation, ConversationMember, ConversationUpdate, CreateConversationInput, DirectConversation, GroupConversation, GroupConversationInput } from "./conversation.schema.ts";
 
 
+
+// Conversations
+
 export async function createOrFindConversation(requesterId: string, body: CreateConversationInput): Promise<{created: boolean, conversation: Conversation}>{
 
   switch(body.type){
@@ -120,8 +123,40 @@ async function updateGroup(requesterMember: ConversationMember, group: GroupConv
   return updatedGroup;
 }
 
+// NOTE: maybe wwe will add update direct conversation functionality
 async function updateDirect(_requesterMember: ConversationMember, _direct: DirectConversation, _body: ConversationUpdate): Promise<DirectConversation>{
   throw new AppError("Direct conversations cannot be updated", 400);
+}
+
+
+export async function deleteById(requesterId: string, conversationId: string,): Promise<{id: string}>{
+
+  const conversation = await findById(conversationId);
+  if(!conversation) throw new AppError("Conversation not found", 404);
+
+  const requesterMember: ConversationMember | null = await findMember(conversationId, requesterId);
+  if(!requesterMember) throw new AppError("You are not a member of this conversation", 403);
+
+  switch(conversation.type){
+    case "group":
+      return deleteGroup(requesterMember, conversation as GroupConversation);
+
+    case "direct":
+      throw new AppError("Cannot delete a direct conversation" , 400);
+    default:
+      throw new AppError("Unknown conversation type", 500);
+  }
+}
+
+
+export async function deleteGroup(requesterMember: ConversationMember, groupConversation: GroupConversation): Promise<{id: string}>{
+
+  if(requesterMember.role !== "admin") throw new AppError("Only and admin can delete this group conversation", 403);
+  
+  const response = await conversationRepository.deleteGroup(groupConversation.id);
+  if(!response) throw new AppError("Failed to delete group conversation due to unexpected error", 500);
+
+  return response;
 }
 
 
@@ -129,7 +164,6 @@ async function updateDirect(_requesterMember: ConversationMember, _direct: Direc
 
 
 // Members 
-
 
 export async function addMembers(requesterId: string, conversationId: string, { memberIds } :{memberIds: string[]}){
 

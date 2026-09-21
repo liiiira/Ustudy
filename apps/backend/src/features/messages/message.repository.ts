@@ -52,9 +52,9 @@ export async function findById(conversationId: string, messageId: string): Promi
       uploads.public_url AS "imageUrl"
     FROM messages
     LEFT JOIN uploads
-      ON inserted.upload_id = uploads.id
+      ON messages.upload_id = uploads.id
     LEFT JOIN users 
-      ON inserted.sender_id = users.id
+      ON messages.sender_id = users.id
     WHERE messages.conversation_id = $1 AND messages.id = $2`,
     [conversationId, messageId]
   );
@@ -65,7 +65,7 @@ export async function deleteById(conversationId: string, messageId: string): Pro
   
   const result = await pool.query(
     `
-    DELETE messages 
+    DELETE FROM messages
     WHERE id = $1 AND conversation_id = $2
     RETURNING 
       id`,

@@ -26,9 +26,9 @@ export async function deleteById(req: Request<{conversationId: string, messageId
   const deletedMessage: {id: string} = await messageService.deleteById(userId, conversationId, messageId);
 
   
-  return res.status(201).json({
+  return res.status(200).json({
     status: "success",
-    message: "Message Created Sucessfully",
+    message: "Message deleted successfully",
     chatMessage: deletedMessage,
   })
 }

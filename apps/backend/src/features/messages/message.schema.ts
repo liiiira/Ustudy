@@ -20,4 +20,9 @@ export const createMessageSchema = z.object({
   imageUrl: z.url().optional(),
 })
 
+export const messageIdSchema = z.object({
+  conversationId: z.uuid(),
+  messageIdSchema: z.uuid(),
+})
+
 

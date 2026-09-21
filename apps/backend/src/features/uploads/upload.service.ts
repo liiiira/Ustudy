@@ -30,19 +30,20 @@ export async function createPresignUpload(userId: string, presignData: PresignTy
 }
 
 type UploadUrl =
-  | { avatarUrl: string; postUrl?: never; communityUrl?: never; conversationUrl?: never; }
-  | { postUrl: string; avatarUrl?: never; communityUrl?: never; conversationUrl?: never; }
-  | { communityUrl: string; avatarUrl?: never; postUrl?: never; conversationUrl?: never; }
-  | { conversationUrl: string; avatarUrl?: never; postUrl?: never; communityUrl?: never; };
+  | { avatarUrl: string; postUrl?: never; communityUrl?: never; conversationUrl?: never; messageUrl?: never; }
+  | { postUrl: string; avatarUrl?: never; communityUrl?: never; conversationUrl?: never; messageUrl?: never; }
+  | { communityUrl: string; avatarUrl?: never; postUrl?: never; conversationUrl?: never; messageUrl?: never; }
+  | { conversationUrl: string; avatarUrl?: never; postUrl?: never; communityUrl?: never; messageUrl?: never; }
+  | { messageUrl: string; avatarUrl?: never; postUrl?: never; communityUrl?: never; conversationUrl?: never; };
 
 export async function verifyUploadOwnerShip(requesterId: string, uploadUrl: UploadUrl): Promise<Upload>{
   
-  const {avatarUrl, postUrl, communityUrl, conversationUrl} = uploadUrl;
+  const {avatarUrl, postUrl, communityUrl, conversationUrl, messageUrl} = uploadUrl;
     
-  const count = [avatarUrl, postUrl, communityUrl, conversationUrl].filter(Boolean).length;
+  const count = [avatarUrl, postUrl, communityUrl, conversationUrl, messageUrl].filter(Boolean).length;
 
   if (count !== 1) {
-    throw new AppError("Provide exactly one of avatarUrl, postUrl, communityUrl", 400);
+    throw new AppError("Provide exactly one of avatarUrl, postUrl, communityUrl, conversationUrl, messageUrl", 400);
   }
 
   let publicUrl: string;
@@ -66,6 +67,11 @@ export async function verifyUploadOwnerShip(requesterId: string, uploadUrl: Uplo
   if(conversationUrl){
     publicUrl = conversationUrl;
     kind = "conversation"
+  }
+
+  if(messageUrl){
+    publicUrl = messageUrl;
+    kind = "message";
   }
   
   const upload: Upload | null = await uploadRepository.findByPublicUrl(publicUrl!)

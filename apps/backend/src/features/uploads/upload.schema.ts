@@ -9,7 +9,8 @@ export const FOLDER_BY_KIND: Record<UploadKind, string> = {
   "avatar": "avatars",
   "community": "communities",
   "post": "posts",
-  "conversation": "conversations"
+  "conversation": "conversations",
+  "message": "messages",
 } as const;
 
 export const EXTENSION_BY_TYPE: Record<UploadContentType, string> = {
@@ -19,19 +20,19 @@ export const EXTENSION_BY_TYPE: Record<UploadContentType, string> = {
 }
 
 export const presignRequestSchema = z.object({
-  kind: z.enum(["avatar", "post", "community", "conversation"]),
+  kind: z.enum(["avatar", "post", "community", "conversation", "message"]),
   contentType: z.enum(["image/png", "image/jpeg", "image/webp"]),
   size: z.number().positive().max(MAX_UPLOAD_BYTES),
 });
 
 export type PresignType = {
-  kind: "avatar" | "post" | "community" | "conversation";
+  kind: "avatar" | "post" | "community" | "conversation" | "message";
   contentType: "image/png" | "image/jpeg" | "image/webp";
   size: number;
 }
 
 export type UploadInput = {
-  kind: "avatar" | "post" | "community" |"conversation";
+  kind: "avatar" | "post" | "community" | "conversation" | "message";
   objectKey: string;
   publicUrl: string;
   contentType: string;

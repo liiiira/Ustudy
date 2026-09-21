@@ -1,4 +1,4 @@
-export type UploadKind = "post" | "avatar" | "community" | "conversation";
+export type UploadKind = "post" | "avatar" | "community" | "conversation" | "message";
 export type ContentType = "image/jpeg" | "image/webp" | "image/png";
 
 export const CONTENT_TYPES = ["image/jpeg", "image/webp", "image/png"]

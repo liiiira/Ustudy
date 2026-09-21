@@ -7,7 +7,7 @@ import { conversationIdSchema } from "../conversations/conversation.schema.ts";
 
 const router = Router({caseSensitive: true, mergeParams: true});
 
-router.post("/messages", 
+router.post("/", 
   isAuthenticated,
   validateParams(conversationIdSchema),
   validateBody(createMessageSchema),

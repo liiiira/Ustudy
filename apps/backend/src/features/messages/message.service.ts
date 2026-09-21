@@ -17,7 +17,7 @@ export async function create(requesterId: string, conversationId: string, {textC
   
   let uploadId: string | undefined;
   if(imageUrl){
-    const upload = await uploadService.verifyUploadOwnerShip(requesterId, {conversationUrl: imageUrl});
+    const upload = await uploadService.verifyUploadOwnerShip(requesterId, {messageUrl: imageUrl});
     uploadId = upload.id;
   } 
 

@@ -15,7 +15,7 @@ router.use("/auth", authRouter);
 router.use("/communities", communityRouter);
 router.use("/uploads", uploadRouter);
 router.use("/conversations", conversationRouter);
-router.use("conversations/:conversationId", messageRouter);
+router.use("/conversations/:conversationId/messages", messageRouter);
 router.use("/communities/:communityId/posts", postRouter);
 router.use("/communities/:communityId/posts/:postId/comments", commentRouter);
 

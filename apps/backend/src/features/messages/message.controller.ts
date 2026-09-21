@@ -14,6 +14,6 @@ export async function create(req: Request<{conversationId: string}>, res: Respon
   return res.status(201).json({
     status: "success",
     message: "Message Created Sucessfully",
-    messageObject: createdMessage,
+    chatMessage: createdMessage,
   })
 }

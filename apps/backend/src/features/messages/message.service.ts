@@ -5,7 +5,7 @@ import type { Message, MessageInput } from "./message.schema.ts";
 import { AppError } from "../../errors/appError.ts";
 
 
-export async function create(requesterId: string, {textContent, imageUrl, conversationId}: MessageInput){
+export async function create(requesterId: string, conversationId: string, {textContent, imageUrl}: MessageInput){
 
   if(!textContent && !imageUrl) throw new AppError("Message must contain at least a text or an image", 400);
   

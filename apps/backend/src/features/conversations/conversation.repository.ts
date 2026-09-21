@@ -127,7 +127,7 @@ export async function updateGroup(conversationId: string, {name, uploadId}: Grou
     queryValues.push(uploadId);
     updateQuery.push(` upload_id = $${queryValues.length} `)
   }
-
+ 
   queryValues.push(conversationId);
   const result = await pool.query(`
     WITH updated AS (

@@ -17,3 +17,18 @@ export async function create(req: Request<{conversationId: string}>, res: Respon
     chatMessage: createdMessage,
   })
 }
+
+export async function deleteById(req: Request<{conversationId: string, messageId: string}>, res: Response){
+
+  const userId = req.user!.id;
+  const {conversationId, messageId} = req.params;
+
+  const deletedMessage: {id: string} = await messageService.deleteById(userId, conversationId, messageId);
+
+  
+  return res.status(201).json({
+    status: "success",
+    message: "Message Created Sucessfully",
+    chatMessage: deletedMessage,
+  })
+}

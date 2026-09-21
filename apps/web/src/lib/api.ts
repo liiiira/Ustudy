@@ -2,86 +2,91 @@ import { getAccessToken, setAccessToken } from "../features/auth/token";
 import concatQueryParams from "../utils/concatQueryParams";
 
 type PublicOptionsType = {
-  body?: Record<string, string | number>,
-  method?: "POST" | "GET" | "PATCH" | "DELETE" | "PUT",
-  queryParams?: Record<string, string>, 
-}
+  body?: Record<string, string | number>;
+  method?: "POST" | "GET" | "PATCH" | "DELETE" | "PUT";
+  queryParams?: Record<string, string>;
+};
 
 type OptionsType = PublicOptionsType & {
   accessToken?: string | null;
-}
+};
 
 type ErrorResponse = {
   status: string;
   message: string;
-}
+};
 
 // Used for fetching api endpints that doesn't require access token
-export async function publicFetch(endPointPath: string, options?: PublicOptionsType){
+export async function publicFetch(
+  endPointPath: string,
+  options?: PublicOptionsType,
+) {
+  options = options ?? {};
+  const response = await fetchApi(endPointPath, false, options);
 
-  options = options ?? {}
-  const response =  await fetchApi(endPointPath, false,  options)
-
-  if(!response.ok){
-    const errorData = await response.json() as ErrorResponse;
-    throw new Error(errorData.message)
+  if (!response.ok) {
+    const errorData = (await response.json()) as ErrorResponse;
+    throw new Error(errorData.message);
   }
 
-  if(response.status === 204)
-    return ;
-  
-  return response.json();
+  if (response.status === 204) return;
 
+  return response.json();
 }
 
 // Used for fetching api endpoints that requires access token
-export async function authFetch(endPointPath: string, options?: PublicOptionsType){
-  
+export async function authFetch(
+  endPointPath: string,
+  options?: PublicOptionsType,
+) {
   const accessToken: string | null = getAccessToken();
-  const response = await fetchApi(endPointPath, true, {...options, accessToken})
-  
-  if(response.status === 204)
-    return ;
+  const response = await fetchApi(endPointPath, true, {
+    ...options,
+    accessToken,
+  });
 
-  if(response.ok)
-    return response.json();
+  if (response.status === 204) return;
 
-  // if the request was not authorized 
-  if(response.status === 401){
+  if (response.ok) return response.json();
 
-    // refresh access token 
-    const data: {message: string, status: string, accessToken: string} = await publicFetch("/auth/refresh", {
-      method: "POST",
-    })
-    
+  // if the request was not authorized
+  if (response.status === 401) {
+    // refresh access token
+    const data: { message: string; status: string; accessToken: string } =
+      await publicFetch("/auth/refresh", {
+        method: "POST",
+      });
+
     setAccessToken(data.accessToken);
 
-    // retry again 
-    const newResponse = await fetchApi(endPointPath, true, {...options, accessToken: data.accessToken})
-    
-    if (newResponse.status === 204)
-      return ;
+    // retry again
+    const newResponse = await fetchApi(endPointPath, true, {
+      ...options,
+      accessToken: data.accessToken,
+    });
 
-    if(newResponse.ok)
-      return newResponse.json();
-    
-    const newErrorData = await newResponse.json() as ErrorResponse;
-    
+    if (newResponse.status === 204) return;
+
+    if (newResponse.ok) return newResponse.json();
+
+    const newErrorData = (await newResponse.json()) as ErrorResponse;
+
     throw new Error(newErrorData.message);
   }
-  
-  const errorData = await response.json() as ErrorResponse;
+
+  const errorData = (await response.json()) as ErrorResponse;
 
   throw new Error(errorData.message);
-
 }
-
 
 // NOTE:: This function shouldn't be used outside this file
 //
 // it's wrapper function to fetch
-async function fetchApi(endPointPath: string, auth: boolean = false , options: OptionsType){
-
+async function fetchApi(
+  endPointPath: string,
+  auth: boolean = false,
+  options: OptionsType,
+) {
   const params = options.queryParams ?? null;
   const queryParams: string = concatQueryParams(params);
 
@@ -91,18 +96,18 @@ async function fetchApi(endPointPath: string, auth: boolean = false , options: O
   const remainingOptions = {
     body: body,
     method: options.method,
-  }
-  
-  const response = await fetch(`http://localhost:3000/api/v1${endPointPath}?${queryParams}`, {
-    ...remainingOptions,
-    credentials: "include",
-    headers: {
-      'Content-Type': 'application/json',
-      ...(auth && {'Authorization': `Bearer ${accessToken}`,
-      }),
-    }
-  });
+  };
+
+  const response = await fetch(
+    `http://localhost:3000/api/v1${endPointPath}?${queryParams}`,
+    {
+      ...remainingOptions,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(auth && { Authorization: `Bearer ${accessToken}` }),
+      },
+    },
+  );
   return response;
 }
-
-

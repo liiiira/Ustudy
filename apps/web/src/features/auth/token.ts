@@ -1,13 +1,13 @@
 let token: string | null = null;
 
-export function setAccessToken(accessToken: string){
+export function setAccessToken(accessToken: string) {
   token = accessToken;
 }
 
-export function getAccessToken(): string | null{
+export function getAccessToken(): string | null {
   return token;
 }
 
-export function removeAccessToken(){
+export function removeAccessToken() {
   token = null;
 }

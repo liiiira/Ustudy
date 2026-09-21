@@ -1,74 +1,80 @@
 import * as communityService from "./community.service.ts";
-import {type Request, type Response} from "express"
+import { type Request, type Response } from "express";
 import { type CommmunityJoinUser, type CommunityDB } from "./community.schema";
 
-export async function create(req: Request, res: Response){
-
-  const {name, description, imageUrl} = req.body;
+export async function create(req: Request, res: Response) {
+  const { name, description, imageUrl } = req.body;
   const ownerId = req.user!.id;
-  
-  const createdCommunity: CommunityDB = await communityService.create({name, description, ownerId, imageUrl});
-  
+
+  const createdCommunity: CommunityDB = await communityService.create({
+    name,
+    description,
+    ownerId,
+    imageUrl,
+  });
+
   res.status(201).json({
     status: "success",
     message: "Community Created Successfuly",
     community: createdCommunity,
-  })
+  });
 }
 
-export async function findAll(_req: Request, res: Response){
-
+export async function findAll(_req: Request, res: Response) {
   const foundCommunities: CommunityDB[] = await communityService.findAll();
 
   res.status(200).json({
     status: "success",
     message: "Communities Found Successfuly",
-    communities: foundCommunities
-  })
+    communities: foundCommunities,
+  });
 }
 
-export async function findById(req: Request<{id: string}>, res: Response){
-  const {id} = req.params;
+export async function findById(req: Request<{ id: string }>, res: Response) {
+  const { id } = req.params;
 
-  const foundCommunity: CommmunityJoinUser = await communityService.getByIdJoinUser(id)
+  const foundCommunity: CommmunityJoinUser =
+    await communityService.getByIdJoinUser(id);
 
   res.status(200).json({
     status: "success",
     message: "Community Fetched Successfuly",
     community: foundCommunity,
-  })
+  });
 }
 
-export async function updateById(req: Request<{id: string}>, res: Response){
-  
+export async function updateById(req: Request<{ id: string }>, res: Response) {
   const userId: string = req.user!.id;
-  const {id} = req.params;
-  const {name, description, imageUrl } = req.body;
-  const updatedCommunity: CommunityDB | null = await communityService.updateById(userId, id, {name, description, imageUrl})
+  const { id } = req.params;
+  const { name, description, imageUrl } = req.body;
+  const updatedCommunity: CommunityDB | null =
+    await communityService.updateById(userId, id, {
+      name,
+      description,
+      imageUrl,
+    });
 
   // Nothing changed
-  if (!updatedCommunity)
-    return res.status(204).json({})
+  if (!updatedCommunity) return res.status(204).json({});
 
- 
   return res.status(200).json({
     status: "success",
     community: updatedCommunity,
-    message: "Community Updated Successfully"
-  })
+    message: "Community Updated Successfully",
+  });
 }
 
-export async function deleteById(req: Request<{id: string}>, res: Response){
-  
+export async function deleteById(req: Request<{ id: string }>, res: Response) {
   const userId: string = req.user!.id;
-  const {id} = req.params;
-  const deletedCommunity: {id: string} = await communityService.delelteById(userId, id);
-  
+  const { id } = req.params;
+  const deletedCommunity: { id: string } = await communityService.delelteById(
+    userId,
+    id,
+  );
+
   return res.status(200).json({
     status: "success",
     message: "Community deleted successfuly",
     community: deletedCommunity,
-  })
+  });
 }
-
-

@@ -2,11 +2,17 @@ import request from "supertest";
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import app from "../src/app.ts";
 import pool from "../src/config/postgres.ts";
-import { resetTables, createCommunity, createPost, createUser, resetPostsTable, loginUser, presignUpload } from "./utils.ts";
+import {
+  resetTables,
+  createCommunity,
+  createPost,
+  createUser,
+  resetPostsTable,
+  loginUser,
+  presignUpload,
+} from "./utils.ts";
 
-
-
-const BASE_URL = "/api/v1/communities"
+const BASE_URL = "/api/v1/communities";
 
 const TEST_USER = {
   email: "community-tests@example.com",
@@ -29,27 +35,35 @@ let otherCommunity;
 let otherCommunityId: string;
 
 beforeAll(async () => {
-    await resetTables();
-    testUserId = await createUser(TEST_USER);
-    await createUser(OTHER_USER);
-    accessToken = await loginUser({email: TEST_USER.email, password: TEST_USER.password})
-    otherAccessToken = await loginUser({email: OTHER_USER.email, password: OTHER_USER.password})
-    community = await createCommunity(accessToken, {name: "algorithms_club", description: "A place to discuss algorithms"});
-    communityId = community.id;   
-    otherCommunity = await createCommunity(accessToken, {name: "other-community", description: "Another community"});
-    otherCommunityId = otherCommunity.id;
-})
-
+  await resetTables();
+  testUserId = await createUser(TEST_USER);
+  await createUser(OTHER_USER);
+  accessToken = await loginUser({
+    email: TEST_USER.email,
+    password: TEST_USER.password,
+  });
+  otherAccessToken = await loginUser({
+    email: OTHER_USER.email,
+    password: OTHER_USER.password,
+  });
+  community = await createCommunity(accessToken, {
+    name: "algorithms_club",
+    description: "A place to discuss algorithms",
+  });
+  communityId = community.id;
+  otherCommunity = await createCommunity(accessToken, {
+    name: "other-community",
+    description: "Another community",
+  });
+  otherCommunityId = otherCommunity.id;
+});
 
 describe("POST /api/v1/communities/:communityId/posts", () => {
-
-
   beforeEach(async () => {
     await resetPostsTable();
-  })
+  });
 
   it("creates a post in a community", async () => {
-
     const res = await request(app)
       .post(`${BASE_URL}/${communityId}/posts`)
       .set("Authorization", `Bearer ${accessToken}`)
@@ -72,10 +86,9 @@ describe("POST /api/v1/communities/:communityId/posts", () => {
     expect(res.body.post.createdAt).toBeDefined();
 
     // Verify it actually exists in the database
-    const dbRow = await pool.query(
-      "SELECT * FROM posts WHERE id = $1",
-      [res.body.post.id]
-    );
+    const dbRow = await pool.query("SELECT * FROM posts WHERE id = $1", [
+      res.body.post.id,
+    ]);
 
     expect(dbRow.rows).toHaveLength(1);
     expect(dbRow.rows[0].owner_id).toBe(testUserId);
@@ -84,9 +97,7 @@ describe("POST /api/v1/communities/:communityId/posts", () => {
     expect(dbRow.rows[0].text_content).toBe("This is my first post.");
   });
 
-
   it("requires authentication", async () => {
-
     const res = await request(app)
       .post(`${BASE_URL}/${communityId}/posts`)
       .send({
@@ -98,8 +109,6 @@ describe("POST /api/v1/communities/:communityId/posts", () => {
   });
 
   it("rejects an invalid community ID", async () => {
-
-    
     const res = await request(app)
       .post(`${BASE_URL}/not-a-uuid/posts`)
       .set("Authorization", `Bearer ${accessToken}`)
@@ -112,7 +121,6 @@ describe("POST /api/v1/communities/:communityId/posts", () => {
   });
 
   it("rejects invalid post data", async () => {
-
     const res = await request(app)
       .post(`${BASE_URL}/${communityId}/posts`)
       .set("Authorization", `Bearer ${accessToken}`)
@@ -125,9 +133,7 @@ describe("POST /api/v1/communities/:communityId/posts", () => {
   });
 
   it("returns 400 when the community does not exist", async () => {
-
-    const nonExistentCommunityId =
-      "00000000-0000-0000-0000-000000000000";
+    const nonExistentCommunityId = "00000000-0000-0000-0000-000000000000";
 
     const res = await request(app)
       .post(`${BASE_URL}/${nonExistentCommunityId}/posts`)
@@ -141,50 +147,44 @@ describe("POST /api/v1/communities/:communityId/posts", () => {
   });
 });
 
-
-
-
 describe("GET /api/v1/communities/:communityId/posts", () => {
-  
   let post;
   let postId: string;
 
   beforeEach(async () => {
     await resetPostsTable();
-    post = await createPost(communityId, accessToken, {textContent: "This is my first post.", title: "My first post"})
-    postId = post.id;    
+    post = await createPost(communityId, accessToken, {
+      textContent: "This is my first post.",
+      title: "My first post",
+    });
+    postId = post.id;
   });
 
-
   it("returns all posts belonging to a community", async () => {
-
     const res = await request(app)
       .get(`${BASE_URL}/${communityId}/posts`)
       .set("Authorization", `Bearer ${accessToken}`);
 
-      expect(res.status).toBe(200);
-      expect(res.body.status).toBe("success");
-      expect(res.body.posts).toHaveLength(1);
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("success");
+    expect(res.body.posts).toHaveLength(1);
 
-      expect(res.body.posts[0]).toMatchObject({
-        id: postId,
-        title: "My first post",
-        textContent: "This is my first post.",
-        ownerId: testUserId,
-        communityId,
-      });
+    expect(res.body.posts[0]).toMatchObject({
+      id: postId,
+      title: "My first post",
+      textContent: "This is my first post.",
+      ownerId: testUserId,
+      communityId,
     });
+  });
 
   it("requires authentication", async () => {
-
-    const res = await request(app)
-      .get(`${BASE_URL}/${communityId}/posts`);
+    const res = await request(app).get(`${BASE_URL}/${communityId}/posts`);
 
     expect(res.status).toBe(401);
   });
 
   it("rejects an invalid community ID", async () => {
-
     const res = await request(app)
       .get(`${BASE_URL}/not-a-uuid/posts`)
       .set("Authorization", `Bearer ${accessToken}`);
@@ -193,7 +193,10 @@ describe("GET /api/v1/communities/:communityId/posts", () => {
   });
 
   it("returns an empty array when the community has no posts", async () => {
-    const community = await createCommunity(accessToken, {name: "idcccc", description: "it is useless idk"})
+    const community = await createCommunity(accessToken, {
+      name: "idcccc",
+      description: "it is useless idk",
+    });
     const communityId = community.id;
 
     const res = await request(app)
@@ -205,8 +208,10 @@ describe("GET /api/v1/communities/:communityId/posts", () => {
   });
 
   it("does not return posts from another community", async () => {
-     
-    const post = await createPost(otherCommunityId, accessToken, {title: "Other post", textContent: "Other Content"})
+    const post = await createPost(otherCommunityId, accessToken, {
+      title: "Other post",
+      textContent: "Other Content",
+    });
     const postId = post.id;
 
     const res = await request(app)
@@ -220,17 +225,18 @@ describe("GET /api/v1/communities/:communityId/posts", () => {
 });
 
 describe("PATCH /api/v1/communities/:communityId/posts/:postId", () => {
-
   let post;
   let postId: string;
 
   beforeEach(async () => {
     await resetPostsTable();
-    post = await createPost(communityId, accessToken, {textContent: "Original content", title: "Original title"})
-    postId = post.id;    
+    post = await createPost(communityId, accessToken, {
+      textContent: "Original content",
+      title: "Original title",
+    });
+    postId = post.id;
+  });
 
-  }); 
-  
   it("updates a post", async () => {
     const res = await request(app)
       .patch(`${BASE_URL}/${communityId}/posts/${postId}`)
@@ -256,7 +262,7 @@ describe("PATCH /api/v1/communities/:communityId/posts/:postId", () => {
       `SELECT title, text_content, owner_id, community_id
        FROM posts
        WHERE id = $1`,
-      [postId]
+      [postId],
     );
 
     expect(dbRow.rows).toHaveLength(1);
@@ -316,8 +322,7 @@ describe("PATCH /api/v1/communities/:communityId/posts/:postId", () => {
   });
 
   it("returns 404 when the post does not exist", async () => {
-    const nonExistentPostId =
-      "00000000-0000-0000-0000-000000000000";
+    const nonExistentPostId = "00000000-0000-0000-0000-000000000000";
 
     const res = await request(app)
       .patch(`${BASE_URL}/${communityId}/posts/${nonExistentPostId}`)
@@ -361,10 +366,9 @@ describe("PATCH /api/v1/communities/:communityId/posts/:postId", () => {
     expect(res.status).toBe(403);
 
     // Verify it wasn't changed
-    const dbRow = await pool.query(
-      "SELECT title FROM posts WHERE id = $1",
-      [postId]
-    );
+    const dbRow = await pool.query("SELECT title FROM posts WHERE id = $1", [
+      postId,
+    ]);
 
     expect(dbRow.rows[0].title).toBe("Original title");
   });
@@ -375,10 +379,12 @@ describe("DELETE /api/v1/communities/:communityId/posts/:postId", () => {
   let postId: string;
 
   beforeEach(async () => {
-
     await resetPostsTable();
-    post = await createPost(communityId, accessToken, {textContent: "This Post will be delted", title: "Post to be delete"})
-    postId = post.id;    
+    post = await createPost(communityId, accessToken, {
+      textContent: "This Post will be delted",
+      title: "Post to be delete",
+    });
+    postId = post.id;
   });
 
   it("deletes a post", async () => {
@@ -394,17 +400,17 @@ describe("DELETE /api/v1/communities/:communityId/posts/:postId", () => {
     });
 
     // Verify it was actually deleted
-    const dbRow = await pool.query(
-      "SELECT * FROM posts WHERE id = $1",
-      [postId]
-    );
+    const dbRow = await pool.query("SELECT * FROM posts WHERE id = $1", [
+      postId,
+    ]);
 
     expect(dbRow.rows).toHaveLength(0);
   });
 
   it("requires authentication", async () => {
-    const res = await request(app)
-      .delete(`${BASE_URL}/${communityId}/posts/${postId}`);
+    const res = await request(app).delete(
+      `${BASE_URL}/${communityId}/posts/${postId}`,
+    );
 
     expect(res.status).toBe(401);
   });
@@ -418,8 +424,7 @@ describe("DELETE /api/v1/communities/:communityId/posts/:postId", () => {
   });
 
   it("returns 404 when the post does not exist", async () => {
-    const nonExistentPostId =
-      "00000000-0000-0000-0000-000000000000";
+    const nonExistentPostId = "00000000-0000-0000-0000-000000000000";
 
     const res = await request(app)
       .delete(`${BASE_URL}/${communityId}/posts/${nonExistentPostId}`)
@@ -436,17 +441,15 @@ describe("DELETE /api/v1/communities/:communityId/posts/:postId", () => {
     expect(res.status).toBe(403);
 
     // Verify it wasn't deleted
-    const dbRow = await pool.query(
-      "SELECT * FROM posts WHERE id = $1",
-      [postId]
-    );
+    const dbRow = await pool.query("SELECT * FROM posts WHERE id = $1", [
+      postId,
+    ]);
 
     expect(dbRow.rows).toHaveLength(1);
   });
 });
 
 describe("posts (images)", () => {
-
   beforeEach(async () => {
     await resetPostsTable();
   });
@@ -464,7 +467,7 @@ describe("posts (images)", () => {
 
     const row = await pool.query(
       `SELECT u.public_url FROM posts p JOIN uploads u ON p.image_id = u.id WHERE p.id = $1`,
-      [res.body.post.id]
+      [res.body.post.id],
     );
     expect(row.rows[0].public_url).toBe(imageUrl);
   });
@@ -483,7 +486,11 @@ describe("posts (images)", () => {
     const res = await request(app)
       .post(`${BASE_URL}/${communityId}/posts`)
       .set("Authorization", `Bearer ${accessToken}`)
-      .send({ title: "Unknown image", textContent: "content", imageUrl: "https://example.com/posts/nope.png" });
+      .send({
+        title: "Unknown image",
+        textContent: "content",
+        imageUrl: "https://example.com/posts/nope.png",
+      });
 
     expect(res.status).toBe(404);
     const count = await pool.query("SELECT count(*)::int AS n FROM posts");
@@ -496,7 +503,11 @@ describe("posts (images)", () => {
     const res = await request(app)
       .post(`${BASE_URL}/${communityId}/posts`)
       .set("Authorization", `Bearer ${accessToken}`)
-      .send({ title: "Stolen image", textContent: "content", imageUrl: someoneElsesImage });
+      .send({
+        title: "Stolen image",
+        textContent: "content",
+        imageUrl: someoneElsesImage,
+      });
 
     expect(res.status).toBe(403);
     const count = await pool.query("SELECT count(*)::int AS n FROM posts");
@@ -518,7 +529,11 @@ describe("posts (images)", () => {
     const res = await request(app)
       .post(`${BASE_URL}/${communityId}/posts`)
       .set("Authorization", `Bearer ${accessToken}`)
-      .send({ title: "Bad url", textContent: "content", imageUrl: "not a url" });
+      .send({
+        title: "Bad url",
+        textContent: "content",
+        imageUrl: "not a url",
+      });
 
     expect(res.status).toBe(400);
   });
@@ -546,7 +561,10 @@ describe("posts (images)", () => {
   it("replaces the image on update", async () => {
     const first = await presignUpload(accessToken, "post");
     const second = await presignUpload(accessToken, "post");
-    const post = await createPost(communityId, accessToken, { title: "t", textContent: "c" });
+    const post = await createPost(communityId, accessToken, {
+      title: "t",
+      textContent: "c",
+    });
 
     const setFirst = await request(app)
       .patch(`${BASE_URL}/${communityId}/posts/${post.id}`)
@@ -564,14 +582,17 @@ describe("posts (images)", () => {
 
     const row = await pool.query(
       `SELECT u.public_url FROM posts p JOIN uploads u ON p.image_id = u.id WHERE p.id = $1`,
-      [post.id]
+      [post.id],
     );
     expect(row.rows[0].public_url).toBe(second);
   });
 
   it("returns 204 when the same image is sent again", async () => {
     const imageUrl = await presignUpload(accessToken, "post");
-    const post = await createPost(communityId, accessToken, { title: "t", textContent: "c" });
+    const post = await createPost(communityId, accessToken, {
+      title: "t",
+      textContent: "c",
+    });
 
     await request(app)
       .patch(`${BASE_URL}/${communityId}/posts/${post.id}`)
@@ -588,7 +609,10 @@ describe("posts (images)", () => {
 
   it("does not allow another user's upload on update and leaves the post unchanged", async () => {
     const someoneElsesImage = await presignUpload(otherAccessToken, "post");
-    const post = await createPost(communityId, accessToken, { title: "t", textContent: "c" });
+    const post = await createPost(communityId, accessToken, {
+      title: "t",
+      textContent: "c",
+    });
 
     const res = await request(app)
       .patch(`${BASE_URL}/${communityId}/posts/${post.id}`)
@@ -597,7 +621,9 @@ describe("posts (images)", () => {
 
     expect(res.status).toBe(403);
 
-    const row = await pool.query("SELECT image_id FROM posts WHERE id = $1", [post.id]);
+    const row = await pool.query("SELECT image_id FROM posts WHERE id = $1", [
+      post.id,
+    ]);
     expect(row.rows[0].image_id).toBeNull();
   });
 });

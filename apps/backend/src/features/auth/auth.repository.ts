@@ -1,13 +1,17 @@
 import pool from "../../config/postgres";
-import { type InputRefreshToken, type DbRefreshToken, type UserToken } from "./auth.schema";
+import {
+  type InputRefreshToken,
+  type DbRefreshToken,
+  type UserToken,
+} from "./auth.schema";
 
 // For now one user has only one refresh token (Later we will update for many devices)
 
-
 // it tries first to insert a refresh token of a user  if it fails it updates the existing refresh token of the user
-export async function upsertRefreshToken(RefreshToken: InputRefreshToken): Promise<DbRefreshToken>{
-
-  const {userId, hashedToken, expiresAt} = RefreshToken; 
+export async function upsertRefreshToken(
+  RefreshToken: InputRefreshToken,
+): Promise<DbRefreshToken> {
+  const { userId, hashedToken, expiresAt } = RefreshToken;
   const result = await pool.query(
     `INSERT INTO refresh_tokens(user_id, hashed_token, expires_at)
     VALUES ($1, $2, $3)
@@ -19,15 +23,16 @@ export async function upsertRefreshToken(RefreshToken: InputRefreshToken): Promi
     RETURNING 
     id, user_id AS userId, created_at AS createdAt, expires_at AS expiresAt;
     `,
-    [userId, hashedToken, expiresAt]
+    [userId, hashedToken, expiresAt],
   );
-  
+
   return result.rows[0];
 }
 
-export async function findRefreshToken(userId: string): Promise<DbRefreshToken | undefined>   {
-
-   const result = await pool.query(
+export async function findRefreshToken(
+  userId: string,
+): Promise<DbRefreshToken | undefined> {
+  const result = await pool.query(
     `SELECT 
       hashed_token AS "hashedToken", 
       user_id AS "userId",  
@@ -36,14 +41,15 @@ export async function findRefreshToken(userId: string): Promise<DbRefreshToken |
       id
       FROM refresh_tokens
       WHERE user_id = $1;`,
-    [userId]
+    [userId],
   );
 
   return result.rows[0];
 }
 
-export async function revokeRefreshToken(hashedToken: string): Promise<UserToken | undefined>{
-  
+export async function revokeRefreshToken(
+  hashedToken: string,
+): Promise<UserToken | undefined> {
   const result = await pool.query(
     `UPDATE refresh_tokens
     SET revoked_at=NOW()
@@ -51,11 +57,7 @@ export async function revokeRefreshToken(hashedToken: string): Promise<UserToken
     RETURNING
     user_id AS "userId",
     id`,
-    [hashedToken]
-  )
+    [hashedToken],
+  );
   return result.rows[0];
 }
-
-
-
-

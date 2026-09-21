@@ -6,12 +6,16 @@ type CreateMessageRepository = {
   senderId: string;
   textContent?: string;
   uploadId?: string;
-}
+};
 
-
-export async function create({conversationId, senderId, textContent, uploadId}: CreateMessageRepository) : Promise<Message | null>{
-
-  const result = await pool.query(`
+export async function create({
+  conversationId,
+  senderId,
+  textContent,
+  uploadId,
+}: CreateMessageRepository): Promise<Message | null> {
+  const result = await pool.query(
+    `
     WITH inserted AS(
       INSERT INTO messages(conversation_id, sender_id, text_content, upload_id)
       VALUES 
@@ -31,15 +35,16 @@ export async function create({conversationId, senderId, textContent, uploadId}: 
       ON inserted.upload_id = uploads.id
     LEFT JOIN users 
       ON inserted.sender_id = users.id`,
-    [conversationId, senderId, textContent, uploadId]
+    [conversationId, senderId, textContent, uploadId],
   );
 
   return result.rows[0] ?? null;
 }
 
-
-export async function findById(conversationId: string, messageId: string): Promise<Message | null>{
-  
+export async function findById(
+  conversationId: string,
+  messageId: string,
+): Promise<Message | null> {
   const result = await pool.query(
     `
     SELECT 
@@ -56,22 +61,23 @@ export async function findById(conversationId: string, messageId: string): Promi
     LEFT JOIN users 
       ON messages.sender_id = users.id
     WHERE messages.conversation_id = $1 AND messages.id = $2`,
-    [conversationId, messageId]
+    [conversationId, messageId],
   );
 
   return result.rows[0] ?? null;
 }
-export async function deleteById(conversationId: string, messageId: string): Promise<{id: string} | null>{
-  
+export async function deleteById(
+  conversationId: string,
+  messageId: string,
+): Promise<{ id: string } | null> {
   const result = await pool.query(
     `
     DELETE FROM messages
     WHERE id = $1 AND conversation_id = $2
     RETURNING 
       id`,
-    [messageId, conversationId]
+    [messageId, conversationId],
   );
 
   return result.rows[0] ?? null;
 }
-

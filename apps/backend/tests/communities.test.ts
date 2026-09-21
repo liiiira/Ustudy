@@ -1,6 +1,13 @@
 import request from "supertest";
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
-import { createUser, loginUser, createCommunity, resetCommunitiesTable, resetTables, presignUpload } from "./utils.ts";
+import {
+  createUser,
+  loginUser,
+  createCommunity,
+  resetCommunitiesTable,
+  resetTables,
+  presignUpload,
+} from "./utils.ts";
 import app from "../src/app.ts";
 import pool from "../src/config/postgres.ts";
 
@@ -26,19 +33,27 @@ beforeAll(async () => {
   await resetTables();
   testUserId = await createUser(TEST_USER);
   await createUser(OTHER_USER);
-  accessToken = await loginUser({ email: TEST_USER.email, password: TEST_USER.password });
-  otherAccessToken = await loginUser({ email: OTHER_USER.email, password: OTHER_USER.password });
+  accessToken = await loginUser({
+    email: TEST_USER.email,
+    password: TEST_USER.password,
+  });
+  otherAccessToken = await loginUser({
+    email: OTHER_USER.email,
+    password: OTHER_USER.password,
+  });
 });
 
 describe("POST /api/v1/communities", () => {
-
   beforeEach(resetCommunitiesTable);
 
   it("creates a community and persists it", async () => {
     const res = await request(app)
       .post(BASE_URL)
       .set("Authorization", `Bearer ${accessToken}`)
-      .send({ name: "algorithms-club", description: "A place to discuss algorithms" });
+      .send({
+        name: "algorithms-club",
+        description: "A place to discuss algorithms",
+      });
 
     expect(res.status).toBe(201);
     expect(res.body.status).toBe("success");
@@ -50,13 +65,19 @@ describe("POST /api/v1/communities", () => {
     expect(res.body.community.id).toBeDefined();
     expect(res.body.community.createdAt).toBeDefined();
 
-    const dbRow = await pool.query("SELECT * FROM communities WHERE name = $1", ["algorithms-club"]);
+    const dbRow = await pool.query(
+      "SELECT * FROM communities WHERE name = $1",
+      ["algorithms-club"],
+    );
     expect(dbRow.rows).toHaveLength(1);
     expect(dbRow.rows[0].owner_id).toBe(testUserId);
   });
 
   it("rejects a duplicate community name with 409", async () => {
-    await createCommunity(accessToken, { name: "duplicate-club", description: "First one" });
+    await createCommunity(accessToken, {
+      name: "duplicate-club",
+      description: "First one",
+    });
 
     const res = await request(app)
       .post(BASE_URL)
@@ -95,7 +116,6 @@ describe("POST /api/v1/communities", () => {
 });
 
 describe("GET /api/v1/communities", () => {
-
   beforeEach(resetCommunitiesTable);
 
   it("returns 200 and an empty array when there are no communities", async () => {
@@ -110,8 +130,14 @@ describe("GET /api/v1/communities", () => {
   });
 
   it("returns all communities that exist in the database", async () => {
-    await createCommunity(accessToken, { name: "algorithms-club", description: "A place to discuss algorithms" });
-    await createCommunity(accessToken, { name: "systems-programming", description: "Low-level programming discussion" });
+    await createCommunity(accessToken, {
+      name: "algorithms-club",
+      description: "A place to discuss algorithms",
+    });
+    await createCommunity(accessToken, {
+      name: "systems-programming",
+      description: "Low-level programming discussion",
+    });
 
     const res = await request(app)
       .get(BASE_URL)
@@ -121,14 +147,25 @@ describe("GET /api/v1/communities", () => {
     expect(res.body.communities).toHaveLength(2);
     expect(res.body.communities).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ name: "algorithms-club", description: "A place to discuss algorithms", ownerId: testUserId }),
-        expect.objectContaining({ name: "systems-programming", description: "Low-level programming discussion", ownerId: testUserId }),
-      ])
+        expect.objectContaining({
+          name: "algorithms-club",
+          description: "A place to discuss algorithms",
+          ownerId: testUserId,
+        }),
+        expect.objectContaining({
+          name: "systems-programming",
+          description: "Low-level programming discussion",
+          ownerId: testUserId,
+        }),
+      ]),
     );
   });
 
   it("returns communities with the expected fields", async () => {
-    await createCommunity(accessToken, { name: "shape-check-club", description: "Checking field shape" });
+    await createCommunity(accessToken, {
+      name: "shape-check-club",
+      description: "Checking field shape",
+    });
 
     const res = await request(app)
       .get(BASE_URL)
@@ -156,7 +193,10 @@ describe("GET /api/v1/communities/:id", () => {
   beforeEach(resetCommunitiesTable);
 
   it("fetches the community by id", async () => {
-    const community = await createCommunity(accessToken, { name: "fetchable-club", description: "a description worth reading" });
+    const community = await createCommunity(accessToken, {
+      name: "fetchable-club",
+      description: "a description worth reading",
+    });
 
     const res = await request(app)
       .get(`${BASE_URL}/${community.id}`)
@@ -176,7 +216,10 @@ describe("GET /api/v1/communities/:id", () => {
   });
 
   it("allows a non-owner to fetch the community", async () => {
-    const community = await createCommunity(accessToken, { name: "public-club", description: "readable by anyone logged in" });
+    const community = await createCommunity(accessToken, {
+      name: "public-club",
+      description: "readable by anyone logged in",
+    });
 
     const res = await request(app)
       .get(`${BASE_URL}/${community.id}`)
@@ -196,7 +239,10 @@ describe("GET /api/v1/communities/:id", () => {
   });
 
   it("returns 404 after the community has been deleted", async () => {
-    const community = await createCommunity(accessToken, { name: "soon-gone-club", description: "temporary" });
+    const community = await createCommunity(accessToken, {
+      name: "soon-gone-club",
+      description: "temporary",
+    });
 
     await pool.query("DELETE FROM communities WHERE id = $1", [community.id]);
 
@@ -217,7 +263,10 @@ describe("GET /api/v1/communities/:id", () => {
   });
 
   it("requires authentication", async () => {
-    const community = await createCommunity(accessToken, { name: "no-auth-club", description: "some description" });
+    const community = await createCommunity(accessToken, {
+      name: "no-auth-club",
+      description: "some description",
+    });
 
     const res = await request(app).get(`${BASE_URL}/${community.id}`);
 
@@ -226,11 +275,13 @@ describe("GET /api/v1/communities/:id", () => {
 });
 
 describe("PATCH /api/v1/communities/:id", () => {
-
   beforeEach(resetCommunitiesTable);
 
   it("updates both the name and description", async () => {
-    const community = await createCommunity(accessToken, { name: "original-name", description: "original description" });
+    const community = await createCommunity(accessToken, {
+      name: "original-name",
+      description: "original description",
+    });
 
     const res = await request(app)
       .patch(`${BASE_URL}/${community.id}`)
@@ -245,13 +296,18 @@ describe("PATCH /api/v1/communities/:id", () => {
       description: "updated description",
     });
 
-    const dbRow = await pool.query("SELECT * FROM communities WHERE id = $1", [community.id]);
+    const dbRow = await pool.query("SELECT * FROM communities WHERE id = $1", [
+      community.id,
+    ]);
     expect(dbRow.rows[0].name).toBe("renamed-club");
     expect(dbRow.rows[0].description).toBe("updated description");
   });
 
   it("updates only the name when description is omitted", async () => {
-    const community = await createCommunity(accessToken, { name: "name-only-club", description: "keep this description" });
+    const community = await createCommunity(accessToken, {
+      name: "name-only-club",
+      description: "keep this description",
+    });
 
     const res = await request(app)
       .patch(`${BASE_URL}/${community.id}`)
@@ -266,7 +322,10 @@ describe("PATCH /api/v1/communities/:id", () => {
   });
 
   it("updates only the description when name is omitted", async () => {
-    const community = await createCommunity(accessToken, { name: "description-only-club", description: "original description" });
+    const community = await createCommunity(accessToken, {
+      name: "description-only-club",
+      description: "original description",
+    });
 
     const res = await request(app)
       .patch(`${BASE_URL}/${community.id}`)
@@ -276,12 +335,17 @@ describe("PATCH /api/v1/communities/:id", () => {
     expect(res.status).toBe(200);
     expect(res.body.community.id).toBe(community.id);
 
-    const dbRow = await pool.query("SELECT * FROM communities WHERE id = $1", [community.id]);
+    const dbRow = await pool.query("SELECT * FROM communities WHERE id = $1", [
+      community.id,
+    ]);
     expect(dbRow.rows[0].description).toBe("brand new description");
   });
 
   it("returns 204 when the submitted values match the existing ones", async () => {
-    const community = await createCommunity(accessToken, { name: "unchanged-club", description: "unchanged description" });
+    const community = await createCommunity(accessToken, {
+      name: "unchanged-club",
+      description: "unchanged description",
+    });
 
     const res = await request(app)
       .patch(`${BASE_URL}/${community.id}`)
@@ -292,7 +356,10 @@ describe("PATCH /api/v1/communities/:id", () => {
   });
 
   it("rejects an empty body with no name or description", async () => {
-    const community = await createCommunity(accessToken, { name: "empty-body-club", description: "some description" });
+    const community = await createCommunity(accessToken, {
+      name: "empty-body-club",
+      description: "some description",
+    });
 
     const res = await request(app)
       .patch(`${BASE_URL}/${community.id}`)
@@ -313,8 +380,14 @@ describe("PATCH /api/v1/communities/:id", () => {
   });
 
   it("rejects a duplicate name with 409", async () => {
-    await createCommunity(accessToken, { name: "taken-name", description: "first club" });
-    const community = await createCommunity(accessToken, { name: "original-name", description: "second club" });
+    await createCommunity(accessToken, {
+      name: "taken-name",
+      description: "first club",
+    });
+    const community = await createCommunity(accessToken, {
+      name: "original-name",
+      description: "second club",
+    });
 
     const res = await request(app)
       .patch(`${BASE_URL}/${community.id}`)
@@ -326,7 +399,10 @@ describe("PATCH /api/v1/communities/:id", () => {
   });
 
   it("rejects an update from a user who is not the owner", async () => {
-    const community = await createCommunity(accessToken, { name: "owner-only-club", description: "original description" });
+    const community = await createCommunity(accessToken, {
+      name: "owner-only-club",
+      description: "original description",
+    });
 
     const res = await request(app)
       .patch(`${BASE_URL}/${community.id}`)
@@ -337,7 +413,9 @@ describe("PATCH /api/v1/communities/:id", () => {
     expect(res.body.message).toMatch(/not allowed/i);
 
     // Nothing should have actually changed in the DB.
-    const dbRow = await pool.query("SELECT * FROM communities WHERE id = $1", [community.id]);
+    const dbRow = await pool.query("SELECT * FROM communities WHERE id = $1", [
+      community.id,
+    ]);
     expect(dbRow.rows[0].name).toBe("owner-only-club");
     expect(dbRow.rows[0].description).toBe("original description");
   });
@@ -355,7 +433,10 @@ describe("PATCH /api/v1/communities/:id", () => {
   });
 
   it("requires authentication", async () => {
-    const community = await createCommunity(accessToken, { name: "no-auth-club", description: "some description" });
+    const community = await createCommunity(accessToken, {
+      name: "no-auth-club",
+      description: "some description",
+    });
 
     const res = await request(app)
       .patch(`${BASE_URL}/${community.id}`)
@@ -380,7 +461,10 @@ describe("DELETE /api/v1/communities/:id", () => {
   beforeEach(resetCommunitiesTable);
 
   it("deletes the community and returns it", async () => {
-    const community = await createCommunity(accessToken, { name: "to-be-deleted", description: "will not survive this test" });
+    const community = await createCommunity(accessToken, {
+      name: "to-be-deleted",
+      description: "will not survive this test",
+    });
 
     const res = await request(app)
       .delete(`${BASE_URL}/${community.id}`)
@@ -393,7 +477,9 @@ describe("DELETE /api/v1/communities/:id", () => {
       community: { id: community.id },
     });
 
-    const dbRow = await pool.query("SELECT * FROM communities WHERE id = $1", [community.id]);
+    const dbRow = await pool.query("SELECT * FROM communities WHERE id = $1", [
+      community.id,
+    ]);
     expect(dbRow.rows).toHaveLength(0);
   });
 
@@ -416,7 +502,10 @@ describe("DELETE /api/v1/communities/:id", () => {
   });
 
   it("rejects a delete from a user who is not the owner", async () => {
-    const community = await createCommunity(accessToken, { name: "owner-only-club", description: "should survive this test" });
+    const community = await createCommunity(accessToken, {
+      name: "owner-only-club",
+      description: "should survive this test",
+    });
 
     const res = await request(app)
       .delete(`${BASE_URL}/${community.id}`)
@@ -426,7 +515,9 @@ describe("DELETE /api/v1/communities/:id", () => {
     expect(res.body.message).toMatch(/not allowed/i);
 
     // Nothing should have actually been deleted.
-    const dbRow = await pool.query("SELECT * FROM communities WHERE id = $1", [community.id]);
+    const dbRow = await pool.query("SELECT * FROM communities WHERE id = $1", [
+      community.id,
+    ]);
     expect(dbRow.rows).toHaveLength(1);
   });
 
@@ -441,7 +532,10 @@ describe("DELETE /api/v1/communities/:id", () => {
   });
 
   it("returns 404 when deleting an already-deleted community", async () => {
-    const community = await createCommunity(accessToken, { name: "delete-me-twice", description: "first delete should win" });
+    const community = await createCommunity(accessToken, {
+      name: "delete-me-twice",
+      description: "first delete should win",
+    });
 
     await request(app)
       .delete(`${BASE_URL}/${community.id}`)
@@ -456,7 +550,10 @@ describe("DELETE /api/v1/communities/:id", () => {
   });
 
   it("requires authentication", async () => {
-    const community = await createCommunity(accessToken, { name: "no-auth-club", description: "some description" });
+    const community = await createCommunity(accessToken, {
+      name: "no-auth-club",
+      description: "some description",
+    });
 
     const res = await request(app).delete(`${BASE_URL}/${community.id}`);
 
@@ -465,7 +562,6 @@ describe("DELETE /api/v1/communities/:id", () => {
 });
 
 describe("communities (images)", () => {
-
   beforeEach(resetCommunitiesTable);
 
   it("creates a community with the requester's own community upload and returns its URL", async () => {
@@ -481,7 +577,7 @@ describe("communities (images)", () => {
 
     const row = await pool.query(
       `SELECT u.public_url FROM communities c JOIN uploads u ON c.image_id = u.id WHERE c.id = $1`,
-      [res.body.community.id]
+      [res.body.community.id],
     );
     expect(row.rows[0].public_url).toBe(imageUrl);
   });
@@ -500,23 +596,38 @@ describe("communities (images)", () => {
     const res = await request(app)
       .post(BASE_URL)
       .set("Authorization", `Bearer ${accessToken}`)
-      .send({ name: "unknown-image", description: "plain", imageUrl: "https://example.com/communities/nope.png" });
+      .send({
+        name: "unknown-image",
+        description: "plain",
+        imageUrl: "https://example.com/communities/nope.png",
+      });
 
     expect(res.status).toBe(404);
-    const count = await pool.query("SELECT count(*)::int AS n FROM communities");
+    const count = await pool.query(
+      "SELECT count(*)::int AS n FROM communities",
+    );
     expect(count.rows[0].n).toBe(0);
   });
 
   it("does not allow attaching another user's upload", async () => {
-    const someoneElsesImage = await presignUpload(otherAccessToken, "community");
+    const someoneElsesImage = await presignUpload(
+      otherAccessToken,
+      "community",
+    );
 
     const res = await request(app)
       .post(BASE_URL)
       .set("Authorization", `Bearer ${accessToken}`)
-      .send({ name: "stolen-image", description: "plain", imageUrl: someoneElsesImage });
+      .send({
+        name: "stolen-image",
+        description: "plain",
+        imageUrl: someoneElsesImage,
+      });
 
     expect(res.status).toBe(403);
-    const count = await pool.query("SELECT count(*)::int AS n FROM communities");
+    const count = await pool.query(
+      "SELECT count(*)::int AS n FROM communities",
+    );
     expect(count.rows[0].n).toBe(0);
   });
 
@@ -563,7 +674,10 @@ describe("communities (images)", () => {
   it("replaces the image on update", async () => {
     const first = await presignUpload(accessToken, "community");
     const second = await presignUpload(accessToken, "community");
-    const community = await createCommunity(accessToken, { name: "updatable", description: "plain" });
+    const community = await createCommunity(accessToken, {
+      name: "updatable",
+      description: "plain",
+    });
 
     const setFirst = await request(app)
       .patch(`${BASE_URL}/${community.id}`)
@@ -581,14 +695,17 @@ describe("communities (images)", () => {
 
     const row = await pool.query(
       `SELECT u.public_url FROM communities c JOIN uploads u ON c.image_id = u.id WHERE c.id = $1`,
-      [community.id]
+      [community.id],
     );
     expect(row.rows[0].public_url).toBe(second);
   });
 
   it("returns 204 when the same image is sent again", async () => {
     const imageUrl = await presignUpload(accessToken, "community");
-    const community = await createCommunity(accessToken, { name: "same-image", description: "plain" });
+    const community = await createCommunity(accessToken, {
+      name: "same-image",
+      description: "plain",
+    });
 
     await request(app)
       .patch(`${BASE_URL}/${community.id}`)
@@ -604,8 +721,14 @@ describe("communities (images)", () => {
   });
 
   it("does not allow another user's upload on update and leaves the community unchanged", async () => {
-    const someoneElsesImage = await presignUpload(otherAccessToken, "community");
-    const community = await createCommunity(accessToken, { name: "guarded", description: "plain" });
+    const someoneElsesImage = await presignUpload(
+      otherAccessToken,
+      "community",
+    );
+    const community = await createCommunity(accessToken, {
+      name: "guarded",
+      description: "plain",
+    });
 
     const res = await request(app)
       .patch(`${BASE_URL}/${community.id}`)
@@ -614,7 +737,10 @@ describe("communities (images)", () => {
 
     expect(res.status).toBe(403);
 
-    const row = await pool.query("SELECT image_id FROM communities WHERE id = $1", [community.id]);
+    const row = await pool.query(
+      "SELECT image_id FROM communities WHERE id = $1",
+      [community.id],
+    );
     expect(row.rows[0].image_id).toBeNull();
   });
 });

@@ -2,7 +2,13 @@ import request from "supertest";
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import app from "../src/app.ts";
 import pool from "../src/config/postgres.ts";
-import { resetTables, resetConversationsTable, registerAndLogin, presignUpload, tokenFor } from "./utils.ts";
+import {
+  resetTables,
+  resetConversationsTable,
+  registerAndLogin,
+  presignUpload,
+  tokenFor,
+} from "./utils.ts";
 
 const BASE_URL = "/api/v1/conversations";
 const MEMBERS_TABLE = "conversation_members";
@@ -33,8 +39,15 @@ let memberId: string;
 let memberToken: string;
 let thirdId: string;
 
-async function countRows(table: string, where: string, params: unknown[]): Promise<number> {
-  const result = await pool.query(`SELECT count(*)::int AS n FROM ${table} WHERE ${where}`, params);
+async function countRows(
+  table: string,
+  where: string,
+  params: unknown[],
+): Promise<number> {
+  const result = await pool.query(
+    `SELECT count(*)::int AS n FROM ${table} WHERE ${where}`,
+    params,
+  );
   return result.rows[0].n;
 }
 
@@ -46,7 +59,6 @@ beforeAll(async () => {
 });
 
 describe("POST /api/v1/conversations (direct)", () => {
-
   beforeEach(async () => {
     await resetConversationsTable();
   });
@@ -65,16 +77,21 @@ describe("POST /api/v1/conversations (direct)", () => {
 
     const conversationId = res.body.conversation.id;
 
-    const conv = await pool.query("SELECT type, direct_key FROM conversations WHERE id = $1", [conversationId]);
+    const conv = await pool.query(
+      "SELECT type, direct_key FROM conversations WHERE id = $1",
+      [conversationId],
+    );
     expect(conv.rows).toHaveLength(1);
     expect(conv.rows[0].type).toBe("direct");
     expect(conv.rows[0].direct_key).toBe([ownerId, memberId].sort().join(":"));
 
     const members = await pool.query(
       `SELECT member_id FROM ${MEMBERS_TABLE} WHERE conversation_id = $1 ORDER BY member_id`,
-      [conversationId]
+      [conversationId],
     );
-    expect(members.rows.map(r => r.member_id).sort()).toEqual([ownerId, memberId].sort());
+    expect(members.rows.map((r) => r.member_id).sort()).toEqual(
+      [ownerId, memberId].sort(),
+    );
   });
 
   it("returns the existing conversation when the same pair asks again", async () => {
@@ -93,7 +110,11 @@ describe("POST /api/v1/conversations (direct)", () => {
     expect(second.body.conversation.id).toBe(first.body.conversation.id);
 
     expect(await countRows("conversations", "type = 'direct'", [])).toBe(1);
-    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [first.body.conversation.id])).toBe(2);
+    expect(
+      await countRows(MEMBERS_TABLE, "conversation_id = $1", [
+        first.body.conversation.id,
+      ]),
+    ).toBe(2);
   });
 
   it("returns the same conversation regardless of which side initiates", async () => {
@@ -109,7 +130,9 @@ describe("POST /api/v1/conversations (direct)", () => {
 
     expect(fromOwner.status).toBe(201);
     expect(fromMember.status).toBe(200);
-    expect(fromMember.body.conversation.id).toBe(fromOwner.body.conversation.id);
+    expect(fromMember.body.conversation.id).toBe(
+      fromOwner.body.conversation.id,
+    );
     expect(await countRows("conversations", "type = 'direct'", [])).toBe(1);
   });
 
@@ -126,7 +149,9 @@ describe("POST /api/v1/conversations (direct)", () => {
 
     expect(withMember.status).toBe(201);
     expect(withThird.status).toBe(201);
-    expect(withThird.body.conversation.id).not.toBe(withMember.body.conversation.id);
+    expect(withThird.body.conversation.id).not.toBe(
+      withMember.body.conversation.id,
+    );
     expect(await countRows("conversations", "type = 'direct'", [])).toBe(2);
   });
 
@@ -161,7 +186,6 @@ describe("POST /api/v1/conversations (direct)", () => {
 });
 
 describe("POST /api/v1/conversations (group)", () => {
-
   beforeEach(async () => {
     await resetConversationsTable();
   });
@@ -170,7 +194,11 @@ describe("POST /api/v1/conversations (group)", () => {
     const res = await request(app)
       .post(BASE_URL)
       .set("Authorization", `Bearer ${ownerToken}`)
-      .send({ type: "group", name: "Study group", memberIds: [memberId, thirdId] });
+      .send({
+        type: "group",
+        name: "Study group",
+        memberIds: [memberId, thirdId],
+      });
 
     expect(res.status).toBe(201);
     expect(res.body.status).toBe("success");
@@ -182,14 +210,24 @@ describe("POST /api/v1/conversations (group)", () => {
 
     const conversationId = res.body.conversation.id;
 
-    const conv = await pool.query("SELECT type, name, owner_id, direct_key FROM conversations WHERE id = $1", [conversationId]);
-    expect(conv.rows[0]).toMatchObject({ type: "group", name: "Study group", owner_id: ownerId, direct_key: null });
+    const conv = await pool.query(
+      "SELECT type, name, owner_id, direct_key FROM conversations WHERE id = $1",
+      [conversationId],
+    );
+    expect(conv.rows[0]).toMatchObject({
+      type: "group",
+      name: "Study group",
+      owner_id: ownerId,
+      direct_key: null,
+    });
 
     const members = await pool.query(
       `SELECT member_id, role FROM ${MEMBERS_TABLE} WHERE conversation_id = $1`,
-      [conversationId]
+      [conversationId],
     );
-    const byId = Object.fromEntries(members.rows.map(r => [r.member_id, r.role]));
+    const byId = Object.fromEntries(
+      members.rows.map((r) => [r.member_id, r.role]),
+    );
     expect(byId).toEqual({
       [ownerId]: "admin",
       [memberId]: "member",
@@ -207,7 +245,7 @@ describe("POST /api/v1/conversations (group)", () => {
 
     const owner = await pool.query(
       `SELECT role FROM ${MEMBERS_TABLE} WHERE conversation_id = $1 AND member_id = $2`,
-      [res.body.conversation.id, ownerId]
+      [res.body.conversation.id, ownerId],
     );
     expect(owner.rows).toHaveLength(1);
     expect(owner.rows[0].role).toBe("admin");
@@ -216,8 +254,14 @@ describe("POST /api/v1/conversations (group)", () => {
   it("creates a new group every time — groups are never deduplicated", async () => {
     const body = { type: "group", name: "Same name", memberIds: [memberId] };
 
-    const first = await request(app).post(BASE_URL).set("Authorization", `Bearer ${ownerToken}`).send(body);
-    const second = await request(app).post(BASE_URL).set("Authorization", `Bearer ${ownerToken}`).send(body);
+    const first = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send(body);
+    const second = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send(body);
 
     expect(first.status).toBe(201);
     expect(second.status).toBe(201);
@@ -229,20 +273,34 @@ describe("POST /api/v1/conversations (group)", () => {
     const res = await request(app)
       .post(BASE_URL)
       .set("Authorization", `Bearer ${ownerToken}`)
-      .send({ type: "group", name: "Dupes", memberIds: [memberId, memberId, ownerId] });
+      .send({
+        type: "group",
+        name: "Dupes",
+        memberIds: [memberId, memberId, ownerId],
+      });
 
     expect(res.status).toBe(201);
-    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [res.body.conversation.id])).toBe(2);
+    expect(
+      await countRows(MEMBERS_TABLE, "conversation_id = $1", [
+        res.body.conversation.id,
+      ]),
+    ).toBe(2);
   });
 
   it("rejects the group when any member does not exist and creates nothing", async () => {
     const res = await request(app)
       .post(BASE_URL)
       .set("Authorization", `Bearer ${ownerToken}`)
-      .send({ type: "group", name: "Ghost member", memberIds: [memberId, NONEXISTENT_ID] });
+      .send({
+        type: "group",
+        name: "Ghost member",
+        memberIds: [memberId, NONEXISTENT_ID],
+      });
 
     expect(res.status).toBe(400);
-    expect(res.body.details).toMatchObject({ missingUserIds: [NONEXISTENT_ID] });
+    expect(res.body.details).toMatchObject({
+      missingUserIds: [NONEXISTENT_ID],
+    });
     expect(await countRows("conversations", "true", [])).toBe(0);
     expect(await countRows(MEMBERS_TABLE, "true", [])).toBe(0);
   });
@@ -267,7 +325,6 @@ describe("POST /api/v1/conversations (group)", () => {
 });
 
 describe("POST /api/v1/conversations (group image)", () => {
-
   beforeEach(async () => {
     await resetConversationsTable();
   });
@@ -278,7 +335,12 @@ describe("POST /api/v1/conversations (group image)", () => {
     const res = await request(app)
       .post(BASE_URL)
       .set("Authorization", `Bearer ${ownerToken}`)
-      .send({ type: "group", name: "With image", memberIds: [memberId], imageUrl });
+      .send({
+        type: "group",
+        name: "With image",
+        memberIds: [memberId],
+        imageUrl,
+      });
 
     expect(res.status).toBe(201);
     expect(res.body.conversation.imageUrl).toBe(imageUrl);
@@ -287,7 +349,7 @@ describe("POST /api/v1/conversations (group image)", () => {
       `SELECT c.upload_id, u.public_url
        FROM conversations c JOIN uploads u ON c.upload_id = u.id
        WHERE c.id = $1`,
-      [res.body.conversation.id]
+      [res.body.conversation.id],
     );
     expect(row.rows).toHaveLength(1);
     expect(row.rows[0].public_url).toBe(imageUrl);
@@ -302,7 +364,10 @@ describe("POST /api/v1/conversations (group image)", () => {
     expect(res.status).toBe(201);
     expect(res.body.conversation.imageUrl).toBeNull();
 
-    const row = await pool.query("SELECT upload_id FROM conversations WHERE id = $1", [res.body.conversation.id]);
+    const row = await pool.query(
+      "SELECT upload_id FROM conversations WHERE id = $1",
+      [res.body.conversation.id],
+    );
     expect(row.rows[0].upload_id).toBeNull();
   });
 
@@ -327,7 +392,12 @@ describe("POST /api/v1/conversations (group image)", () => {
     const res = await request(app)
       .post(BASE_URL)
       .set("Authorization", `Bearer ${ownerToken}`)
-      .send({ type: "group", name: "Stolen image", memberIds: [memberId], imageUrl: someoneElsesImage });
+      .send({
+        type: "group",
+        name: "Stolen image",
+        memberIds: [memberId],
+        imageUrl: someoneElsesImage,
+      });
 
     expect(res.status).toBe(403);
     expect(await countRows("conversations", "true", [])).toBe(0);
@@ -339,7 +409,12 @@ describe("POST /api/v1/conversations (group image)", () => {
     const res = await request(app)
       .post(BASE_URL)
       .set("Authorization", `Bearer ${ownerToken}`)
-      .send({ type: "group", name: "Wrong kind", memberIds: [memberId], imageUrl: postImage });
+      .send({
+        type: "group",
+        name: "Wrong kind",
+        memberIds: [memberId],
+        imageUrl: postImage,
+      });
 
     expect(res.status).toBe(403);
     expect(await countRows("conversations", "true", [])).toBe(0);
@@ -349,7 +424,12 @@ describe("POST /api/v1/conversations (group image)", () => {
     const res = await request(app)
       .post(BASE_URL)
       .set("Authorization", `Bearer ${ownerToken}`)
-      .send({ type: "group", name: "Bad url", memberIds: [memberId], imageUrl: "not a url" });
+      .send({
+        type: "group",
+        name: "Bad url",
+        memberIds: [memberId],
+        imageUrl: "not a url",
+      });
 
     expect(res.status).toBe(400);
   });
@@ -365,13 +445,15 @@ describe("POST /api/v1/conversations (group image)", () => {
     expect(res.status).toBe(201);
     expect(res.body.conversation.imageUrl).toBeUndefined();
 
-    const row = await pool.query("SELECT upload_id FROM conversations WHERE id = $1", [res.body.conversation.id]);
+    const row = await pool.query(
+      "SELECT upload_id FROM conversations WHERE id = $1",
+      [res.body.conversation.id],
+    );
     expect(row.rows[0].upload_id).toBeNull();
   });
 });
 
 describe("POST /api/v1/conversations (common)", () => {
-
   it("returns 400 for an unknown type", async () => {
     const res = await request(app)
       .post(BASE_URL)
@@ -400,12 +482,14 @@ describe("POST /api/v1/conversations (common)", () => {
 });
 
 describe("GET /api/v1/conversations/:conversationId", () => {
-
   beforeEach(async () => {
     await resetConversationsTable();
   });
 
-  async function createDirect(token: string, otherUserId: string): Promise<string> {
+  async function createDirect(
+    token: string,
+    otherUserId: string,
+  ): Promise<string> {
     const res = await request(app)
       .post(BASE_URL)
       .set("Authorization", `Bearer ${token}`)
@@ -413,7 +497,12 @@ describe("GET /api/v1/conversations/:conversationId", () => {
     return res.body.conversation.id;
   }
 
-  async function createGroup(token: string, name: string, memberIds: string[], imageUrl?: string): Promise<string> {
+  async function createGroup(
+    token: string,
+    name: string,
+    memberIds: string[],
+    imageUrl?: string,
+  ): Promise<string> {
     const res = await request(app)
       .post(BASE_URL)
       .set("Authorization", `Bearer ${token}`)
@@ -431,14 +520,25 @@ describe("GET /api/v1/conversations/:conversationId", () => {
 
       expect(res.status).toBe(200);
       expect(res.body.status).toBe("success");
-      expect(res.body.conversation).toMatchObject({ id, type: "direct", name: null, ownerId: null, imageUrl: null });
+      expect(res.body.conversation).toMatchObject({
+        id,
+        type: "direct",
+        name: null,
+        ownerId: null,
+        imageUrl: null,
+      });
       expect(res.body.conversation.createdAt).toBeDefined();
     }
   });
 
   it("returns a group conversation with its name, owner and image", async () => {
     const imageUrl = await presignUpload(ownerToken, "conversation");
-    const id = await createGroup(ownerToken, "Readable group", [memberId], imageUrl);
+    const id = await createGroup(
+      ownerToken,
+      "Readable group",
+      [memberId],
+      imageUrl,
+    );
 
     const res = await request(app)
       .get(`${BASE_URL}/${id}`)
@@ -518,12 +618,15 @@ describe("GET /api/v1/conversations/:conversationId", () => {
 });
 
 describe("PATCH /api/v1/conversations/:conversationId", () => {
-
   beforeEach(async () => {
     await resetConversationsTable();
   });
 
-  async function createGroup(token: string, name: string, memberIds: string[]): Promise<string> {
+  async function createGroup(
+    token: string,
+    name: string,
+    memberIds: string[],
+  ): Promise<string> {
     const res = await request(app)
       .post(BASE_URL)
       .set("Authorization", `Bearer ${token}`)
@@ -531,7 +634,10 @@ describe("PATCH /api/v1/conversations/:conversationId", () => {
     return res.body.conversation.id;
   }
 
-  async function createDirect(token: string, otherUserId: string): Promise<string> {
+  async function createDirect(
+    token: string,
+    otherUserId: string,
+  ): Promise<string> {
     const res = await request(app)
       .post(BASE_URL)
       .set("Authorization", `Bearer ${token}`)
@@ -548,9 +654,17 @@ describe("PATCH /api/v1/conversations/:conversationId", () => {
       .send({ name: "New name" });
 
     expect(res.status).toBe(200);
-    expect(res.body.conversation).toMatchObject({ id, type: "group", name: "New name", ownerId: ownerId });
+    expect(res.body.conversation).toMatchObject({
+      id,
+      type: "group",
+      name: "New name",
+      ownerId: ownerId,
+    });
 
-    const row = await pool.query("SELECT name FROM conversations WHERE id = $1", [id]);
+    const row = await pool.query(
+      "SELECT name FROM conversations WHERE id = $1",
+      [id],
+    );
     expect(row.rows[0].name).toBe("New name");
   });
 
@@ -569,7 +683,7 @@ describe("PATCH /api/v1/conversations/:conversationId", () => {
 
     const row = await pool.query(
       "SELECT u.public_url FROM conversations c JOIN uploads u ON c.upload_id = u.id WHERE c.id = $1",
-      [id]
+      [id],
     );
     expect(row.rows[0].public_url).toBe(imageUrl);
   });
@@ -584,7 +698,10 @@ describe("PATCH /api/v1/conversations/:conversationId", () => {
       .send({ name: "Both updated", imageUrl });
 
     expect(res.status).toBe(200);
-    expect(res.body.conversation).toMatchObject({ name: "Both updated", imageUrl });
+    expect(res.body.conversation).toMatchObject({
+      name: "Both updated",
+      imageUrl,
+    });
   });
 
   it("does not allow a non-admin member to update the group", async () => {
@@ -597,7 +714,10 @@ describe("PATCH /api/v1/conversations/:conversationId", () => {
 
     expect(res.status).toBe(403);
 
-    const row = await pool.query("SELECT name FROM conversations WHERE id = $1", [id]);
+    const row = await pool.query(
+      "SELECT name FROM conversations WHERE id = $1",
+      [id],
+    );
     expect(row.rows[0].name).toBe("Locked");
   });
 
@@ -623,7 +743,10 @@ describe("PATCH /api/v1/conversations/:conversationId", () => {
 
     expect(res.status).toBe(403);
 
-    const row = await pool.query("SELECT upload_id FROM conversations WHERE id = $1", [id]);
+    const row = await pool.query(
+      "SELECT upload_id FROM conversations WHERE id = $1",
+      [id],
+    );
     expect(row.rows[0].upload_id).toBeNull();
   });
 
@@ -637,7 +760,10 @@ describe("PATCH /api/v1/conversations/:conversationId", () => {
 
     expect(res.status).toBe(400);
 
-    const row = await pool.query("SELECT name FROM conversations WHERE id = $1", [id]);
+    const row = await pool.query(
+      "SELECT name FROM conversations WHERE id = $1",
+      [id],
+    );
     expect(row.rows[0].name).toBeNull();
   });
 
@@ -693,12 +819,15 @@ describe("PATCH /api/v1/conversations/:conversationId", () => {
 });
 
 describe("POST /api/v1/conversations/:conversationId/members", () => {
-
   beforeEach(async () => {
     await resetConversationsTable();
   });
 
-  async function createGroup(token: string, name: string, memberIds: string[]): Promise<string> {
+  async function createGroup(
+    token: string,
+    name: string,
+    memberIds: string[],
+  ): Promise<string> {
     const res = await request(app)
       .post(BASE_URL)
       .set("Authorization", `Bearer ${token}`)
@@ -706,7 +835,10 @@ describe("POST /api/v1/conversations/:conversationId/members", () => {
     return res.body.conversation.id;
   }
 
-  async function createDirect(token: string, otherUserId: string): Promise<string> {
+  async function createDirect(
+    token: string,
+    otherUserId: string,
+  ): Promise<string> {
     const res = await request(app)
       .post(BASE_URL)
       .set("Authorization", `Bearer ${token}`)
@@ -728,11 +860,13 @@ describe("POST /api/v1/conversations/:conversationId/members", () => {
 
     const row = await pool.query(
       `SELECT role FROM ${MEMBERS_TABLE} WHERE conversation_id = $1 AND member_id = $2`,
-      [id, thirdId]
+      [id, thirdId],
     );
     expect(row.rows).toHaveLength(1);
     expect(row.rows[0].role).toBe("member");
-    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(3);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(
+      3,
+    );
   });
 
   it("is idempotent — already-present members are skipped and only new ones returned", async () => {
@@ -745,7 +879,9 @@ describe("POST /api/v1/conversations/:conversationId/members", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.members).toEqual([thirdId]);
-    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(3);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(
+      3,
+    );
 
     const again = await request(app)
       .post(`${BASE_URL}/${id}/members`)
@@ -754,7 +890,9 @@ describe("POST /api/v1/conversations/:conversationId/members", () => {
 
     expect(again.status).toBe(200);
     expect(again.body.members).toEqual([]);
-    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(3);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(
+      3,
+    );
   });
 
   it("does not allow a non-admin member to add members", async () => {
@@ -766,7 +904,9 @@ describe("POST /api/v1/conversations/:conversationId/members", () => {
       .send({ memberIds: [thirdId] });
 
     expect(res.status).toBe(403);
-    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(2);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(
+      2,
+    );
   });
 
   it("does not allow a non-member to add members", async () => {
@@ -778,7 +918,9 @@ describe("POST /api/v1/conversations/:conversationId/members", () => {
       .send({ memberIds: [thirdId] });
 
     expect([403, 404]).toContain(res.status);
-    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(2);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(
+      2,
+    );
   });
 
   it("rejects adding members to a direct conversation", async () => {
@@ -790,7 +932,9 @@ describe("POST /api/v1/conversations/:conversationId/members", () => {
       .send({ memberIds: [thirdId] });
 
     expect(res.status).toBe(400);
-    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(2);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(
+      2,
+    );
   });
 
   it("returns 400 when any member does not exist and adds nothing", async () => {
@@ -802,7 +946,9 @@ describe("POST /api/v1/conversations/:conversationId/members", () => {
       .send({ memberIds: [thirdId, NONEXISTENT_ID] });
 
     expect(res.status).toBe(400);
-    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(2);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(
+      2,
+    );
   });
 
   it("returns 400 for an empty memberIds list", async () => {
@@ -848,12 +994,15 @@ describe("POST /api/v1/conversations/:conversationId/members", () => {
 });
 
 describe("DELETE /api/v1/conversations/:conversationId/members/:memberId", () => {
-
   beforeEach(async () => {
     await resetConversationsTable();
   });
 
-  async function createGroup(token: string, name: string, memberIds: string[]): Promise<string> {
+  async function createGroup(
+    token: string,
+    name: string,
+    memberIds: string[],
+  ): Promise<string> {
     const res = await request(app)
       .post(BASE_URL)
       .set("Authorization", `Bearer ${token}`)
@@ -861,7 +1010,10 @@ describe("DELETE /api/v1/conversations/:conversationId/members/:memberId", () =>
     return res.body.conversation.id;
   }
 
-  async function createDirect(token: string, otherUserId: string): Promise<string> {
+  async function createDirect(
+    token: string,
+    otherUserId: string,
+  ): Promise<string> {
     const res = await request(app)
       .post(BASE_URL)
       .set("Authorization", `Bearer ${token}`)
@@ -880,8 +1032,16 @@ describe("DELETE /api/v1/conversations/:conversationId/members/:memberId", () =>
     expect(res.body.status).toBe("success");
     expect(res.body.member).toEqual({ memberId: thirdId });
 
-    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1 AND member_id = $2", [id, thirdId])).toBe(0);
-    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(2);
+    expect(
+      await countRows(
+        MEMBERS_TABLE,
+        "conversation_id = $1 AND member_id = $2",
+        [id, thirdId],
+      ),
+    ).toBe(0);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(
+      2,
+    );
   });
 
   it("lets a member leave", async () => {
@@ -893,7 +1053,13 @@ describe("DELETE /api/v1/conversations/:conversationId/members/:memberId", () =>
 
     expect(res.status).toBe(200);
     expect(res.body.member).toEqual({ memberId });
-    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1 AND member_id = $2", [id, memberId])).toBe(0);
+    expect(
+      await countRows(
+        MEMBERS_TABLE,
+        "conversation_id = $1 AND member_id = $2",
+        [id, memberId],
+      ),
+    ).toBe(0);
   });
 
   it("does not allow a non-admin member to remove someone else", async () => {
@@ -904,7 +1070,9 @@ describe("DELETE /api/v1/conversations/:conversationId/members/:memberId", () =>
       .set("Authorization", `Bearer ${memberToken}`);
 
     expect(res.status).toBe(403);
-    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(3);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(
+      3,
+    );
   });
 
   it("does not allow removing the admin", async () => {
@@ -920,7 +1088,13 @@ describe("DELETE /api/v1/conversations/:conversationId/members/:memberId", () =>
       .set("Authorization", `Bearer ${ownerToken}`);
     expect(bySelf.status).toBe(400);
 
-    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1 AND member_id = $2", [id, ownerId])).toBe(1);
+    expect(
+      await countRows(
+        MEMBERS_TABLE,
+        "conversation_id = $1 AND member_id = $2",
+        [id, ownerId],
+      ),
+    ).toBe(1);
   });
 
   it("does not allow a non-member to remove anyone", async () => {
@@ -931,7 +1105,9 @@ describe("DELETE /api/v1/conversations/:conversationId/members/:memberId", () =>
       .set("Authorization", `Bearer ${tokenFor(thirdId)}`);
 
     expect(res.status).toBe(403);
-    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(2);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(
+      2,
+    );
   });
 
   it("returns 404 when the target is not a member", async () => {
@@ -952,7 +1128,9 @@ describe("DELETE /api/v1/conversations/:conversationId/members/:memberId", () =>
       .set("Authorization", `Bearer ${ownerToken}`);
 
     expect(res.status).toBe(400);
-    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(2);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(
+      2,
+    );
   });
 
   it("returns 404 for a conversation that does not exist", async () => {
@@ -976,19 +1154,24 @@ describe("DELETE /api/v1/conversations/:conversationId/members/:memberId", () =>
   it("requires authentication", async () => {
     const id = await createGroup(ownerToken, "Auth", [memberId]);
 
-    const res = await request(app).delete(`${BASE_URL}/${id}/members/${memberId}`);
+    const res = await request(app).delete(
+      `${BASE_URL}/${id}/members/${memberId}`,
+    );
 
     expect(res.status).toBe(401);
   });
 });
 
 describe("DELETE /api/v1/conversations/:conversationId", () => {
-
   beforeEach(async () => {
     await resetConversationsTable();
   });
 
-  async function createGroup(token: string, name: string, memberIds: string[]): Promise<string> {
+  async function createGroup(
+    token: string,
+    name: string,
+    memberIds: string[],
+  ): Promise<string> {
     const res = await request(app)
       .post(BASE_URL)
       .set("Authorization", `Bearer ${token}`)
@@ -996,7 +1179,10 @@ describe("DELETE /api/v1/conversations/:conversationId", () => {
     return res.body.conversation.id;
   }
 
-  async function createDirect(token: string, otherUserId: string): Promise<string> {
+  async function createDirect(
+    token: string,
+    otherUserId: string,
+  ): Promise<string> {
     const res = await request(app)
       .post(BASE_URL)
       .set("Authorization", `Bearer ${token}`)
@@ -1016,7 +1202,9 @@ describe("DELETE /api/v1/conversations/:conversationId", () => {
     expect(res.body.conversation).toEqual({ id });
 
     expect(await countRows("conversations", "id = $1", [id])).toBe(0);
-    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(0);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [id])).toBe(
+      0,
+    );
   });
 
   it("does not delete other conversations", async () => {
@@ -1028,7 +1216,9 @@ describe("DELETE /api/v1/conversations/:conversationId", () => {
       .set("Authorization", `Bearer ${ownerToken}`);
 
     expect(await countRows("conversations", "id = $1", [kept])).toBe(1);
-    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [kept])).toBe(2);
+    expect(await countRows(MEMBERS_TABLE, "conversation_id = $1", [kept])).toBe(
+      2,
+    );
   });
 
   it("does not allow a non-admin member to delete the group", async () => {
@@ -1075,8 +1265,13 @@ describe("DELETE /api/v1/conversations/:conversationId", () => {
   it("returns 404 when deleting the same group twice", async () => {
     const id = await createGroup(ownerToken, "Once", [memberId]);
 
-    await request(app).delete(`${BASE_URL}/${id}`).set("Authorization", `Bearer ${ownerToken}`).expect(200);
-    const again = await request(app).delete(`${BASE_URL}/${id}`).set("Authorization", `Bearer ${ownerToken}`);
+    await request(app)
+      .delete(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .expect(200);
+    const again = await request(app)
+      .delete(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${ownerToken}`);
 
     expect(again.status).toBe(404);
   });

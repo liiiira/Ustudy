@@ -1,10 +1,17 @@
-import pool from "../../config/postgres.ts"
-import type { CommentCreate, CommentDB, CommentInput, CommentJoinUser } from "./comment.schema.ts";
+import pool from "../../config/postgres.ts";
+import type {
+  CommentCreate,
+  CommentDB,
+  CommentInput,
+  CommentJoinUser,
+} from "./comment.schema.ts";
 
-export async function create({ownerId, postId, textContent}: CommentCreate): Promise<CommentJoinUser | null>{
-
-  const query =  
-    `WITH inserted_comment AS (
+export async function create({
+  ownerId,
+  postId,
+  textContent,
+}: CommentCreate): Promise<CommentJoinUser | null> {
+  const query = `WITH inserted_comment AS (
       INSERT INTO comments (post_id, owner_id, text_content)
       VALUES ($1, $2, $3)
       RETURNING id, post_id, owner_id, text_content, created_at
@@ -17,14 +24,14 @@ export async function create({ownerId, postId, textContent}: CommentCreate): Pro
     inserted_comment.created_at AS "createdAt",
     users.username AS "ownerUsername"
   FROM inserted_comment
-  JOIN users ON users.id = inserted_comment.owner_id`
+  JOIN users ON users.id = inserted_comment.owner_id`;
 
   const result = await pool.query(query, [postId, ownerId, textContent]);
 
   return result.rows[0] ?? null;
 }
 
-export async function findAllPost(postId: string):Promise<CommentJoinUser[]>{
+export async function findAllPost(postId: string): Promise<CommentJoinUser[]> {
   const result = await pool.query(
     `SELECT 
         comments.id AS "id",
@@ -39,13 +46,13 @@ export async function findAllPost(postId: string):Promise<CommentJoinUser[]>{
       JOIN users 
       ON comments.owner_id = users.id
       WHERE comments.post_id = $1`,
-    [postId]
+    [postId],
   );
 
   return result.rows;
 }
 
-export async function findById(commentId: string): Promise<CommentDB | null>{
+export async function findById(commentId: string): Promise<CommentDB | null> {
   const result = await pool.query(
     `SELECT 
         id,
@@ -55,13 +62,16 @@ export async function findById(commentId: string): Promise<CommentDB | null>{
         created_at as "createdAt"
       FROM comments
       WHERE id = $1`,
-    [commentId]
+    [commentId],
   );
 
   return result.rows[0] ?? null;
 }
 
-export async function updateById(commentId: string, {textContent}: CommentInput): Promise<CommentDB | null>{
+export async function updateById(
+  commentId: string,
+  { textContent }: CommentInput,
+): Promise<CommentDB | null> {
   const result = await pool.query(
     `UPDATE comments 
       SET text_content = $2
@@ -72,20 +82,21 @@ export async function updateById(commentId: string, {textContent}: CommentInput)
         owner_id as "ownerId",
         text_content as "textContent",
         created_at as "createdAt"`,
-    [commentId, textContent]
+    [commentId, textContent],
   );
 
   return result.rows[0] ?? null;
 }
 
-export async function deleteById(commentId: string): Promise<{id: string} | null>{
-
+export async function deleteById(
+  commentId: string,
+): Promise<{ id: string } | null> {
   const result = await pool.query(
     `DELETE FROM comments 
       WHERE comments.id = $1
       RETURNING 
         id`,
-      [commentId]
+    [commentId],
   );
 
   return result.rows[0] ?? null;

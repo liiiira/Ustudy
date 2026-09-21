@@ -3,29 +3,23 @@ import { type Community } from "../types";
 import { useState, useEffect } from "react";
 import { type UseCommunitiesList } from "../types";
 
-export default function useCommunitiesList(): UseCommunitiesList{
-  
+export default function useCommunitiesList(): UseCommunitiesList {
   const [loading, setLoading] = useState<boolean>(true);
-  const [communities, setCommunities] = useState<Community[]>([])
+  const [communities, setCommunities] = useState<Community[]>([]);
   const [error, setError] = useState<boolean>(false);
 
   useEffect(() => {
-    async function loadCommunities(){
-      try{
-
-        const fetchedCommunities: Community[] = await communitiesApi.getAll()
+    async function loadCommunities() {
+      try {
+        const fetchedCommunities: Community[] = await communitiesApi.getAll();
         setCommunities(fetchedCommunities);
-
-      }catch{
-
+      } catch {
         setError(true);
-
-      }finally{
-
+      } finally {
         setLoading(false);
       }
     }
     loadCommunities();
-  }, [])
-  return {loading, communities, error}
+  }, []);
+  return { loading, communities, error };
 }

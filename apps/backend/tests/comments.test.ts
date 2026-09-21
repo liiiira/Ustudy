@@ -1,12 +1,18 @@
 import request from "supertest";
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import app from "../src/app.ts";
-import { resetTables, createCommunity, createPost, createUser, loginUser, resetCommentsTable} from "./utils.ts";
-
+import {
+  resetTables,
+  createCommunity,
+  createPost,
+  createUser,
+  loginUser,
+  resetCommentsTable,
+} from "./utils.ts";
 
 // full url for the endpoint we wanna test  is
-// /api/v1/communities/:communityId/posts/:postId/comments/ 
-const BASE_URL = "/api/v1/communities"
+// /api/v1/communities/:communityId/posts/:postId/comments/
+const BASE_URL = "/api/v1/communities";
 
 const TEST_USER = {
   email: "community-tests@example.com",
@@ -23,12 +29,12 @@ const OTHER_USER = {
 const COMMUNITY = {
   name: "algorithm_club",
   description: "a place to discuss algorithms",
-}
+};
 
 const POST = {
   title: "random post title",
   textContent: "ranodom text content",
-}
+};
 
 let testUserId: string;
 let otherUserId: string;
@@ -40,22 +46,29 @@ let post;
 let postId: string;
 
 beforeAll(async () => {
-    await resetTables();
-    testUserId = await createUser(TEST_USER);
-    otherUserId = await createUser(OTHER_USER);
-    accessToken = await loginUser({email: TEST_USER.email, password: TEST_USER.password})
-    otherAccessToken = await loginUser({email: OTHER_USER.email, password: OTHER_USER.password})
-    community = await createCommunity(accessToken, COMMUNITY);
-    communityId = community.id;   
-    post = await createPost(communityId, accessToken, POST);
-    postId = post.id;
+  await resetTables();
+  testUserId = await createUser(TEST_USER);
+  otherUserId = await createUser(OTHER_USER);
+  accessToken = await loginUser({
+    email: TEST_USER.email,
+    password: TEST_USER.password,
+  });
+  otherAccessToken = await loginUser({
+    email: OTHER_USER.email,
+    password: OTHER_USER.password,
+  });
+  community = await createCommunity(accessToken, COMMUNITY);
+  communityId = community.id;
+  post = await createPost(communityId, accessToken, POST);
+  postId = post.id;
 });
 
 beforeEach(async () => {
   await resetCommentsTable();
-})
+});
 describe("POST /api/v1/communities/:communityId/posts/:postId/comments", () => {
-  const commentUrl = () => `${BASE_URL}/${communityId}/posts/${postId}/comments`;
+  const commentUrl = () =>
+    `${BASE_URL}/${communityId}/posts/${postId}/comments`;
 
   it("creates a comment successfully", async () => {
     const res = await request(app)
@@ -127,7 +140,7 @@ describe("POST /api/v1/communities/:communityId/posts/:postId/comments", () => {
     expect(res.status).toBe(201);
     expect(res.body.comment.ownerId).toBe(otherUserId);
   });
-  
+
   it("returns 404 for a well-formed but nonexistent postId", async () => {
     const nonexistentPostId = "00000000-0000-0000-0000-000000000000";
 
@@ -140,10 +153,9 @@ describe("POST /api/v1/communities/:communityId/posts/:postId/comments", () => {
   });
 });
 
-
-
 describe("GET /api/v1/communities/:communityId/posts/:postId/comments", () => {
-  const commentUrl = () => `${BASE_URL}/${communityId}/posts/${postId}/comments`;
+  const commentUrl = () =>
+    `${BASE_URL}/${communityId}/posts/${postId}/comments`;
   const seedComment = async (token: string, textContent: string) => {
     const res = await request(app)
       .post(commentUrl())
@@ -151,7 +163,6 @@ describe("GET /api/v1/communities/:communityId/posts/:postId/comments", () => {
       .send({ textContent });
     return res.body.comment;
   };
-
 
   it("returns an empty array when the post has no comments", async () => {
     const res = await request(app)
@@ -217,7 +228,7 @@ describe("GET /api/v1/communities/:communityId/posts/:postId/comments", () => {
     expect(res.status).toBe(400);
   });
 
-    it("returns 404 for a well-formed but nonexistent postId", async () => {
+  it("returns 404 for a well-formed but nonexistent postId", async () => {
     const nonexistentPostId = "00000000-0000-0000-0000-000000000000";
 
     const res = await request(app)
@@ -225,26 +236,24 @@ describe("GET /api/v1/communities/:communityId/posts/:postId/comments", () => {
       .set("Authorization", `Bearer ${accessToken}`);
 
     expect(res.status).toBe(404);
-  }); 
+  });
 });
-
 
 describe("PATCH /api/v1/communities/:communityId/posts/:postId/comments/:commentId", () => {
   let comment: any;
   const commentsUrl = () =>
-  `${BASE_URL}/${communityId}/posts/${postId}/comments`;
+    `${BASE_URL}/${communityId}/posts/${postId}/comments`;
 
-  const commentUrl = (commentId: string) =>
-    `${commentsUrl()}/${commentId}`;
+  const commentUrl = (commentId: string) => `${commentsUrl()}/${commentId}`;
 
   const seedComment = async (token: string, textContent: string) => {
-  const res = await request(app)
-    .post(commentsUrl())
-    .set("Authorization", `Bearer ${token}`)
-    .send({ textContent });
+    const res = await request(app)
+      .post(commentsUrl())
+      .set("Authorization", `Bearer ${token}`)
+      .send({ textContent });
 
-  return res.body.comment;
-}; 
+    return res.body.comment;
+  };
   beforeEach(async () => {
     comment = await seedComment(accessToken, "Original comment content");
   });
@@ -317,17 +326,13 @@ describe("PATCH /api/v1/communities/:communityId/posts/:postId/comments/:comment
   });
 });
 
-
-
-
 describe("DELETE /api/v1/communities/:communityId/posts/:postId/comments/:commentId", () => {
   let comment: any;
 
   const commentsUrl = () =>
     `${BASE_URL}/${communityId}/posts/${postId}/comments`;
 
-  const commentUrl = (commentId: string) =>
-    `${commentsUrl()}/${commentId}`;
+  const commentUrl = (commentId: string) => `${commentsUrl()}/${commentId}`;
 
   const seedComment = async (token: string, textContent: string) => {
     const res = await request(app)
@@ -352,7 +357,7 @@ describe("DELETE /api/v1/communities/:communityId/posts/:postId/comments/:commen
       message: "Comment Deleted Successfuly",
       status: "success",
       comment: {
-        id: comment.id
+        id: comment.id,
       },
     });
   });
@@ -366,8 +371,7 @@ describe("DELETE /api/v1/communities/:communityId/posts/:postId/comments/:commen
   });
 
   it("returns 404 for a well-formed but nonexistent commentId", async () => {
-    const nonexistentCommentId =
-      "00000000-0000-0000-0000-000000000000";
+    const nonexistentCommentId = "00000000-0000-0000-0000-000000000000";
 
     const res = await request(app)
       .delete(commentUrl(nonexistentCommentId))
@@ -378,17 +382,14 @@ describe("DELETE /api/v1/communities/:communityId/posts/:postId/comments/:commen
 
   it("rejects an invalid commentId format", async () => {
     const res = await request(app)
-      .delete(
-        `${BASE_URL}/${communityId}/posts/${postId}/comments/not-a-uuid`
-      )
+      .delete(`${BASE_URL}/${communityId}/posts/${postId}/comments/not-a-uuid`)
       .set("Authorization", `Bearer ${accessToken}`);
 
     expect(res.status).toBe(400);
   });
 
   it("rejects when not authenticated", async () => {
-    const res = await request(app)
-      .delete(commentUrl(comment.id));
+    const res = await request(app).delete(commentUrl(comment.id));
 
     expect(res.status).toBe(401);
   });
@@ -406,4 +407,3 @@ describe("DELETE /api/v1/communities/:communityId/posts/:postId/comments/:commen
     expect(res.body.comments).toEqual([]);
   });
 });
-

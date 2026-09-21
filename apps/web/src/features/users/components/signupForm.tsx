@@ -1,80 +1,122 @@
 import { useState } from "react";
 import { createUser } from "../api/users.api";
-import {useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import FormField from "../../../components/ui/formField";
-import {validateEmail, validateLength} from '../../../utils/validators.ts'
+import { validateEmail, validateLength } from "../../../utils/validators.ts";
 import Button from "../../../components/ui/button.tsx";
 import { type SignupUser, type SignupError } from "../types.ts";
 
-
-export default function SignupForm(){
-  
+export default function SignupForm() {
   const navigate = useNavigate();
 
-  const [user, setUser] = useState<SignupUser>({username: "", password: "", email: ""});
+  const [user, setUser] = useState<SignupUser>({
+    username: "",
+    password: "",
+    email: "",
+  });
   const [apiError, setApiError] = useState<string>("");
-  const [inputError, setInputError] = useState<SignupError>({email: [], password: [], username: []});
+  const [inputError, setInputError] = useState<SignupError>({
+    email: [],
+    password: [],
+    username: [],
+  });
   const [valid, setValid] = useState<boolean>(false);
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>){
-    
-    const newUser: SignupUser = {...user, [e.target.name]: e.target.value};
-    setUser(newUser)
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const newUser: SignupUser = { ...user, [e.target.name]: e.target.value };
+    setUser(newUser);
     setValid(validateUser(newUser));
   }
 
-
-  function validateUser(user: SignupUser): boolean{
-
+  function validateUser(user: SignupUser): boolean {
     const emailErrors = validateEmail(user.email, 200);
     const usernameErrors = validateLength("Username", user.username, 3, 25);
-    const passwordErrors = validateLength("Password", user.password, 8, 24)
+    const passwordErrors = validateLength("Password", user.password, 8, 24);
 
-    setInputError({email: emailErrors, username: usernameErrors, password: passwordErrors  })
+    setInputError({
+      email: emailErrors,
+      username: usernameErrors,
+      password: passwordErrors,
+    });
 
-    return ![emailErrors, usernameErrors ,passwordErrors].some((error: string[]) => error.length > 0);
-  }  
+    return ![emailErrors, usernameErrors, passwordErrors].some(
+      (error: string[]) => error.length > 0,
+    );
+  }
 
-
-  async function handleSubmit(e: React.SubmitEvent){
+  async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault();
-    
-    try{
 
+    try {
       await createUser(user);
-       navigate("/login")
-
-    }catch(err){
-      if(err instanceof Error)
-        setApiError(err.message);
+      navigate("/login");
+    } catch (err) {
+      if (err instanceof Error) setApiError(err.message);
     }
   }
 
   return (
-  <form className=" p-6 w-1/2 h-max max-w-md flex flex-col content-between border-2 gap-4 border-gray-300 rounded-2xl bg-white" 
-      onSubmit={handleSubmit}>
-    
-    <div id="form-header" className="flex flex-col gap-1 ">
+    <form
+      className=" p-6 w-1/2 h-max max-w-md flex flex-col content-between border-2 gap-4 border-gray-300 rounded-2xl bg-white"
+      onSubmit={handleSubmit}
+    >
+      <div id="form-header" className="flex flex-col gap-1 ">
+        <div className="text-3xl font-extrabold text-shadow-gray-900 text-center w-full ">
+          {" "}
+          Welcome to Ustudy
+        </div>
+        <div className="text-md font-light text-gray-600 text-center w-full mb-3">
+          Sign up and Start Learning{" "}
+        </div>
+        <div className="min-h-[1.25rem] text-red-500 text-sm text-center">
+          {apiError}
+        </div>
+      </div>
 
-      <div className="text-3xl font-extrabold text-shadow-gray-900 text-center w-full "> Welcome to Ustudy</div>
-      <div className="text-md font-light text-gray-600 text-center w-full mb-3">Sign up and Start Learning </div>
-      <div className="min-h-[1.25rem] text-red-500 text-sm text-center">{apiError}</div>
-    </div>
-     
-    <div id="form-body" className="flex flex-col gap-2">
+      <div id="form-body" className="flex flex-col gap-2">
+        <FormField
+          id="email"
+          name="email"
+          value={user.email}
+          charLimit={200}
+          type="email"
+          placeholder="Email"
+          label="Email"
+          inputError={inputError.email}
+          handleChange={handleChange}
+        />
 
-     
-      <FormField id="email" name="email" value={user.email} charLimit={200} type="email" placeholder="Email" label="Email" inputError={inputError.email} handleChange={handleChange}  />
+        <FormField
+          id="username"
+          name="username"
+          value={user.username}
+          charLimit={25}
+          type="text"
+          placeholder="Username"
+          label="Username"
+          inputError={inputError.username}
+          handleChange={handleChange}
+        />
 
-      <FormField id="username" name="username" value={user.username} charLimit={25} type="text" placeholder="Username" label="Username" inputError={inputError.username} handleChange={handleChange} />
-      
-      <FormField id="password" name="password" value={user.password} charLimit={24} type="password" placeholder="Password" label="Password" inputError={inputError.password} handleChange={handleChange} />
-  
-    </div>
+        <FormField
+          id="password"
+          name="password"
+          value={user.password}
+          charLimit={24}
+          type="password"
+          placeholder="Password"
+          label="Password"
+          inputError={inputError.password}
+          handleChange={handleChange}
+        />
+      </div>
 
-    <div id="form-footer" className="flex justify-center items-center">
-      <Button variant="Primary" disabled={!valid} type="submit"> Sign Up</Button>
-    </div>
-  </form>
+      <div id="form-footer" className="flex justify-center items-center">
+        <Button variant="Primary" disabled={!valid} type="submit">
+          {" "}
+          Sign Up
+        </Button>
+      </div>
+    </form>
   );
 }

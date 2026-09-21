@@ -3,30 +3,26 @@ import FormBg from "../../../components/layout/formBg";
 import { useParams } from "react-router";
 import usePost from "../hooks/usePost";
 
+export default function UpdatePostPage() {
+  const { communityId, postId } = useParams();
+  const { loading, error, post } = usePost(communityId!, postId!);
 
-export default function UpdatePostPage(){
-   
-  const {communityId, postId} = useParams()
-  const {loading, error, post} = usePost(communityId!, postId!)
+  if (loading) return <p>loading...</p>;
 
-  if(loading)
-    return <p>loading...</p>
-  
-  if(error)
-    return <p>error</p>
+  if (error) return <p>error</p>;
 
-  const {title, textContent, imageUrl} = post!;
+  const { title, textContent, imageUrl } = post!;
 
   return (
     <FormBg>
-      <PostForm 
-        mode="Update" 
-        communityId={communityId!} 
-        textContent={textContent} 
-        title={title} 
-        postId={postId} 
+      <PostForm
+        mode="Update"
+        communityId={communityId!}
+        textContent={textContent}
+        title={title}
+        postId={postId}
         imageUrl={imageUrl}
       />
     </FormBg>
-  )
+  );
 }

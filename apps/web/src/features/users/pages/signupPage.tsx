@@ -1,10 +1,10 @@
 import SignupForm from "../components/signupForm";
 import FormBg from "../../../components/layout/formBg";
 
-export default function SignupPage(){
+export default function SignupPage() {
   return (
-     <FormBg>
+    <FormBg>
       <SignupForm />
-    </FormBg> 
-  )
+    </FormBg>
+  );
 }

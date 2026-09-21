@@ -6,25 +6,21 @@ type ModalProps = {
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
-}
+};
 
-export default function Modal({open, onClose, title, children}: ModalProps){
-
+export default function Modal({ open, onClose, title, children }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
     const dialog = dialogRef.current;
-    if(!dialog) return;
+    if (!dialog) return;
 
-    if(open && !dialog.open)
-      dialog.showModal();
-    else if(!open && dialog.open)
-      dialog.close();
+    if (open && !dialog.open) dialog.showModal();
+    else if (!open && dialog.open) dialog.close();
   }, [open]);
 
-  function handleBackdropClick(e: React.MouseEvent<HTMLDialogElement>){
-    if(e.target === dialogRef.current)
-      onClose();
+  function handleBackdropClick(e: React.MouseEvent<HTMLDialogElement>) {
+    if (e.target === dialogRef.current) onClose();
   }
 
   return (
@@ -35,7 +31,6 @@ export default function Modal({open, onClose, title, children}: ModalProps){
       className="m-auto p-0 rounded-2xl bg-white shadow-2xl backdrop:bg-black/60"
     >
       <div className="flex flex-col gap-4 p-4">
-
         <div className="flex flex-row items-center justify-between gap-8">
           <div className="font-bold text-lg">{title}</div>
           <button
@@ -49,8 +44,7 @@ export default function Modal({open, onClose, title, children}: ModalProps){
         </div>
 
         {children}
-
       </div>
     </dialog>
-  )
+  );
 }

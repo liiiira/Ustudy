@@ -1,28 +1,27 @@
-import {z} from "zod";
+import { z } from "zod";
 
 export type DirectConversation = {
   id: string;
   type: string;
   createdAt: Date;
-}
+};
 
 export type DirectConversationInput = {
   directKey: string;
   requesterId: string;
   otherUserId: string;
-}
-
+};
 
 export type GroupConversationInput = {
   memberIds: string[];
   name: string;
   imageUrl?: string;
-}
+};
 
 export type ConversationUpdate = {
   name?: string;
   imageUrl?: string;
-}
+};
 
 export type GroupConversation = {
   id: string;
@@ -30,24 +29,25 @@ export type GroupConversation = {
   name: string;
   ownerId?: string;
   imageUrl?: string;
-  createdAt: Date; 
-}
+  createdAt: Date;
+};
 
 export type Conversation = GroupConversation | DirectConversation;
 
 export type CreateDirectConversationInput = {
   otherUserId: string;
   type: "direct";
-}
+};
 
 export type CreateGroupConversationInput = {
   memberIds: string[];
   imageUrl?: string;
   type: "group";
   name: string;
-}
+};
 
-export type CreateConversationInput = CreateGroupConversationInput | CreateDirectConversationInput;
+export type CreateConversationInput =
+  CreateGroupConversationInput | CreateDirectConversationInput;
 
 export type ConversationMember = {
   conversationId: string;
@@ -55,15 +55,15 @@ export type ConversationMember = {
   role: "member" | "admin";
   joinedAt: Date;
   lastReadMessageId: string | null;
-}
+};
 
 export type AddMembersBody = {
   memberIds: string[];
-}
+};
 
 export const createDirectConversationSchema = z.object({
   otherUserId: z.uuid(),
-  type: z.literal("direct"), 
+  type: z.literal("direct"),
 });
 
 export const createGroupConversationSchema = z.object({
@@ -71,7 +71,7 @@ export const createGroupConversationSchema = z.object({
   type: z.literal("group"),
   name: z.string().min(3).max(100),
   imageUrl: z.url().optional(),
-})
+});
 
 export const createConversationSchema = z.discriminatedUnion("type", [
   createDirectConversationSchema,
@@ -85,14 +85,12 @@ export const updateConversationSchema = z.object({
 
 export const addMembersSchema = z.object({
   memberIds: z.array(z.uuid()).min(1),
-})
+});
 export const conversationIdSchema = z.object({
   conversationId: z.uuid(),
-})
+});
 
 export const conversationMemberIdSchema = z.object({
   conversationId: z.uuid(),
   memberId: z.uuid(),
-})
-
-
+});

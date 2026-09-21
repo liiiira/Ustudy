@@ -1,26 +1,30 @@
 import FormBg from "../../../components/layout/formBg";
 import CommunityForm from "../components/communityForm";
-import { type  UseCommunity } from "../types";
+import { type UseCommunity } from "../types";
 import useCommunity from "../hooks/useCommunity";
 import { useParams } from "react-router";
 
+export default function UpdateCommunityPage() {
+  const { communityId } = useParams();
+  const { loading, error, community }: UseCommunity = useCommunity(
+    communityId!,
+  );
 
-export default function UpdateCommunityPage(){
+  if (error) return <p>error</p>;
 
-  const {communityId} = useParams();
-  const {loading, error, community}: UseCommunity = useCommunity(communityId!);
+  if (loading) return <p>loading...</p>;
 
-  if(error)
-    return (<p>error</p>)
-  
-  if(loading)
-    return (<p>loading...</p>)
-
-  const {name, description, imageUrl} = community!;
+  const { name, description, imageUrl } = community!;
 
   return (
     <FormBg>
-      <CommunityForm id={communityId} name={name} description={description} imageUrl={imageUrl} mode="Update"/>
+      <CommunityForm
+        id={communityId}
+        name={name}
+        description={description}
+        imageUrl={imageUrl}
+        mode="Update"
+      />
     </FormBg>
-  )
+  );
 }

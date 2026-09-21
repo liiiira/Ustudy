@@ -1,41 +1,51 @@
 import * as postController from "./post.controller.ts";
 import { Router } from "express";
 import isAuthenticated from "../../middlewares/isAuthenticated.ts";
-import { communityIdSchema, postIdSchema, postInputSchema, postUpdateSchema} from "./post.schema.ts";
-import {validateBody, validateParams} from "../../middlewares/validate.ts"
+import {
+  communityIdSchema,
+  postIdSchema,
+  postInputSchema,
+  postUpdateSchema,
+} from "./post.schema.ts";
+import { validateBody, validateParams } from "../../middlewares/validate.ts";
 
-const router = Router({caseSensitive: true, mergeParams: true});
+const router = Router({ caseSensitive: true, mergeParams: true });
 
-router.get("/",
+router.get(
+  "/",
   isAuthenticated,
   validateParams(communityIdSchema),
-  postController.findAllCommunity
+  postController.findAllCommunity,
 );
 
-router.post("/",
+router.post(
+  "/",
   isAuthenticated,
   validateParams(communityIdSchema),
   validateBody(postInputSchema),
-  postController.create
+  postController.create,
 );
 
-router.get("/:postId",
+router.get(
+  "/:postId",
   isAuthenticated,
   validateParams(postIdSchema),
-  postController.findById
+  postController.findById,
 );
 
-router.patch("/:postId",
+router.patch(
+  "/:postId",
   isAuthenticated,
   validateParams(postIdSchema),
   validateBody(postUpdateSchema),
-  postController.updateById
+  postController.updateById,
 );
 
-router.delete("/:postId",
+router.delete(
+  "/:postId",
   isAuthenticated,
   validateParams(postIdSchema),
-  postController.deleteById
+  postController.deleteById,
 );
 
 export default router;

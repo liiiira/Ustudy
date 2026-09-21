@@ -1,49 +1,59 @@
 import { Router } from "express";
 import { validateBody, validateParams } from "../../middlewares/validate";
-import { addMembersSchema, conversationIdSchema, conversationMemberIdSchema, createConversationSchema, updateConversationSchema } from "./conversation.schema";
+import {
+  addMembersSchema,
+  conversationIdSchema,
+  conversationMemberIdSchema,
+  createConversationSchema,
+  updateConversationSchema,
+} from "./conversation.schema";
 import isAuthenticated from "../../middlewares/isAuthenticated";
-import * as conversationController from "./conversation.controller.ts"
+import * as conversationController from "./conversation.controller.ts";
 
-const router = Router({caseSensitive: true, mergeParams: true});
+const router = Router({ caseSensitive: true, mergeParams: true });
 
-
-router.post("/",
+router.post(
+  "/",
   isAuthenticated,
   validateBody(createConversationSchema),
-  conversationController.create
+  conversationController.create,
 );
 
-router.get("/:conversationId", 
+router.get(
+  "/:conversationId",
   isAuthenticated,
   validateParams(conversationIdSchema),
-  conversationController.getById
+  conversationController.getById,
 );
 
-router.patch("/:conversationId",
+router.patch(
+  "/:conversationId",
   isAuthenticated,
   validateParams(conversationIdSchema),
   validateBody(updateConversationSchema),
-  conversationController.updateById
+  conversationController.updateById,
 );
 
-router.delete("/:conversationId",
+router.delete(
+  "/:conversationId",
   isAuthenticated,
   validateParams(conversationIdSchema),
-  conversationController.deleteById
+  conversationController.deleteById,
 );
 
-router.post("/:conversationId/members",
+router.post(
+  "/:conversationId/members",
   isAuthenticated,
   validateParams(conversationIdSchema),
   validateBody(addMembersSchema),
-  conversationController.addMembers
+  conversationController.addMembers,
 );
 
-router.delete("/:conversationId/members/:memberId",
+router.delete(
+  "/:conversationId/members/:memberId",
   isAuthenticated,
   validateParams(conversationMemberIdSchema),
-  conversationController.removeMember
+  conversationController.removeMember,
 );
 
 export default router;
-

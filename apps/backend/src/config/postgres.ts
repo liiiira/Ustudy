@@ -1,5 +1,5 @@
 import pg from "pg";
-import './env.ts'
+import "./env.ts";
 
 const { Pool } = pg;
 const postgresUrl = process.env.POSTGRES_URL;

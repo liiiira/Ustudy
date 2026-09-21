@@ -18,7 +18,7 @@ vi.mock("./upload.repository.ts", () => ({
 // Static imports are hoisted before any of this file's own code runs, so
 // the module under test is imported dynamically, inside beforeAll, after
 // the env var is set — not as a static top-level import.
-let createPresignUpload: typeof import("./upload.service.ts")["createPresignUpload"];
+let createPresignUpload: (typeof import("./upload.service.ts"))["createPresignUpload"];
 let mockedCreatePresignedUrl: ReturnType<typeof vi.fn>;
 let mockedRepoCreate: ReturnType<typeof vi.fn>;
 
@@ -31,8 +31,11 @@ beforeAll(async () => {
   const uploadRepository = await import("./upload.repository.ts");
   ({ createPresignUpload } = await import("./upload.service.ts"));
 
-  mockedCreatePresignedUrl = storage.createPresignedUrl as unknown as ReturnType<typeof vi.fn>;
-  mockedRepoCreate = uploadRepository.create as unknown as ReturnType<typeof vi.fn>;
+  mockedCreatePresignedUrl =
+    storage.createPresignedUrl as unknown as ReturnType<typeof vi.fn>;
+  mockedRepoCreate = uploadRepository.create as unknown as ReturnType<
+    typeof vi.fn
+  >;
 });
 
 const FAKE_UPLOAD_ROW: Upload = {
@@ -46,13 +49,14 @@ const FAKE_UPLOAD_ROW: Upload = {
 };
 
 describe("upload.service.createPresignUpload", () => {
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("builds an object key namespaced by kind/owner and requests a presigned URL for it", async () => {
-    mockedCreatePresignedUrl.mockResolvedValue("https://s3.example.com/signed-put-url");
+    mockedCreatePresignedUrl.mockResolvedValue(
+      "https://s3.example.com/signed-put-url",
+    );
     mockedRepoCreate.mockResolvedValue(FAKE_UPLOAD_ROW);
 
     const result = await createPresignUpload("user-1", {
@@ -62,7 +66,8 @@ describe("upload.service.createPresignUpload", () => {
     });
 
     expect(mockedCreatePresignedUrl).toHaveBeenCalledTimes(1);
-    const [calledKey, calledContentType, calledSize, calledExpiry] = mockedCreatePresignedUrl.mock.calls[0];
+    const [calledKey, calledContentType, calledSize, calledExpiry] =
+      mockedCreatePresignedUrl.mock.calls[0];
 
     expect(calledKey).toMatch(/^avatars\/user-1\/[0-9a-f-]+\.png$/);
     expect(calledContentType).toBe("image/png");
@@ -76,27 +81,45 @@ describe("upload.service.createPresignUpload", () => {
   });
 
   it("maps each kind to its own folder prefix", async () => {
-    mockedCreatePresignedUrl.mockResolvedValue("https://s3.example.com/signed-put-url");
+    mockedCreatePresignedUrl.mockResolvedValue(
+      "https://s3.example.com/signed-put-url",
+    );
     mockedRepoCreate.mockResolvedValue(FAKE_UPLOAD_ROW);
 
-    await createPresignUpload("user-1", { kind: "post", contentType: "image/webp", size: 2048 });
+    await createPresignUpload("user-1", {
+      kind: "post",
+      contentType: "image/webp",
+      size: 2048,
+    });
     const [postKey] = mockedCreatePresignedUrl.mock.calls[0];
     expect(postKey).toMatch(/^posts\/user-1\//);
 
     vi.clearAllMocks();
-    mockedCreatePresignedUrl.mockResolvedValue("https://s3.example.com/signed-put-url");
+    mockedCreatePresignedUrl.mockResolvedValue(
+      "https://s3.example.com/signed-put-url",
+    );
     mockedRepoCreate.mockResolvedValue(FAKE_UPLOAD_ROW);
 
-    await createPresignUpload("user-1", { kind: "community", contentType: "image/webp", size: 2048 });
+    await createPresignUpload("user-1", {
+      kind: "community",
+      contentType: "image/webp",
+      size: 2048,
+    });
     const [communityKey] = mockedCreatePresignedUrl.mock.calls[0];
     expect(communityKey).toMatch(/^communities\/user-1\//);
   });
 
   it("persists an uploads row with the requesting user as owner before returning", async () => {
-    mockedCreatePresignedUrl.mockResolvedValue("https://s3.example.com/signed-put-url");
+    mockedCreatePresignedUrl.mockResolvedValue(
+      "https://s3.example.com/signed-put-url",
+    );
     mockedRepoCreate.mockResolvedValue(FAKE_UPLOAD_ROW);
 
-    await createPresignUpload("user-1", { kind: "avatar", contentType: "image/png", size: 1024 });
+    await createPresignUpload("user-1", {
+      kind: "avatar",
+      contentType: "image/png",
+      size: 1024,
+    });
 
     expect(mockedRepoCreate).toHaveBeenCalledTimes(1);
     expect(mockedRepoCreate).toHaveBeenCalledWith(
@@ -106,20 +129,30 @@ describe("upload.service.createPresignUpload", () => {
         contentType: "image/png",
         objectKey: expect.stringMatching(/^avatars\/user-1\//),
         publicUrl: expect.stringContaining("avatars/user-1/"),
-      })
+      }),
     );
   });
 
   it("throws a 500 AppError if the repository fails to persist the upload record", async () => {
-    mockedCreatePresignedUrl.mockResolvedValue("https://s3.example.com/signed-put-url");
+    mockedCreatePresignedUrl.mockResolvedValue(
+      "https://s3.example.com/signed-put-url",
+    );
     mockedRepoCreate.mockResolvedValue(null);
 
     await expect(
-      createPresignUpload("user-1", { kind: "avatar", contentType: "image/png", size: 1024 })
+      createPresignUpload("user-1", {
+        kind: "avatar",
+        contentType: "image/png",
+        size: 1024,
+      }),
     ).rejects.toThrow(AppError);
 
     await expect(
-      createPresignUpload("user-1", { kind: "avatar", contentType: "image/png", size: 1024 })
+      createPresignUpload("user-1", {
+        kind: "avatar",
+        contentType: "image/png",
+        size: 1024,
+      }),
     ).rejects.toMatchObject({ statusCode: 500 });
   });
 
@@ -127,7 +160,11 @@ describe("upload.service.createPresignUpload", () => {
     mockedCreatePresignedUrl.mockRejectedValue(new Error("S3 unreachable"));
 
     await expect(
-      createPresignUpload("user-1", { kind: "avatar", contentType: "image/png", size: 1024 })
+      createPresignUpload("user-1", {
+        kind: "avatar",
+        contentType: "image/png",
+        size: 1024,
+      }),
     ).rejects.toThrow("S3 unreachable");
 
     expect(mockedRepoCreate).not.toHaveBeenCalled();

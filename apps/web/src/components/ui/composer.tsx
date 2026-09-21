@@ -21,7 +21,6 @@ export default function Composer({
   submitLabel,
   inputError,
 }: ComposerProps) {
-
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -29,13 +28,12 @@ export default function Composer({
     }
   }
 
-
   return (
-  <div className="flex flex-col h-max w-full">
+    <div className="flex flex-col h-max w-full">
       <form
         className="flex flex-col items-start gap-3 px-4 py-2 w-full h-max border-2 rounded-2xl border-gray-400 bg-white"
-        onSubmit={onSubmit}>
-
+        onSubmit={onSubmit}
+      >
         <textarea
           name={name}
           value={value}
@@ -47,8 +45,7 @@ export default function Composer({
           className="flex-1 w-full resize-none rounded-md focus:outline-none"
         />
 
-     
-        <div className="flex w-full h-max flex-row justify-end"> 
+        <div className="flex w-full h-max flex-row justify-end">
           <Button
             variant="Primary"
             type="button"
@@ -61,8 +58,12 @@ export default function Composer({
       </form>
 
       <div className="flex flex-row-reverse">
-        <div className="text-sm text-gray-500 font-medium">{value.length}/{charLimit}</div>
-        <div className=" min-h-5 text-red-500 text-xs">{value.length > 0 && inputError[0]}</div>
+        <div className="text-sm text-gray-500 font-medium">
+          {value.length}/{charLimit}
+        </div>
+        <div className=" min-h-5 text-red-500 text-xs">
+          {value.length > 0 && inputError[0]}
+        </div>
       </div>
     </div>
   );

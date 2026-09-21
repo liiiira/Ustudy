@@ -14,10 +14,14 @@ const s3 = new S3Client({
     accessKeyId: S3_ACCESS_KEY_ID,
     secretAccessKey: S3_SECRET_ACCESS_KEY,
   },
-})
+});
 
-export async function createPresignedUrl(key: string, contentType: string, size: number, expiresInSeconds: number,): Promise<string> {
-
+export async function createPresignedUrl(
+  key: string,
+  contentType: string,
+  size: number,
+  expiresInSeconds: number,
+): Promise<string> {
   const command = new PutObjectCommand({
     Bucket: S3_BUCKET,
     Key: key,

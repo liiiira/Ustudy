@@ -1,6 +1,6 @@
 import { Outlet } from "react-router";
 import { Navbar } from "./navbar";
-export default function Layout(){
+export default function Layout() {
   return (
     <div className="min-h-screen w-full flex flex-col ">
       <Navbar />
@@ -11,4 +11,3 @@ export default function Layout(){
     </div>
   );
 }
-

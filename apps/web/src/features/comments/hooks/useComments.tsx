@@ -1,33 +1,29 @@
-import * as commentsApi from "../../comments/api/comments.api.ts"
-import { useState, useEffect } from "react"
+import * as commentsApi from "../../comments/api/comments.api.ts";
+import { useState, useEffect } from "react";
 import type { CommentJoinUser, UseComments } from "../types.ts";
 
-
-export default function useComments(communityId: string, postId: string): UseComments{
-
+export default function useComments(
+  communityId: string,
+  postId: string,
+): UseComments {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<boolean>(false);
-  const [comments, setComments] = useState<CommentJoinUser[]>([])
-  
+  const [comments, setComments] = useState<CommentJoinUser[]>([]);
+
   useEffect(() => {
-    async function loadComments(){
-
-      try{
-
-        const fetchedComments: CommentJoinUser[] = await commentsApi.getPostComments(communityId, postId);
+    async function loadComments() {
+      try {
+        const fetchedComments: CommentJoinUser[] =
+          await commentsApi.getPostComments(communityId, postId);
         setComments(fetchedComments);
-
-      }catch{
+      } catch {
         setError(true);
-
-      }finally{
+      } finally {
         setLoading(false);
-
       }
     }
     loadComments();
+  }, [communityId, postId]);
 
-  }, [communityId, postId])
-
-  return {loading, error, comments, setComments}
+  return { loading, error, comments, setComments };
 }

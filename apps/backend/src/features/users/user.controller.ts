@@ -1,37 +1,33 @@
-import { type UserRegister, type User} from "./user.schema.ts";
+import { type UserRegister, type User } from "./user.schema.ts";
 import * as userService from "./user.service.ts";
-import {type Request, type Response} from 'express';
+import { type Request, type Response } from "express";
 
-export async function create(req:Request, res: Response){
-  
+export async function create(req: Request, res: Response) {
   // body Already validated using the validate middleware
   const userData: UserRegister = req.body;
 
-  // Getting the created user with his uuid, and time stamp of creation 
+  // Getting the created user with his uuid, and time stamp of creation
   const user: User = await userService.create(userData);
-  
-  return res.status(201).json({
 
+  return res.status(201).json({
     status: "success",
     user: user,
-    message: "User Created Successfuly"
-  })
+    message: "User Created Successfuly",
+  });
 }
 
-export async function findAll(_req: Request, res: Response){
-
+export async function findAll(_req: Request, res: Response) {
   const users: User[] = await userService.findAll();
 
   return res.status(200).json({
     status: "success",
     users: users,
     message: "Users Returned Successfuly",
-  })
+  });
 }
 
-export async function findById(req: Request<{ id: string} >, res: Response) {
-
-  const {id} = req.params;
+export async function findById(req: Request<{ id: string }>, res: Response) {
+  const { id } = req.params;
   const user: User = await userService.findById(id);
 
   return res.status(200).json({
@@ -41,47 +37,49 @@ export async function findById(req: Request<{ id: string} >, res: Response) {
   });
 }
 
-
-export async function updateById(req: Request<{id: string}>, res: Response){
-
+export async function updateById(req: Request<{ id: string }>, res: Response) {
   const requesterId: string = req.user!.id;
-  const {id} = req.params;
-  const {username, password, email, avatarUrl } = req.body;
-  const updatedUser: User | null = await userService.updateById(requesterId, id, {username, password, email, avatarUrl})
+  const { id } = req.params;
+  const { username, password, email, avatarUrl } = req.body;
+  const updatedUser: User | null = await userService.updateById(
+    requesterId,
+    id,
+    { username, password, email, avatarUrl },
+  );
 
   // Nothing changed
-  if (!updatedUser)
-    return res.status(204).json({})
-
+  if (!updatedUser) return res.status(204).json({});
 
   return res.status(200).json({
     status: "success",
     user: updatedUser,
-    message: "User Updated Successfully"
-  })
+    message: "User Updated Successfully",
+  });
 }
 
-export async function deleteById (req: Request<{id: string}>, res: Response){
+export async function deleteById(req: Request<{ id: string }>, res: Response) {
   const requesterId: string = req.user!.id;
-  const {id} = req.params;
+  const { id } = req.params;
 
-  const deletedUser: {id: string} = await userService.delelteById(requesterId, id);
+  const deletedUser: { id: string } = await userService.delelteById(
+    requesterId,
+    id,
+  );
 
   return res.status(200).json({
     status: "success",
     message: "User Deleted Successfully",
     user: deletedUser,
-  })
+  });
 }
 
-export async function getProfile(req: Request, res: Response){
-
+export async function getProfile(req: Request, res: Response) {
   const id = req.user!.id;
   const user: User = await userService.findById(id);
 
   res.status(200).json({
     status: "success",
     message: "Profile fetched Successfully",
-    user: user
-  })
+    user: user,
+  });
 }

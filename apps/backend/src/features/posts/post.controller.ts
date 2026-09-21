@@ -2,15 +2,19 @@ import * as postService from "./post.service.ts";
 import { type Post, type PostInput, type PostJoined } from "./post.schema.ts";
 import type { Request, Response } from "express";
 
-
-
-export async function create(req: Request<{communityId: string}>, res: Response){
-
+export async function create(
+  req: Request<{ communityId: string }>,
+  res: Response,
+) {
   const ownerId: string = req.user!.id;
-  const {communityId} = req.params;
+  const { communityId } = req.params;
   const postData: PostInput = req.body;
 
-  const createdPost: Post = await postService.create(ownerId, communityId, postData);
+  const createdPost: Post = await postService.create(
+    ownerId,
+    communityId,
+    postData,
+  );
 
   return res.status(201).json({
     message: "Post Created Successfuly",
@@ -19,12 +23,14 @@ export async function create(req: Request<{communityId: string}>, res: Response)
   });
 }
 
-export async function findById(req: Request<{communityId: string, postId: string}>, res: Response){
+export async function findById(
+  req: Request<{ communityId: string; postId: string }>,
+  res: Response,
+) {
+  const { postId } = req.params;
 
-  const {postId} = req.params;
+  const foundPost: PostJoined = await postService.getById(postId);
 
-  const foundPost: PostJoined = await postService.getById(postId)
-  
   return res.status(200).json({
     message: "Post Fetched Successfuly",
     status: "success",
@@ -32,48 +38,60 @@ export async function findById(req: Request<{communityId: string, postId: string
   });
 }
 
-export async function findAllCommunity(req: Request<{communityId: string}>, res: Response){
+export async function findAllCommunity(
+  req: Request<{ communityId: string }>,
+  res: Response,
+) {
+  const { communityId } = req.params;
 
-  const {communityId} = req.params;
-
-  const communityPosts: Post[] = await postService.findAllCommunity(communityId);
+  const communityPosts: Post[] =
+    await postService.findAllCommunity(communityId);
 
   return res.status(200).json({
     Message: "Community Posts Fetched Successfuly",
     status: "success",
     posts: communityPosts,
-  })
+  });
 }
 
-export async function updateById(req: Request<{communityId: string, postId: string}> , res: Response){
-
+export async function updateById(
+  req: Request<{ communityId: string; postId: string }>,
+  res: Response,
+) {
   const userId: string = req.user!.id;
-  const {postId} = req.params;
-  const {title, textContent, imageUrl} = req.body;
+  const { postId } = req.params;
+  const { title, textContent, imageUrl } = req.body;
 
-  const updatedPost: Post | null = await postService.updateById(userId, postId, {title, textContent, imageUrl})
+  const updatedPost: Post | null = await postService.updateById(
+    userId,
+    postId,
+    { title, textContent, imageUrl },
+  );
 
-  if(!updatedPost)
-    return res.status(204).json();
+  if (!updatedPost) return res.status(204).json();
 
   return res.status(200).json({
     message: "Post Updated Successfuly",
     status: "success",
     post: updatedPost,
-  })
-}
-
-export async function deleteById(req: Request<{communityId: string, postId: string}>, res: Response){
-
-  const userId: string = req.user!.id;
-  const {postId} = req.params;
-  
-  const deletedPost: {id: string} = await postService.deleteById(postId, userId);
-
-  return res.status(200).json({
-    message: "Post Deleted Successfuly", 
-    status: "success",
-    post: deletedPost
   });
 }
 
+export async function deleteById(
+  req: Request<{ communityId: string; postId: string }>,
+  res: Response,
+) {
+  const userId: string = req.user!.id;
+  const { postId } = req.params;
+
+  const deletedPost: { id: string } = await postService.deleteById(
+    postId,
+    userId,
+  );
+
+  return res.status(200).json({
+    message: "Post Deleted Successfuly",
+    status: "success",
+    post: deletedPost,
+  });
+}

@@ -1,56 +1,54 @@
-import { authFetch } from "../../../lib/api"
-import { type CreateCommunityData, type Community, type CommunityUpdate, type CommunityJoinUser} from "../types";
+import { authFetch } from "../../../lib/api";
+import {
+  type CreateCommunityData,
+  type Community,
+  type CommunityUpdate,
+  type CommunityJoinUser,
+} from "../types";
 
+export async function create(
+  communityData: CreateCommunityData,
+): Promise<Community> {
+  const data = await authFetch("/communities/", {
+    method: "POST",
+    body: communityData,
+  });
 
-export async function create(communityData: CreateCommunityData): Promise<Community>{
-
-  const data = await authFetch("/communities/",
-    {
-      method: "POST", 
-      body: communityData
-    });
-
-    return data.community 
+  return data.community;
 }
 
-export async function getAll(): Promise<Community[]>{
-
-  const data = await authFetch("/communities",
-  {
+export async function getAll(): Promise<Community[]> {
+  const data = await authFetch("/communities", {
     method: "GET",
   });
 
   return data.communities;
 }
 
-export async function getById(id: string): Promise<CommunityJoinUser>{
-  const data = await authFetch(`/communities/${id}`, 
-    {
-      method: "GET",
-    }
-  );
+export async function getById(id: string): Promise<CommunityJoinUser> {
+  const data = await authFetch(`/communities/${id}`, {
+    method: "GET",
+  });
 
   return data.community;
 }
 
-export async function updateById(id: string, community: CommunityUpdate): Promise<CommunityUpdate | null>{
-
-  const data = await authFetch(`/communities/${id}`, 
-    {
-      method: "PATCH",
-      body: community,
-    })
+export async function updateById(
+  id: string,
+  community: CommunityUpdate,
+): Promise<CommunityUpdate | null> {
+  const data = await authFetch(`/communities/${id}`, {
+    method: "PATCH",
+    body: community,
+  });
 
   return data ? data.community : null;
 }
 
-export async function deleteById(id: string): Promise<{id: string}>{
-  const data = await authFetch(`/communities/${id}`, 
-    {
-      method: "DELETE",
-    }
-  );
+export async function deleteById(id: string): Promise<{ id: string }> {
+  const data = await authFetch(`/communities/${id}`, {
+    method: "DELETE",
+  });
 
   return data.community;
 }
-

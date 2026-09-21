@@ -1,9 +1,9 @@
-import { Routes, Route } from "react-router"
-import Layout from '../components/layout/layout';
-import TestPage from '../TestPage.tsx'
-import LoginPage from '../features/auth/pages/loginPage.tsx';
+import { Routes, Route } from "react-router";
+import Layout from "../components/layout/layout";
+import TestPage from "../TestPage.tsx";
+import LoginPage from "../features/auth/pages/loginPage.tsx";
 import SignupPage from "../features/users/pages/signupPage.tsx";
-import ProfilePage from '../features/users/pages/settingsPage.tsx';
+import ProfilePage from "../features/users/pages/settingsPage.tsx";
 import ProtectedRoute from "../components/protectedRoute.tsx";
 import CreateCommunityPage from "../features/communities/pages/createCommunityPage.tsx";
 import CommunitiesPage from "../features/communities/pages/communitiesPage.tsx";
@@ -13,70 +13,40 @@ import CreatePostPage from "../features/posts/pages/CreatePostPage.tsx";
 import PostPage from "../features/posts/pages/PostPage.tsx";
 import UpdatePostPage from "../features/posts/pages/UpdatePostPage.tsx";
 
-export default function AppRoutes(){
-  return(
-      <Routes>
+export default function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<Layout />}>
+        {/* public routes*/}
+        <Route index element={<p>home</p>} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/test" element={<TestPage />} />
 
-        <Route path="/" element={<Layout />}>
-        
-          {/* public routes*/}
+        {/* protected Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/communities" element={<CommunitiesPage />} />
+          <Route path="/communities/create" element={<CreateCommunityPage />} />
+          <Route path="/communities/:communityId" element={<CommunityPage />} />
           <Route
-            index 
-            element={<p>home</p>} 
+            path="/communities/:communityId/update"
+            element={<UpdateCommunityPage />}
           />
-          <Route 
-            path="/login" 
-            element={<LoginPage />} 
+          <Route
+            path="/communities/:communityId/posts/create"
+            element={<CreatePostPage />}
           />
-          <Route 
-            path="/signup" 
-            element={<SignupPage />} 
+          <Route
+            path="/communities/:communityId/posts/:postId"
+            element={<PostPage />}
           />
-          <Route 
-            path="/test" 
-            element={<TestPage/>} 
+          <Route
+            path="/communities/:communityId/posts/:postId/update"
+            element=<UpdatePostPage />
           />
-
-          {/* protected Routes */}
-          <Route 
-            element={<ProtectedRoute />} 
-          >
-
-            <Route 
-              path="/profile"
-              element={<ProfilePage />} 
-            />
-            <Route 
-              path="/communities" 
-              element={<CommunitiesPage />}
-            />
-            <Route 
-              path="/communities/create" 
-              element={<CreateCommunityPage />}
-            />
-            <Route 
-              path="/communities/:communityId" 
-              element={<CommunityPage />} 
-            />
-            <Route 
-              path="/communities/:communityId/update" 
-              element={<UpdateCommunityPage />} 
-            />
-            <Route 
-              path="/communities/:communityId/posts/create" 
-              element={<CreatePostPage />} 
-            />
-            <Route 
-              path="/communities/:communityId/posts/:postId" 
-              element={<PostPage />} 
-            />
-            <Route
-              path="/communities/:communityId/posts/:postId/update" 
-              element=<UpdatePostPage />
-            />
-          </Route>
         </Route>
-      </Routes>
-
-  )
+      </Route>
+    </Routes>
+  );
 }

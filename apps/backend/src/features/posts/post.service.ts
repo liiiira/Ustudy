@@ -1,117 +1,121 @@
-import * as postRepository from "./post.repository.ts"
-import * as communityService from "../communities/community.service.ts"
-import * as uploadService from "../uploads/upload.service.ts"
+import * as postRepository from "./post.repository.ts";
+import * as communityService from "../communities/community.service.ts";
+import * as uploadService from "../uploads/upload.service.ts";
 import type { PostInput, Post, PostJoined, PostUpdate } from "./post.schema.ts";
-import {AppError} from "../../errors/appError.ts"
+import { AppError } from "../../errors/appError.ts";
 import { type CommunityDB } from "../communities/community.schema.ts";
 
+export async function create(
+  ownerId: string,
+  communityId: string,
+  postData: PostInput,
+): Promise<Post> {
+  const communityExists: CommunityDB | null =
+    await communityService.findById(communityId);
 
-export async function create(ownerId: string, communityId: string,  postData: PostInput): Promise<Post>{
-  
-  const communityExists: CommunityDB | null = await communityService.findById(communityId);
+  if (!communityExists) throw new AppError("Community was not found", 404);
 
-  if(!communityExists)
-    throw new AppError("Community was not found", 404);
-  
   let uploadId: string | undefined;
 
-  if(postData.imageUrl){
-    const upload = await uploadService.verifyUploadOwnerShip(ownerId, {postUrl: postData.imageUrl})
+  if (postData.imageUrl) {
+    const upload = await uploadService.verifyUploadOwnerShip(ownerId, {
+      postUrl: postData.imageUrl,
+    });
     uploadId = upload.id;
   }
 
-  const createdPost: Post | null = await postRepository.create(ownerId, communityId, {title: postData.title, textContent: postData.textContent, uploadId})
+  const createdPost: Post | null = await postRepository.create(
+    ownerId,
+    communityId,
+    { title: postData.title, textContent: postData.textContent, uploadId },
+  );
 
-  if(!createdPost)
-    throw new AppError("Failed to create post", 500);
+  if (!createdPost) throw new AppError("Failed to create post", 500);
 
   return createdPost;
 }
 
-
-export async function findById(postId: string): Promise<Post | null>{
-  
+export async function findById(postId: string): Promise<Post | null> {
   return await postRepository.findById(postId);
 }
 
-
-export async function getById(postId: string): Promise<PostJoined>{
-
+export async function getById(postId: string): Promise<PostJoined> {
   const post: PostJoined | null = await postRepository.findByIdJoin(postId);
 
-  if(!post)
-    throw new AppError("Post was not found", 404);
+  if (!post) throw new AppError("Post was not found", 404);
 
   return post;
 }
 
-export async function findAllCommunity(communityId: string): Promise<Post[]>{
-
-  const posts: Post[] = await postRepository.findAllCommunity(communityId)
+export async function findAllCommunity(communityId: string): Promise<Post[]> {
+  const posts: Post[] = await postRepository.findAllCommunity(communityId);
 
   return posts;
 }
 
-export async function updateById(userId: string, postId: string, postData: PostUpdate) : Promise<Post | null>{
-
-  const {title, textContent, imageUrl} = postData;
+export async function updateById(
+  userId: string,
+  postId: string,
+  postData: PostUpdate,
+): Promise<Post | null> {
+  const { title, textContent, imageUrl } = postData;
 
   const post: Post | null = await findById(postId);
 
-  if(!post)
-    throw new AppError("Post doesn't exist", 404);
+  if (!post) throw new AppError("Post doesn't exist", 404);
 
-  if(userId !== post.ownerId) 
-    throw new AppError("You are not allowed to update this post", 403)
+  if (userId !== post.ownerId)
+    throw new AppError("You are not allowed to update this post", 403);
 
-  if(!title && !textContent && !imageUrl)
+  if (!title && !textContent && !imageUrl)
     throw new AppError("Body is Empty", 400);
 
-  const modifiedAttributes: Record<string, string> = {}
-  
-  // check if post title changed
-  if (title && post.title !== title)
-    modifiedAttributes["title"] = title;
+  const modifiedAttributes: Record<string, string> = {};
 
-  // Check if post text content exists and changed 
+  // check if post title changed
+  if (title && post.title !== title) modifiedAttributes["title"] = title;
+
+  // Check if post text content exists and changed
   if (textContent && post.textContent !== textContent)
     modifiedAttributes["textContent"] = textContent;
-  
+
   // Check if post image changed
-  if (imageUrl && post.imageUrl !== imageUrl){
-    const upload = await uploadService.verifyUploadOwnerShip(userId, {postUrl: imageUrl});
+  if (imageUrl && post.imageUrl !== imageUrl) {
+    const upload = await uploadService.verifyUploadOwnerShip(userId, {
+      postUrl: imageUrl,
+    });
     modifiedAttributes["uploadId"] = upload.id;
   }
-  
 
-  // Check if nothing changed  
-  if (Object.keys(modifiedAttributes).length === 0)
-    return null;
+  // Check if nothing changed
+  if (Object.keys(modifiedAttributes).length === 0) return null;
 
-  const updatedPost: Post | null = await postRepository.updateById(postId, modifiedAttributes)
-   
+  const updatedPost: Post | null = await postRepository.updateById(
+    postId,
+    modifiedAttributes,
+  );
+
   if (!updatedPost)
     throw new AppError("Post Was Not Updated", 500, "Unknown Failure");
 
   return updatedPost;
 }
 
-export async function deleteById(postId: string, userId: string): Promise<{id: string}>{
-
+export async function deleteById(
+  postId: string,
+  userId: string,
+): Promise<{ id: string }> {
   const post: Post | null = await findById(postId);
 
-  if(!post)
-    throw new AppError("Post doesn't exist", 404);
+  if (!post) throw new AppError("Post doesn't exist", 404);
 
-  if(userId !== post.ownerId) 
-    throw new AppError("You are not allowed to delete this community", 403)
-  
-  const deletedPost: {id: string} | null = await postRepository.deleteById(postId);
+  if (userId !== post.ownerId)
+    throw new AppError("You are not allowed to delete this community", 403);
 
-  if(!deletedPost)
-    throw new AppError("Failed to delete the post", 500);
+  const deletedPost: { id: string } | null =
+    await postRepository.deleteById(postId);
 
-  return deletedPost
+  if (!deletedPost) throw new AppError("Failed to delete the post", 500);
+
+  return deletedPost;
 }
-
-

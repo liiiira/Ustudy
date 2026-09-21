@@ -1,8 +1,13 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import request from 'supertest';
-import app from '../src/app';
-import pool from '../src/config/postgres';
-import { createUser, registerAndLogin, resetUsersTable, presignUpload } from './utils.ts';
+import { describe, it, expect, beforeEach } from "vitest";
+import request from "supertest";
+import app from "../src/app";
+import pool from "../src/config/postgres";
+import {
+  createUser,
+  registerAndLogin,
+  resetUsersTable,
+  presignUpload,
+} from "./utils.ts";
 
 const BASE_URL = "/api/v1/users";
 
@@ -19,13 +24,10 @@ const OTHER_USER = {
 };
 
 describe("POST /api/v1/users", () => {
-
   beforeEach(resetUsersTable);
 
   it("registers a user", async () => {
-    const res = await request(app)
-      .post(BASE_URL)
-      .send(TEST_USER);
+    const res = await request(app).post(BASE_URL).send(TEST_USER);
 
     expect(res.status).toBe(201);
     expect(res.headers["content-type"]).toMatch(/json/);
@@ -85,7 +87,6 @@ describe("POST /api/v1/users", () => {
 });
 
 describe("GET /api/v1/users", () => {
-
   beforeEach(resetUsersTable);
 
   it("returns every registered user to an authenticated caller", async () => {
@@ -101,9 +102,15 @@ describe("GET /api/v1/users", () => {
     expect(res.body.users).toHaveLength(2);
     expect(res.body.users).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ username: TEST_USER.username, email: TEST_USER.email }),
-        expect.objectContaining({ username: OTHER_USER.username, email: OTHER_USER.email }),
-      ])
+        expect.objectContaining({
+          username: TEST_USER.username,
+          email: TEST_USER.email,
+        }),
+        expect.objectContaining({
+          username: OTHER_USER.username,
+          email: OTHER_USER.email,
+        }),
+      ]),
     );
   });
 
@@ -115,7 +122,6 @@ describe("GET /api/v1/users", () => {
 });
 
 describe("GET /api/v1/users/:id", () => {
-
   beforeEach(resetUsersTable);
 
   it("returns a user by id", async () => {
@@ -177,7 +183,6 @@ describe("GET /api/v1/users/:id", () => {
 });
 
 describe("PATCH /api/v1/users/:id/", () => {
-
   beforeEach(resetUsersTable);
 
   it("updates the caller's own username", async () => {
@@ -228,7 +233,8 @@ describe("PATCH /api/v1/users/:id/", () => {
 
   it("does not allow another user to update the account", async () => {
     const { id } = await registerAndLogin(TEST_USER);
-    const { accessToken: otherAccessToken } = await registerAndLogin(OTHER_USER);
+    const { accessToken: otherAccessToken } =
+      await registerAndLogin(OTHER_USER);
 
     const res = await request(app)
       .patch(`${BASE_URL}/${id}`)
@@ -238,7 +244,9 @@ describe("PATCH /api/v1/users/:id/", () => {
     expect(res.status).toBe(403);
 
     // Verify it wasn't changed
-    const dbRow = await pool.query("SELECT username FROM users WHERE id = $1", [id]);
+    const dbRow = await pool.query("SELECT username FROM users WHERE id = $1", [
+      id,
+    ]);
     expect(dbRow.rows[0].username).toBe(TEST_USER.username);
   });
 
@@ -288,7 +296,6 @@ describe("PATCH /api/v1/users/:id/", () => {
 });
 
 describe("DELETE /api/v1/users/:id", () => {
-
   beforeEach(resetUsersTable);
 
   it("deletes the caller's own account", async () => {
@@ -311,7 +318,8 @@ describe("DELETE /api/v1/users/:id", () => {
 
   it("does not allow another user to delete the account", async () => {
     const { id } = await registerAndLogin(TEST_USER);
-    const { accessToken: otherAccessToken } = await registerAndLogin(OTHER_USER);
+    const { accessToken: otherAccessToken } =
+      await registerAndLogin(OTHER_USER);
 
     const res = await request(app)
       .delete(`${BASE_URL}/${id}`)
@@ -355,7 +363,6 @@ describe("DELETE /api/v1/users/:id", () => {
 });
 
 describe("users (avatars)", () => {
-
   beforeEach(resetUsersTable);
 
   it("sets the caller's avatar from their own avatar upload", async () => {
@@ -372,7 +379,7 @@ describe("users (avatars)", () => {
 
     const row = await pool.query(
       `SELECT up.public_url FROM users u JOIN uploads up ON u.avatar_id = up.id WHERE u.id = $1`,
-      [id]
+      [id],
     );
     expect(row.rows[0].public_url).toBe(avatarUrl);
   });
@@ -399,11 +406,15 @@ describe("users (avatars)", () => {
       .set("Authorization", `Bearer ${accessToken}`)
       .send({ username: TEST_USER.username, avatarUrl });
 
-    const me = await request(app).get(`${BASE_URL}/me`).set("Authorization", `Bearer ${accessToken}`);
+    const me = await request(app)
+      .get(`${BASE_URL}/me`)
+      .set("Authorization", `Bearer ${accessToken}`);
     expect(me.status).toBe(200);
     expect(me.body.user.avatarUrl).toBe(avatarUrl);
 
-    const byId = await request(app).get(`${BASE_URL}/${id}`).set("Authorization", `Bearer ${accessToken}`);
+    const byId = await request(app)
+      .get(`${BASE_URL}/${id}`)
+      .set("Authorization", `Bearer ${accessToken}`);
     expect(byId.status).toBe(200);
     expect(byId.body.user.avatarUrl).toBe(avatarUrl);
   });
@@ -411,7 +422,9 @@ describe("users (avatars)", () => {
   it("returns a null avatarUrl for a user who has not set one", async () => {
     const { accessToken } = await registerAndLogin(TEST_USER);
 
-    const me = await request(app).get(`${BASE_URL}/me`).set("Authorization", `Bearer ${accessToken}`);
+    const me = await request(app)
+      .get(`${BASE_URL}/me`)
+      .set("Authorization", `Bearer ${accessToken}`);
     expect(me.status).toBe(200);
     expect(me.body.user.avatarUrl).toBeNull();
   });
@@ -458,11 +471,16 @@ describe("users (avatars)", () => {
     const res = await request(app)
       .patch(`${BASE_URL}/${id}`)
       .set("Authorization", `Bearer ${accessToken}`)
-      .send({ username: TEST_USER.username, avatarUrl: "https://example.com/avatars/nope.png" });
+      .send({
+        username: TEST_USER.username,
+        avatarUrl: "https://example.com/avatars/nope.png",
+      });
 
     expect(res.status).toBe(404);
 
-    const row = await pool.query("SELECT avatar_id FROM users WHERE id = $1", [id]);
+    const row = await pool.query("SELECT avatar_id FROM users WHERE id = $1", [
+      id,
+    ]);
     expect(row.rows[0].avatar_id).toBeNull();
   });
 
@@ -478,7 +496,9 @@ describe("users (avatars)", () => {
 
     expect(res.status).toBe(403);
 
-    const row = await pool.query("SELECT avatar_id FROM users WHERE id = $1", [id]);
+    const row = await pool.query("SELECT avatar_id FROM users WHERE id = $1", [
+      id,
+    ]);
     expect(row.rows[0].avatar_id).toBeNull();
   });
 
@@ -508,11 +528,16 @@ describe("users (avatars)", () => {
   it("ignores avatarUrl at registration", async () => {
     const res = await request(app)
       .post(BASE_URL)
-      .send({ ...TEST_USER, avatarUrl: "https://example.com/avatars/nope.png" });
+      .send({
+        ...TEST_USER,
+        avatarUrl: "https://example.com/avatars/nope.png",
+      });
 
     expect(res.status).toBe(201);
 
-    const row = await pool.query("SELECT avatar_id FROM users WHERE id = $1", [res.body.user.id]);
+    const row = await pool.query("SELECT avatar_id FROM users WHERE id = $1", [
+      res.body.user.id,
+    ]);
     expect(row.rows[0].avatar_id).toBeNull();
   });
 });

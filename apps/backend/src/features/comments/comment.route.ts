@@ -2,34 +2,43 @@ import * as commentController from "./comment.controller.ts";
 import { Router } from "express";
 import isAuthenticated from "../../middlewares/isAuthenticated";
 import { validateParams, validateBody } from "../../middlewares/validate";
-import { commentIdSchema, commentInputSchema, postIdSchema, commentUpdateSchema } from "./comment.schema";
+import {
+  commentIdSchema,
+  commentInputSchema,
+  postIdSchema,
+  commentUpdateSchema,
+} from "./comment.schema";
 
-const router = Router({caseSensitive: true, mergeParams: true});
+const router = Router({ caseSensitive: true, mergeParams: true });
 
-router.post("/",
-  isAuthenticated, 
-  validateParams(postIdSchema),
-  validateBody(commentInputSchema),
-  commentController.create
-);
-
-router.get("/",
+router.post(
+  "/",
   isAuthenticated,
   validateParams(postIdSchema),
-  commentController.findAllPost
+  validateBody(commentInputSchema),
+  commentController.create,
 );
 
-router.patch("/:commentId",
+router.get(
+  "/",
+  isAuthenticated,
+  validateParams(postIdSchema),
+  commentController.findAllPost,
+);
+
+router.patch(
+  "/:commentId",
   isAuthenticated,
   validateParams(commentIdSchema),
   validateBody(commentUpdateSchema),
-  commentController.updateById
+  commentController.updateById,
 );
 
-router.delete("/:commentId",
-  isAuthenticated, 
+router.delete(
+  "/:commentId",
+  isAuthenticated,
   validateParams(commentIdSchema),
-  commentController.deleteById
-); 
+  commentController.deleteById,
+);
 
 export default router;

@@ -1,20 +1,31 @@
 import pool from "../../config/postgres";
-import type { DirectConversationInput, DirectConversation, GroupConversation, ConversationMember} from "./conversation.schema";
+import type {
+  DirectConversationInput,
+  DirectConversation,
+  GroupConversation,
+  ConversationMember,
+} from "./conversation.schema";
 
-type GroupConversationInputRepository= {
-
+type GroupConversationInputRepository = {
   ownerId: string;
   memberIds: string[];
   name: string;
   uploadId?: string;
-}
+};
 
-type GroupConversationUpdateRepository= {
+type GroupConversationUpdateRepository = {
   name?: string;
   uploadId?: string;
-}
+};
 
-export async function findOrCreateDirect({directKey, requesterId, otherUserId}: DirectConversationInput): Promise<{created: boolean, conversation: DirectConversation} | null>{
+export async function findOrCreateDirect({
+  directKey,
+  requesterId,
+  otherUserId,
+}: DirectConversationInput): Promise<{
+  created: boolean;
+  conversation: DirectConversation;
+} | null> {
   const result = await pool.query(
     `
       WITH inserted AS (
@@ -42,18 +53,22 @@ export async function findOrCreateDirect({directKey, requesterId, otherUserId}: 
         conv.created_at AS "createdAt",
         conv.created AS "created"
       FROM conv`,
-      [directKey, [requesterId, otherUserId]]
+    [directKey, [requesterId, otherUserId]],
   );
 
-  if(result.rows[0]){
-    const {created, ...conversation} = result.rows[0];
-    return {created, conversation}
+  if (result.rows[0]) {
+    const { created, ...conversation } = result.rows[0];
+    return { created, conversation };
   }
   return null;
 }
 
-export async function createGroup({memberIds, uploadId, name, ownerId}: GroupConversationInputRepository): Promise<GroupConversation | null>{
-  
+export async function createGroup({
+  memberIds,
+  uploadId,
+  name,
+  ownerId,
+}: GroupConversationInputRepository): Promise<GroupConversation | null> {
   const result = await pool.query(
     `
       WITH inserted AS (
@@ -80,16 +95,15 @@ export async function createGroup({memberIds, uploadId, name, ownerId}: GroupCon
       FROM inserted
       LEFT JOIN uploads
       ON inserted.upload_id = uploads.id`,
-    [ownerId, name, uploadId, memberIds]
+    [ownerId, name, uploadId, memberIds],
   );
 
   return result.rows[0] ?? null;
 }
 
-
-
-
-export async function findById(conversationId: string): Promise<GroupConversation | DirectConversation | null>{
+export async function findById(
+  conversationId: string,
+): Promise<GroupConversation | DirectConversation | null> {
   const result = await pool.query(
     `
     SELECT 
@@ -104,36 +118,36 @@ export async function findById(conversationId: string): Promise<GroupConversatio
       ON c.upload_id = u.id
     WHERE 
       c.id = $1`,
-    [conversationId]
+    [conversationId],
   );
 
   return result.rows[0] ?? null;
 }
 
-
-
-export async function updateGroup(conversationId: string, {name, uploadId}: GroupConversationUpdateRepository): Promise<GroupConversation | null>{
-
-
+export async function updateGroup(
+  conversationId: string,
+  { name, uploadId }: GroupConversationUpdateRepository,
+): Promise<GroupConversation | null> {
   let updateQuery: string[] = [];
   let queryValues: string[] = [];
 
-  if(name){
+  if (name) {
     queryValues.push(name);
-    updateQuery.push(` name = $${queryValues.length} `)
+    updateQuery.push(` name = $${queryValues.length} `);
   }
 
-  if(uploadId){
+  if (uploadId) {
     queryValues.push(uploadId);
-    updateQuery.push(` upload_id = $${queryValues.length} `)
+    updateQuery.push(` upload_id = $${queryValues.length} `);
   }
- 
+
   queryValues.push(conversationId);
-  const result = await pool.query(`
+  const result = await pool.query(
+    `
     WITH updated AS (
       UPDATE conversations
       SET
-        ${updateQuery.join(',')}
+        ${updateQuery.join(",")}
       WHERE id = $${queryValues.length}
       RETURNING id, name, type, created_at, owner_id, upload_id
     )
@@ -147,31 +161,33 @@ export async function updateGroup(conversationId: string, {name, uploadId}: Grou
     FROM updated
     LEFT JOIN uploads
       ON updated.upload_id = uploads.id`,
-    queryValues
+    queryValues,
   );
 
   return result.rows[0] ?? null;
 }
 
-export async function deleteGroup(conversationId: string): Promise<{id: string} | null>{
-  
+export async function deleteGroup(
+  conversationId: string,
+): Promise<{ id: string } | null> {
   const result = await pool.query(
     `
       DELETE FROM conversations 
       WHERE id = $1 AND type = 'group'
       RETURNING 
         id`,
-    [conversationId]
+    [conversationId],
   );
 
   return result.rows[0] ?? null;
-  
 }
 
-// Members 
+// Members
 
-export async function addMembers(conversationId: string, memberIds: string[]): Promise<string[]> {
-
+export async function addMembers(
+  conversationId: string,
+  memberIds: string[],
+): Promise<string[]> {
   const result = await pool.query(
     `
     INSERT INTO conversation_members (conversation_id, member_id, role)
@@ -180,15 +196,16 @@ export async function addMembers(conversationId: string, memberIds: string[]): P
     ON CONFLICT (conversation_id, member_id) DO NOTHING
     RETURNING member_id
     `,
-    [conversationId, memberIds]
+    [conversationId, memberIds],
   );
 
   return result.rows.map((row) => row.member_id);
 }
 
-
-export async function findMember(conversationId: string, memberId: string): Promise<ConversationMember | null>{
-  
+export async function findMember(
+  conversationId: string,
+  memberId: string,
+): Promise<ConversationMember | null> {
   const result = await pool.query(
     `
       SELECT 
@@ -199,36 +216,34 @@ export async function findMember(conversationId: string, memberId: string): Prom
         last_read_message_id AS "lastReadMessageId"
       FROM conversation_members
       WHERE conversation_id = $1 AND member_id = $2`,
-    [conversationId, memberId]
+    [conversationId, memberId],
   );
 
   return result.rows[0] ?? null;
 }
 
-
-export async function findMemberIds(conversationId: string): Promise<string[]>{
-  
+export async function findMemberIds(conversationId: string): Promise<string[]> {
   const result = await pool.query(
     `
     SELECT member_id AS "memberId"
     FROM conversation_members
       WHERE conversation_id = $1`,
-    [conversationId]
+    [conversationId],
   );
 
   return result.rows.map((row) => row.memberId);
 }
 
-
-
-export async function removeMember(conversationId: string, memberId: string): Promise<{memberId: string} | null> {
-
+export async function removeMember(
+  conversationId: string,
+  memberId: string,
+): Promise<{ memberId: string } | null> {
   const result = await pool.query(
     `
     DELETE FROM conversation_members
     WHERE conversation_id = $1 AND member_id = $2
     RETURNING member_id AS "memberId"`,
-    [conversationId, memberId]
+    [conversationId, memberId],
   );
 
   return result.rows[0] ?? null;

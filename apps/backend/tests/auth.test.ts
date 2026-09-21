@@ -17,7 +17,6 @@ beforeAll(async () => {
 });
 
 describe("POST /api/v1/auth/login", () => {
-
   it("logs in with valid credentials and sets the refresh cookie", async () => {
     const res = await request(app)
       .post(`${BASE_URL}/login`)
@@ -29,7 +28,7 @@ describe("POST /api/v1/auth/login", () => {
         status: "success",
         message: "Logged In Successfuly",
         accessToken: expect.any(String),
-      })
+      }),
     );
 
     expect(res.headers["set-cookie"]).toBeDefined();
@@ -47,7 +46,6 @@ describe("POST /api/v1/auth/login", () => {
 });
 
 describe("POST /api/v1/auth/refresh", () => {
-
   it("issues a new access token for a valid refresh cookie", async () => {
     const { refreshCookie } = await loginUserFull(TEST_USER);
 
@@ -61,7 +59,7 @@ describe("POST /api/v1/auth/refresh", () => {
         status: "success",
         message: "Access Token Refreshed",
         accessToken: expect.any(String),
-      })
+      }),
     );
   });
 
@@ -76,7 +74,6 @@ describe("POST /api/v1/auth/refresh", () => {
 });
 
 describe("POST /api/v1/auth/logout", () => {
-
   it("revokes the refresh token", async () => {
     const { refreshCookie } = await loginUserFull(TEST_USER);
 

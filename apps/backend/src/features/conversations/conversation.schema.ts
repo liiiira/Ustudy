@@ -49,6 +49,23 @@ export type CreateGroupConversationInput = {
 export type CreateConversationInput =
   CreateGroupConversationInput | CreateDirectConversationInput;
 
+export type GetConversation = {
+  id: string;
+  name: string | null;
+  createdAt: Date;
+  ownerId: string | null;
+  type: "group" | "direct";
+  imageUrl: string | null;
+  unreadMessagesCount: number;
+  lastMessage: null | {
+    id: string;
+    textContent?: string;
+    imageUrl?: string;
+    senderUsername?: string;
+    createdAt: Date;
+  };
+};
+
 export type ConversationMember = {
   conversationId: string;
   memberId: string;

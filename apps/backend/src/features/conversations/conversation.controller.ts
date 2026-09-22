@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import * as conversationService from "./conversation.service.ts";
-import type { Conversation } from "./conversation.schema.ts";
+import type { Conversation, GetConversation } from "./conversation.schema.ts";
 
 export async function create(req: Request, res: Response) {
   const userId = req.user!.id;
@@ -20,6 +20,19 @@ export async function create(req: Request, res: Response) {
   });
 }
 
+export async function getAll(req: Request, res: Response) {
+  const userId = req.user!.id;
+
+  const conversations: GetConversation[] =
+    await conversationService.getAll(userId);
+
+  return res.status(200).json({
+    status: "success",
+    message: "Conversations found successfully",
+    conversations: conversations,
+  });
+}
+
 export async function getById(
   req: Request<{ conversationId: string }>,
   res: Response,
@@ -34,7 +47,7 @@ export async function getById(
 
   return res.status(200).json({
     status: "success",
-    message: "Conversation fetched successfuly",
+    message: "Conversation found successfully",
     conversation: conversation,
   });
 }

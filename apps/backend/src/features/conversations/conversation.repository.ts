@@ -4,6 +4,7 @@ import type {
   DirectConversation,
   GroupConversation,
   ConversationMember,
+  GetConversation,
 } from "./conversation.schema";
 
 type GroupConversationInputRepository = {
@@ -122,6 +123,97 @@ export async function findById(
   );
 
   return result.rows[0] ?? null;
+}
+
+export async function getAll(userId: string): Promise<GetConversation[]> {
+  type ConversationRow = {
+    id: string;
+    ownerId: string | null;
+    name: string | null;
+    type: "group" | "direct";
+    createdAt: Date;
+    imageUrl: string | null;
+    unreadMessagesCount: number;
+    lastMessageId?: string | null;
+    lastMessageTextContent?: string;
+    lastMessageImageUrl?: string;
+    lastMessageCreatedAt: Date;
+    lastMessageSenderUsername?: string;
+  };
+  const result = await pool.query(
+    `
+      SELECT      
+        c.id AS "id",
+        c.owner_id AS "ownerId",
+        c.name AS "name", 
+        c.type AS "type",
+        c.created_at AS "createdAt",
+        u.public_url AS "imageUrl",
+        unread.count AS "unreadMessagesCount",
+        lm.id AS "lastMessageId",
+        lm.text_content AS "lastMessageTextContent",
+        lm.image_url AS "lastMessageImageUrl",
+        lm.created_at AS "lastMessageCreatedAt",
+        lm.sender_username AS "lastMessageSenderUsername"
+      FROM
+        conversations c       
+      LEFT JOIN uploads u 
+        ON c.upload_id = u.id
+      JOIN conversation_members cm 
+        ON cm.conversation_id = c.id 
+      LEFT JOIN messages lr
+        ON cm.last_read_message_id = lr.id
+      LEFT JOIN LATERAL (
+        SELECT 
+          m.id,
+          m.created_at,
+          s.username as "sender_username",
+          m.text_content,
+          mu.public_url as "image_url"
+        FROM messages m
+        LEFT JOIN users s 
+          ON m.sender_id = s.id
+        LEFT JOIN uploads mu 
+          ON m.upload_id = mu.id
+        WHERE m.conversation_id = cm.conversation_id 
+        ORDER BY m.created_at DESC 
+        LIMIT 1
+      ) lm 
+        ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT 
+          COUNT(*)::int as count
+          FROM messages m
+          WHERE m.conversation_id = c.id 
+            AND m.sender_id IS DISTINCT FROM cm.member_id
+            AND (lr.created_at IS NULL OR m.created_at > lr.created_at)
+      ) unread
+        ON TRUE
+      WHERE cm.member_id = $1
+      ORDER BY COALESCE(lm.created_at, c.created_at) DESC, c.id DESC`,
+    [userId],
+  );
+
+  return result.rows.map((row: ConversationRow): GetConversation => {
+    return {
+      id: row.id,
+      name: row.name,
+      createdAt: row.createdAt,
+      type: row.type,
+      imageUrl: row.imageUrl,
+      unreadMessagesCount: row.unreadMessagesCount,
+      ownerId: row.ownerId,
+      lastMessage: row.lastMessageId
+        ? {
+            id: row.lastMessageId,
+            textContent: row.lastMessageTextContent,
+            imageUrl: row.lastMessageImageUrl,
+            senderUsername: row.lastMessageSenderUsername,
+            createdAt: row.lastMessageCreatedAt,
+          }
+        : null,
+    };
+  });
 }
 
 export async function updateGroup(

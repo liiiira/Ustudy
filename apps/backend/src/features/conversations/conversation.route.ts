@@ -12,6 +12,8 @@ import * as conversationController from "./conversation.controller.ts";
 
 const router = Router({ caseSensitive: true, mergeParams: true });
 
+router.get("/", isAuthenticated, conversationController.getAll);
+
 router.post(
   "/",
   isAuthenticated,

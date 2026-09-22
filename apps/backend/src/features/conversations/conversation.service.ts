@@ -10,6 +10,7 @@ import type {
   ConversationUpdate,
   CreateConversationInput,
   DirectConversation,
+  GetConversation,
   GroupConversation,
   GroupConversationInput,
 } from "./conversation.schema.ts";
@@ -55,6 +56,10 @@ async function findOrCreateDirect(
     throw new AppError("Failed to create or find the direct conversation", 500);
 
   return response;
+}
+
+export async function getAll(requesterId: string): Promise<GetConversation[]> {
+  return conversationRepository.getAll(requesterId);
 }
 
 async function createGroup(

@@ -481,6 +481,272 @@ describe("POST /api/v1/conversations (common)", () => {
   });
 });
 
+describe("GET /api/v1/conversations", () => {
+  beforeEach(async () => {
+    await resetConversationsTable();
+  });
+
+  async function createDirect(
+    token: string,
+    otherUserId: string,
+  ): Promise<string> {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ type: "direct", otherUserId });
+    return res.body.conversation.id;
+  }
+
+  async function createGroup(
+    token: string,
+    name: string,
+    memberIds: string[],
+    imageUrl?: string,
+  ): Promise<string> {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ type: "group", name, memberIds, imageUrl });
+    return res.body.conversation.id;
+  }
+
+  async function sendMessage(
+    token: string,
+    conversationId: string,
+    body: { textContent?: string; imageUrl?: string },
+  ): Promise<string> {
+    const res = await request(app)
+      .post(`${BASE_URL}/${conversationId}/messages`)
+      .set("Authorization", `Bearer ${token}`)
+      .send(body);
+    return res.body.chatMessage.id;
+  }
+
+  // PATCH /conversations/:id/read does not exist yet, so the read marker is
+  // set directly. Replace with the endpoint once it lands.
+  async function markRead(
+    conversationId: string,
+    memberId: string,
+    messageId: string,
+  ) {
+    await pool.query(
+      `UPDATE ${MEMBERS_TABLE}
+         SET last_read_message_id = $1
+       WHERE conversation_id = $2 AND member_id = $3`,
+      [messageId, conversationId, memberId],
+    );
+  }
+
+  async function list(token: string) {
+    return request(app)
+      .get(BASE_URL)
+      .set("Authorization", `Bearer ${token}`);
+  }
+
+  it("returns an empty list when the user has no conversations", async () => {
+    const res = await list(ownerToken);
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("success");
+    expect(res.body.conversations).toEqual([]);
+  });
+
+  it("returns only the conversations the requester is a member of", async () => {
+    const mine = await createDirect(ownerToken, memberId);
+    const theirs = await createDirect(memberToken, thirdId);
+
+    const res = await list(ownerToken);
+
+    expect(res.status).toBe(200);
+    expect(res.body.conversations).toHaveLength(1);
+    expect(res.body.conversations[0].id).toBe(mine);
+    expect(res.body.conversations.map((c: { id: string }) => c.id)).not.toContain(
+      theirs,
+    );
+  });
+
+  it("lists a conversation for every member of it", async () => {
+    const id = await createGroup(ownerToken, "Shared", [memberId]);
+
+    for (const token of [ownerToken, memberToken]) {
+      const res = await list(token);
+
+      expect(res.status).toBe(200);
+      expect(res.body.conversations).toHaveLength(1);
+      expect(res.body.conversations[0].id).toBe(id);
+    }
+  });
+
+  it("returns a direct conversation with null group fields", async () => {
+    const id = await createDirect(ownerToken, memberId);
+
+    const res = await list(ownerToken);
+
+    expect(res.body.conversations[0]).toMatchObject({
+      id,
+      type: "direct",
+      name: null,
+      ownerId: null,
+      imageUrl: null,
+      unreadMessagesCount: 0,
+      lastMessage: null,
+    });
+    expect(res.body.conversations[0].createdAt).toBeDefined();
+  });
+
+  it("returns a group with its name, owner and image", async () => {
+    const imageUrl = await presignUpload(ownerToken, "conversation");
+    const id = await createGroup(ownerToken, "Study group", [memberId], imageUrl);
+
+    const res = await list(ownerToken);
+
+    expect(res.body.conversations[0]).toMatchObject({
+      id,
+      type: "group",
+      name: "Study group",
+      ownerId,
+      imageUrl,
+    });
+  });
+
+  it("does not expose the direct key", async () => {
+    await createDirect(ownerToken, memberId);
+
+    const res = await list(ownerToken);
+
+    expect(res.body.conversations[0].directKey).toBeUndefined();
+    expect(JSON.stringify(res.body)).not.toContain(ownerId + ":");
+    expect(JSON.stringify(res.body)).not.toContain(memberId + ":");
+  });
+
+  it("carries the newest message as lastMessage", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    await sendMessage(ownerToken, id, { textContent: "first" });
+    const newest = await sendMessage(memberToken, id, { textContent: "newest" });
+
+    const res = await list(ownerToken);
+
+    expect(res.body.conversations[0].lastMessage).toMatchObject({
+      id: newest,
+      textContent: "newest",
+      senderUsername: MEMBER.username,
+      imageUrl: null,
+    });
+    expect(res.body.conversations[0].lastMessage.createdAt).toBeDefined();
+  });
+
+  it("carries an image-only message as lastMessage", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    const imageUrl = await presignUpload(ownerToken, "message");
+    await sendMessage(ownerToken, id, { imageUrl });
+
+    const res = await list(ownerToken);
+
+    expect(res.body.conversations[0].lastMessage).toMatchObject({
+      textContent: null,
+      imageUrl,
+    });
+  });
+
+  it("counts messages the requester has not read", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    await sendMessage(ownerToken, id, { textContent: "1" });
+    await sendMessage(ownerToken, id, { textContent: "2" });
+    await sendMessage(ownerToken, id, { textContent: "3" });
+
+    const forMember = await list(memberToken);
+    expect(forMember.body.conversations[0].unreadMessagesCount).toBe(3);
+
+    const forSender = await list(ownerToken);
+    expect(forSender.body.conversations[0].unreadMessagesCount).toBe(0);
+  });
+
+  it("counts only the messages after the read marker", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    await sendMessage(ownerToken, id, { textContent: "1" });
+    const second = await sendMessage(ownerToken, id, { textContent: "2" });
+    await sendMessage(ownerToken, id, { textContent: "3" });
+
+    await markRead(id, memberId, second);
+
+    const res = await list(memberToken);
+    expect(res.body.conversations[0].unreadMessagesCount).toBe(1);
+  });
+
+  it("does not count the requester's own messages in a group", async () => {
+    const id = await createGroup(ownerToken, "Mixed", [memberId]);
+    await sendMessage(ownerToken, id, { textContent: "mine" });
+    await sendMessage(memberToken, id, { textContent: "theirs" });
+
+    const res = await list(ownerToken);
+    expect(res.body.conversations[0].unreadMessagesCount).toBe(1);
+  });
+
+  it("orders conversations by their last message, newest first", async () => {
+    const first = await createDirect(ownerToken, memberId);
+    const second = await createGroup(ownerToken, "Later", [memberId]);
+
+    await sendMessage(ownerToken, first, { textContent: "in first" });
+    await sendMessage(ownerToken, second, { textContent: "in second" });
+
+    const before = await list(ownerToken);
+    expect(before.body.conversations.map((c: { id: string }) => c.id)).toEqual([
+      second,
+      first,
+    ]);
+
+    await sendMessage(memberToken, first, { textContent: "bumps first" });
+
+    const after = await list(ownerToken);
+    expect(after.body.conversations.map((c: { id: string }) => c.id)).toEqual([
+      first,
+      second,
+    ]);
+  });
+
+  it("orders a conversation with no messages by its creation time", async () => {
+    const withMessage = await createDirect(ownerToken, memberId);
+    await sendMessage(ownerToken, withMessage, { textContent: "hello" });
+    const empty = await createGroup(ownerToken, "Empty", [memberId]);
+
+    const res = await list(ownerToken);
+
+    expect(res.body.conversations.map((c: { id: string }) => c.id)).toEqual([
+      empty,
+      withMessage,
+    ]);
+    expect(res.body.conversations[0].lastMessage).toBeNull();
+  });
+
+  it("returns each conversation once regardless of how many members it has", async () => {
+    const id = await createGroup(ownerToken, "Crowded", [memberId, thirdId]);
+    await sendMessage(memberToken, id, { textContent: "hi" });
+
+    const res = await list(ownerToken);
+
+    expect(res.body.conversations).toHaveLength(1);
+    expect(res.body.conversations[0].id).toBe(id);
+  });
+
+  it("returns an empty list for a user who was removed from every conversation", async () => {
+    const id = await createGroup(ownerToken, "Leaving", [memberId]);
+
+    const left = await request(app)
+      .delete(`${BASE_URL}/${id}/members/${memberId}`)
+      .set("Authorization", `Bearer ${memberToken}`);
+    expect(left.status).toBe(200);
+
+    const res = await list(memberToken);
+    expect(res.body.conversations).toEqual([]);
+  });
+
+  it("requires authentication", async () => {
+    const res = await request(app).get(BASE_URL);
+
+    expect(res.status).toBe(401);
+  });
+});
+
 describe("GET /api/v1/conversations/:conversationId", () => {
   beforeEach(async () => {
     await resetConversationsTable();

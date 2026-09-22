@@ -2,6 +2,7 @@ import { AppError } from "../../errors/appError";
 import type { UserAuth } from "../users/user.schema";
 import * as userService from "../users/user.service.ts";
 import * as uploadService from "../uploads/upload.service.ts";
+import * as messageService from "../messages/message.service.ts";
 import * as conversationRepository from "./conversation.repository.ts";
 
 import type {
@@ -13,8 +14,9 @@ import type {
   GetConversation,
   GroupConversation,
   GroupConversationInput,
-  MessageRead,
+  MarkRead,
 } from "./conversation.schema.ts";
+import type { Message } from "../messages/message.schema.ts";
 
 // Conversations
 
@@ -337,11 +339,11 @@ export async function removeMember(
 
 // read message
 
-export async function readMessage(
+export async function markRead(
   requesterId: string,
   conversationId: string,
   messageId: string,
-): Promise<MessageRead> {
+): Promise<MarkRead> {
   const conversation: Conversation | null = await findById(conversationId);
   if (!conversation) throw new AppError("Conversation not found", 404);
 
@@ -352,13 +354,19 @@ export async function readMessage(
   if (!conversationMember)
     throw new AppError("Not a member of this conversation", 403);
 
-  const messageRead = await conversationRepository.readMessage(
+  const message: Message | null = await messageService.findById(
+    conversationId,
+    messageId,
+  );
+  if (!message) throw new AppError("Message not found", 404);
+
+  const markRead = await conversationRepository.markRead(
     conversationId,
     requesterId,
     messageId,
   );
-  if (!messageRead)
+  if (!markRead)
     throw new AppError("Failed to read message due to unexpected error", 500);
 
-  return messageRead;
+  return markRead;
 }

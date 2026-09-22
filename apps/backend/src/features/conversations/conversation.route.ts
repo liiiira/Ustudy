@@ -43,11 +43,11 @@ router.delete(
   conversationController.deleteById,
 );
 
-router.post(
+router.patch(
   "/:conversationId/read",
   isAuthenticated,
   validateParams(conversationIdSchema),
-  conversationController.readMessage,
+  conversationController.markRead,
 );
 
 router.post(

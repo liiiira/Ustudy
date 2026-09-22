@@ -79,7 +79,7 @@ export type AddMembersBody = {
 };
 
 // Read message
-export type MessageRead = {
+export type MarkRead = {
   conversationId: string;
   memberId: string;
   lastReadMessageId: string;

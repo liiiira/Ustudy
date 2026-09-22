@@ -3,7 +3,7 @@ import * as conversationService from "./conversation.service.ts";
 import type {
   Conversation,
   GetConversation,
-  MessageRead,
+  MarkRead,
 } from "./conversation.schema.ts";
 
 export async function create(req: Request, res: Response) {
@@ -136,7 +136,7 @@ export async function removeMember(
 
 // Read message
 
-export async function readMessage(
+export async function markRead(
   req: Request<{ conversationId: string }>,
   res: Response,
 ) {
@@ -144,13 +144,13 @@ export async function readMessage(
   const { conversationId } = req.params;
   const { messageId } = req.body;
 
-  const messageRead: MessageRead = await conversationService.readMessage(
+  const messageRead: MarkRead = await conversationService.markRead(
     userId,
     conversationId,
     messageId,
   );
 
-  return res.status(200).json({
+  return res.status(204).json({
     status: "success",
     message: "Message read successfully",
     readMessage: messageRead,

@@ -5,7 +5,7 @@ import type {
   GroupConversation,
   ConversationMember,
   GetConversation,
-  MessageRead,
+  MarkRead,
 } from "./conversation.schema";
 
 type GroupConversationInputRepository = {
@@ -344,19 +344,19 @@ export async function removeMember(
 
 // read message
 
-export async function readMessage(
+export async function markRead(
   conversationId: string,
   memberId: string,
   messageId: string,
-): Promise<MessageRead | null> {
+): Promise<MarkRead | null> {
   const result = await pool.query(
     `
     UPDATE conversation_members 
     SET last_read_message_id = $3
     WHERE conversation_id = $1 
-      AND message_id = $2
+      AND member_id = $2
     RETURNING 
-      last_read_message_id as "lastReadMessasgeId",
+      last_read_message_id as "lastReadMessageId",
       conversation_Id as "conversationId",
       member_id as "memberId"`,
     [conversationId, memberId, messageId],

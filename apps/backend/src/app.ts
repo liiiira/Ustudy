@@ -23,6 +23,18 @@ app.use(
 //use signed cookies
 app.use(cookieParser(process.env.COOKIE_SECRET));
 
+// claculate duration of each request
+app.use((req, res, next) => {
+  const start = process.hrtime.bigint();
+  res.on("finish", () => {
+    const ms = Number(process.hrtime.bigint() - start) / 1e6;
+    console.log(
+      `${req.method} ${req.originalUrl} ${res.statusCode} ${ms.toFixed(1)}ms`,
+    );
+  });
+  next();
+});
+
 //current api path stats with /api/v1
 app.use("/api/v1", apiRouter);
 

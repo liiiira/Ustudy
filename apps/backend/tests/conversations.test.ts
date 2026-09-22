@@ -1558,3 +1558,179 @@ describe("DELETE /api/v1/conversations/:conversationId", () => {
     expect(res.status).toBe(401);
   });
 });
+
+describe("PATCH /api/v1/conversations/:conversationId/read", () => {
+  beforeEach(async () => {
+    await resetConversationsTable();
+  });
+
+  async function createDirect(
+    token: string,
+    otherUserId: string,
+  ): Promise<string> {
+    const res = await request(app)
+      .post(BASE_URL)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ type: "direct", otherUserId });
+    return res.body.conversation.id;
+  }
+
+  async function sendMessage(
+    token: string,
+    conversationId: string,
+    textContent: string,
+  ): Promise<string> {
+    const res = await request(app)
+      .post(`${BASE_URL}/${conversationId}/messages`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ textContent });
+    return res.body.chatMessage.id;
+  }
+
+  function markRead(token: string, conversationId: string, body: object) {
+    return request(app)
+      .patch(`${BASE_URL}/${conversationId}/read`)
+      .set("Authorization", `Bearer ${token}`)
+      .send(body);
+  }
+
+  async function markerFor(
+    conversationId: string,
+    userId: string,
+  ): Promise<string | null> {
+    const result = await pool.query(
+      `SELECT last_read_message_id AS "lastReadMessageId"
+         FROM ${MEMBERS_TABLE}
+        WHERE conversation_id = $1 AND member_id = $2`,
+      [conversationId, userId],
+    );
+    return result.rows[0]?.lastReadMessageId ?? null;
+  }
+
+  it("sets the requester's read marker to the given message", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    const messageId = await sendMessage(ownerToken, id, "hello");
+
+    const res = await markRead(memberToken, id, { messageId });
+
+    expect(res.status).toBe(204);
+    expect(res.body).toEqual({});
+    expect(await markerFor(id, memberId)).toBe(messageId);
+  });
+
+  it("marks only the requester's own marker, not the other member's", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    const messageId = await sendMessage(ownerToken, id, "hello");
+
+    await markRead(memberToken, id, { messageId });
+
+    expect(await markerFor(id, memberId)).toBe(messageId);
+    expect(await markerFor(id, ownerId)).toBeNull();
+  });
+
+  it("clears the unread count once the latest message is marked read", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    await sendMessage(ownerToken, id, "1");
+    const last = await sendMessage(ownerToken, id, "2");
+
+    const before = await request(app)
+      .get(BASE_URL)
+      .set("Authorization", `Bearer ${memberToken}`);
+    expect(before.body.conversations[0].unreadMessagesCount).toBe(2);
+
+    await markRead(memberToken, id, { messageId: last });
+
+    const after = await request(app)
+      .get(BASE_URL)
+      .set("Authorization", `Bearer ${memberToken}`);
+    expect(after.body.conversations[0].unreadMessagesCount).toBe(0);
+  });
+
+  it("is idempotent — marking the same message twice leaves the marker unchanged", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    const messageId = await sendMessage(ownerToken, id, "hello");
+
+    await markRead(memberToken, id, { messageId });
+    const res = await markRead(memberToken, id, { messageId });
+
+    expect(res.status).toBe(204);
+    expect(await markerFor(id, memberId)).toBe(messageId);
+  });
+
+  it("does not move the marker backwards to an older message", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    const first = await sendMessage(ownerToken, id, "1");
+    const second = await sendMessage(ownerToken, id, "2");
+
+    await markRead(memberToken, id, { messageId: second });
+    await markRead(memberToken, id, { messageId: first });
+
+    expect(await markerFor(id, memberId)).toBe(second);
+  });
+
+  it("does not accept a message that belongs to another conversation", async () => {
+    const mine = await createDirect(ownerToken, memberId);
+    const other = await createDirect(ownerToken, thirdId);
+    const foreign = await sendMessage(ownerToken, other, "elsewhere");
+
+    const res = await markRead(ownerToken, mine, { messageId: foreign });
+
+    expect(res.status).toBe(404);
+    expect(await markerFor(mine, ownerId)).toBeNull();
+  });
+
+  it("returns 400 when messageId is missing", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    await sendMessage(ownerToken, id, "hello");
+
+    const res = await markRead(memberToken, id, {});
+
+    expect(res.status).toBe(400);
+    expect(await markerFor(id, memberId)).toBeNull();
+  });
+
+  it("returns 400 for a malformed messageId", async () => {
+    const id = await createDirect(ownerToken, memberId);
+
+    const res = await markRead(memberToken, id, { messageId: "not-a-uuid" });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 for an invalid conversation id", async () => {
+    const res = await markRead(ownerToken, "not-a-uuid", {
+      messageId: NONEXISTENT_ID,
+    });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 404 for a conversation that does not exist", async () => {
+    const res = await markRead(ownerToken, NONEXISTENT_ID, {
+      messageId: NONEXISTENT_ID,
+    });
+
+    expect(res.status).toBe(404);
+  });
+
+  it("does not allow a non-member to set a read marker", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    const messageId = await sendMessage(ownerToken, id, "hello");
+
+    const res = await markRead(tokenFor(thirdId), id, { messageId });
+
+    expect(res.status).toBe(403);
+    expect(await markerFor(id, memberId)).toBeNull();
+  });
+
+  it("requires authentication", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    const messageId = await sendMessage(ownerToken, id, "hello");
+
+    const res = await request(app)
+      .patch(`${BASE_URL}/${id}/read`)
+      .send({ messageId });
+
+    expect(res.status).toBe(401);
+  });
+});

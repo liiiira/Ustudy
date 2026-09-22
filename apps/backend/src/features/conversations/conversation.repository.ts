@@ -352,7 +352,13 @@ export async function markRead(
   const result = await pool.query(
     `
     UPDATE conversation_members 
-    SET last_read_message_id = $3
+    SET last_read_message_id = CASE 
+      WHEN (last_read_message_id is NULL 
+          OR (SELECT created_at FROM messages WHERE id = $3) > (SELECT created_at FROM messages WHERE id = last_read_message_id)
+          )
+          THEN $3
+        ELSE last_read_message_id
+      END
     WHERE conversation_id = $1 
       AND member_id = $2
     RETURNING 

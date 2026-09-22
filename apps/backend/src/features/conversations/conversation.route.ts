@@ -6,6 +6,7 @@ import {
   conversationMemberIdSchema,
   createConversationSchema,
   updateConversationSchema,
+  readMessageSchema,
 } from "./conversation.schema";
 import isAuthenticated from "../../middlewares/isAuthenticated";
 import * as conversationController from "./conversation.controller.ts";
@@ -47,6 +48,7 @@ router.patch(
   "/:conversationId/read",
   isAuthenticated,
   validateParams(conversationIdSchema),
+  validateBody(readMessageSchema),
   conversationController.markRead,
 );
 

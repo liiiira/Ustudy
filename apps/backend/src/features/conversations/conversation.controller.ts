@@ -1,6 +1,10 @@
 import type { Request, Response } from "express";
 import * as conversationService from "./conversation.service.ts";
-import type { Conversation, GetConversation } from "./conversation.schema.ts";
+import type {
+  Conversation,
+  GetConversation,
+  MessageRead,
+} from "./conversation.schema.ts";
 
 export async function create(req: Request, res: Response) {
   const userId = req.user!.id;
@@ -127,5 +131,28 @@ export async function removeMember(
     status: "success",
     message: "Member removed successfuly",
     member: removedMember,
+  });
+}
+
+// Read message
+
+export async function readMessage(
+  req: Request<{ conversationId: string }>,
+  res: Response,
+) {
+  const userId = req.user!.id;
+  const { conversationId } = req.params;
+  const { messageId } = req.body;
+
+  const messageRead: MessageRead = await conversationService.readMessage(
+    userId,
+    conversationId,
+    messageId,
+  );
+
+  return res.status(200).json({
+    status: "success",
+    message: "Message read successfully",
+    readMessage: messageRead,
   });
 }

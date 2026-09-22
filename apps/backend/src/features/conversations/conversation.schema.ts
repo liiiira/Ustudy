@@ -78,6 +78,13 @@ export type AddMembersBody = {
   memberIds: string[];
 };
 
+// Read message
+export type MessageRead = {
+  conversationId: string;
+  memberId: string;
+  lastReadMessageId: string;
+};
+
 export const createDirectConversationSchema = z.object({
   otherUserId: z.uuid(),
   type: z.literal("direct"),
@@ -103,6 +110,12 @@ export const updateConversationSchema = z.object({
 export const addMembersSchema = z.object({
   memberIds: z.array(z.uuid()).min(1),
 });
+
+// read messages
+export const readMessageSchema = z.object({
+  messageId: z.uuid(),
+});
+
 export const conversationIdSchema = z.object({
   conversationId: z.uuid(),
 });

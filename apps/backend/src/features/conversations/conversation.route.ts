@@ -44,6 +44,13 @@ router.delete(
 );
 
 router.post(
+  "/:conversationId/read",
+  isAuthenticated,
+  validateParams(conversationIdSchema),
+  conversationController.readMessage,
+);
+
+router.post(
   "/:conversationId/members",
   isAuthenticated,
   validateParams(conversationIdSchema),

@@ -13,6 +13,7 @@ import type {
   GetConversation,
   GroupConversation,
   GroupConversationInput,
+  MessageRead,
 } from "./conversation.schema.ts";
 
 // Conversations
@@ -332,4 +333,32 @@ export async function removeMember(
     );
 
   return removed;
+}
+
+// read message
+
+export async function readMessage(
+  requesterId: string,
+  conversationId: string,
+  messageId: string,
+): Promise<MessageRead> {
+  const conversation: Conversation | null = await findById(conversationId);
+  if (!conversation) throw new AppError("Conversation not found", 404);
+
+  const conversationMember: ConversationMember | null = await findMember(
+    conversationId,
+    requesterId,
+  );
+  if (!conversationMember)
+    throw new AppError("Not a member of this conversation", 403);
+
+  const messageRead = await conversationRepository.readMessage(
+    conversationId,
+    requesterId,
+    messageId,
+  );
+  if (!messageRead)
+    throw new AppError("Failed to read message due to unexpected error", 500);
+
+  return messageRead;
 }

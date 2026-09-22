@@ -26,3 +26,15 @@ export function validateParams(schema: ZodType) {
     next();
   };
 }
+
+// validate the query string of http request
+export function validateQuery(schema: ZodType) {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    const result = schema.safeParse(req.query);
+
+    if (!result.success)
+      throw new AppError("Invalid Request Query String", 400);
+
+    next();
+  };
+}

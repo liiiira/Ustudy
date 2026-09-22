@@ -72,7 +72,7 @@ export async function deleteById(
   return result;
 }
 
-async function findById(
+export async function findById(
   conversationId: string,
   messageId: string,
 ): Promise<Message | null> {

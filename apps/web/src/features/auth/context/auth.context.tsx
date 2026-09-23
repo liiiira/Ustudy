@@ -20,7 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(user);
         setIsAuthenticated(true);
       } catch {
-        // no valid session to restore — stay logged out
+        // no valid session to restore, stay logged out
       } finally {
         setLoading(false);
       }

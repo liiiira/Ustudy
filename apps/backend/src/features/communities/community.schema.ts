@@ -16,9 +16,9 @@ export type CommmunityJoinUser = CommunityDB & {
   ownerName: string;
 };
 
-// Service-level update input — public-facing shape, imageUrl as a string.
+// Service-level update input: public-facing shape, imageUrl as a string.
 // (Named UpdateCommunityRepository before this pass despite being the
-// service-level type, not the repository one — renamed for clarity now
+// service-level type, not the repository one, renamed for clarity now
 // that a real repository-level type exists below.)
 export type CommunityUpdate = {
   name?: string;
@@ -27,7 +27,7 @@ export type CommunityUpdate = {
 };
 
 // Repository-level types: the DB stores an `upload_id` FK, not a URL
-// string — these carry `uploadId`, resolved by the service from a
+// string; these carry `uploadId`, resolved by the service from a
 // submitted `imageUrl` via uploadService.verifyUploadOwnerShip before the
 // repository is ever called.
 export type CommunityCreateRepository = {

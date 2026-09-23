@@ -8,7 +8,7 @@ const pool = new Pool({
   connectionString: postgresUrl,
 });
 
-// log how long each query takes, in dev only — never in test (too noisy) or
+// log how long each query takes, in dev only, never in test (too noisy) or
 // in production. SLOW_QUERY_MS hides anything faster than the given threshold.
 if (process.env.NODE_ENV !== "test" && process.env.NODE_ENV !== "production") {
   const slowMs = Number(process.env.SLOW_QUERY_MS ?? 0);

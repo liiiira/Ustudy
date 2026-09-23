@@ -1,6 +1,6 @@
 -- 013 set ON DELETE CASCADE on these FKs, which deletes the *referencing*
 -- row (a user/post/community) whenever the *referenced* uploads row is
--- deleted — backwards from the intended behavior. Deleting an upload
+-- deleted, backwards from the intended behavior. Deleting an upload
 -- should clear the image/avatar reference, not delete the owning record.
 ALTER TABLE users
   DROP CONSTRAINT fk_user_avatar_id_upload,

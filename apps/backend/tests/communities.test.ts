@@ -428,7 +428,7 @@ describe("PATCH /api/v1/communities/:id", () => {
       .set("Authorization", `Bearer ${otherAccessToken}`)
       .send({ name: "does-not-matter" });
 
-    // id shape is valid but no row exists — ownership check never runs.
+    // id shape is valid but no row exists, so the ownership check never runs.
     expect(res.status).toBe(404);
   });
 

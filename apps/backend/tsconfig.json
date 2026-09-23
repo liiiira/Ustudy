@@ -6,7 +6,7 @@
     "types": ["node"],
     "skipLibCheck": true,
 
-    /* Bundler-style resolution, matching apps/web — tolerates this repo's
+    /* Bundler-style resolution, matching apps/web, tolerates this repo's
        mixed use of extensionless and explicit ".ts" relative imports */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -19,7 +19,7 @@
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
 
-    /* Linting — mirrors apps/web/tsconfig.app.json */
+    /* Linting: mirrors apps/web/tsconfig.app.json */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true

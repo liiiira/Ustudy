@@ -251,7 +251,7 @@ describe("POST /api/v1/conversations (group)", () => {
     expect(owner.rows[0].role).toBe("admin");
   });
 
-  it("creates a new group every time — groups are never deduplicated", async () => {
+  it("creates a new group every time: groups are never deduplicated", async () => {
     const body = { type: "group", name: "Same name", memberIds: [memberId] };
 
     const first = await request(app)
@@ -1135,7 +1135,7 @@ describe("POST /api/v1/conversations/:conversationId/members", () => {
     );
   });
 
-  it("is idempotent — already-present members are skipped and only new ones returned", async () => {
+  it("is idempotent: already-present members are skipped and only new ones returned", async () => {
     const id = await createGroup(ownerToken, "Idempotent", [memberId]);
 
     const res = await request(app)
@@ -1646,7 +1646,7 @@ describe("PATCH /api/v1/conversations/:conversationId/read", () => {
     expect(after.body.conversations[0].unreadMessagesCount).toBe(0);
   });
 
-  it("is idempotent — marking the same message twice leaves the marker unchanged", async () => {
+  it("is idempotent: marking the same message twice leaves the marker unchanged", async () => {
     const id = await createDirect(ownerToken, memberId);
     const messageId = await sendMessage(ownerToken, id, "hello");
 

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest";
 import { AppError } from "../../errors/appError.ts";
 import type { Upload } from "./upload.schema.ts";
 
-// Mock both of upload.service.ts's real dependencies — no network calls to
+// Mock both of upload.service.ts's real dependencies, no network calls to
 // R2, no Postgres. vi.mock factories are hoisted by Vitest above the
 // imports below, regardless of source order.
 vi.mock("./storage.ts", () => ({
@@ -17,7 +17,7 @@ vi.mock("./upload.repository.ts", () => ({
 // per-call), so it must be set *before* the module is first imported.
 // Static imports are hoisted before any of this file's own code runs, so
 // the module under test is imported dynamically, inside beforeAll, after
-// the env var is set — not as a static top-level import.
+// the env var is set, not as a static top-level import.
 let createPresignUpload: (typeof import("./upload.service.ts"))["createPresignUpload"];
 let mockedCreatePresignedUrl: ReturnType<typeof vi.fn>;
 let mockedRepoCreate: ReturnType<typeof vi.fn>;
@@ -71,7 +71,7 @@ describe("upload.service.createPresignUpload", () => {
 
     expect(calledKey).toMatch(/^avatars\/user-1\/[0-9a-f-]+\.png$/);
     expect(calledContentType).toBe("image/png");
-    expect(calledSize).toBe(1024); // signed into the URL so R2 enforces it — see agent-logs/r2-image-integration-plan.md
+    expect(calledSize).toBe(1024); // signed into the URL so R2 enforces it, see agent-logs/r2-image-integration-plan.md
     expect(calledExpiry).toBe(5 * 60); // 5 minutes, per the plan
 
     expect(result).toEqual({

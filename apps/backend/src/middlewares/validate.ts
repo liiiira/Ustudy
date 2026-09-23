@@ -33,7 +33,17 @@ export function validateQuery(schema: ZodType) {
     const result = schema.safeParse(req.query);
 
     if (!result.success)
-      throw new AppError("Invalid Request Query String", 400);
+      throw new AppError(
+        "Invalid Request Query String",
+        400,
+        result.error.issues,
+      );
+
+    Object.defineProperty(req, "query", {
+      value: result.data,
+      writable: true,
+      configurable: true,
+    });
 
     next();
   };

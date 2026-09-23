@@ -31,8 +31,8 @@ export const messageIdSchema = z.object({
 });
 
 export const findAllMessagesQuerySchema = z.object({
-  limit: z.coerce.number().positive().min(1).max(100).default(30),
-  cursor: z.coerce.number().positive().optional(),
+  limit: z.coerce.number().int().positive().max(100).default(30),
+  cursor: z.coerce.number().int().nonnegative().optional(),
 });
 
 export type findAllMessagesQueryType = z.infer<

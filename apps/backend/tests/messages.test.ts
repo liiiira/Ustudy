@@ -424,3 +424,193 @@ describe("DELETE /api/v1/conversations/:conversationId/messages/:messageId", () 
     expect(res.status).toBe(401);
   });
 });
+
+describe("GET /api/v1/conversations/:conversationId/messages", () => {
+  beforeEach(async () => {
+    await resetConversationsTable();
+  });
+
+  async function sendMessage(
+    token: string,
+    conversationId: string,
+    body: { textContent?: string; imageUrl?: string },
+  ): Promise<string> {
+    const res = await request(app)
+      .post(`${BASE_URL}/${conversationId}/messages`)
+      .set("Authorization", `Bearer ${token}`)
+      .send(body);
+    return res.body.chatMessage.id;
+  }
+
+  async function seed(
+    conversationId: string,
+    count: number,
+  ): Promise<string[]> {
+    const ids: string[] = [];
+    for (let i = 0; i < count; i++) {
+      ids.push(await sendMessage(ownerToken, conversationId, { textContent: `m${i}` }));
+    }
+    return ids;
+  }
+
+  function list(token: string, conversationId: string, query = "") {
+    return request(app)
+      .get(`${BASE_URL}/${conversationId}/messages${query}`)
+      .set("Authorization", `Bearer ${token}`);
+  }
+
+  it("returns the conversation's messages, newest first", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    const ids = await seed(id, 3);
+
+    const res = await list(memberToken, id);
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("success");
+    expect(res.body.messages.map((m: { id: string }) => m.id)).toEqual(
+      [...ids].reverse(),
+    );
+  });
+
+  it("returns the sender and image fields on each message", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    const imageUrl = await presignUpload(ownerToken, "message");
+    await sendMessage(ownerToken, id, { imageUrl });
+    await sendMessage(ownerToken, id, { textContent: "hello" });
+
+    const res = await list(ownerToken, id);
+
+    expect(res.body.messages[0]).toMatchObject({
+      conversationId: id,
+      senderId: ownerId,
+      senderUsername: OWNER.username,
+      textContent: "hello",
+      imageUrl: null,
+    });
+    expect(res.body.messages[1]).toMatchObject({
+      textContent: null,
+      imageUrl,
+    });
+  });
+
+  it("returns an empty list for a conversation with no messages", async () => {
+    const id = await createDirect(ownerToken, memberId);
+
+    const res = await list(ownerToken, id);
+
+    expect(res.status).toBe(200);
+    expect(res.body.messages).toEqual([]);
+  });
+
+  it("returns only the messages of the requested conversation", async () => {
+    const a = await createDirect(ownerToken, memberId);
+    const b = await createGroup(ownerToken, "Other", [memberId]);
+    await seed(a, 2);
+    await sendMessage(ownerToken, b, { textContent: "in b" });
+
+    const res = await list(ownerToken, a);
+
+    expect(res.body.messages).toHaveLength(2);
+    expect(
+      res.body.messages.every(
+        (m: { conversationId: string }) => m.conversationId === a,
+      ),
+    ).toBe(true);
+  });
+
+  it("defaults to 30 messages when no limit is given", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    await seed(id, 35);
+
+    const res = await list(ownerToken, id);
+
+    expect(res.status).toBe(200);
+    expect(res.body.messages).toHaveLength(30);
+  });
+
+  it("respects an explicit limit", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    await seed(id, 10);
+
+    const res = await list(ownerToken, id, "?limit=4");
+
+    expect(res.status).toBe(200);
+    expect(res.body.messages).toHaveLength(4);
+  });
+
+  it("returns the next page without repeating the first", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    const ids = await seed(id, 10);
+    const newestFirst = [...ids].reverse();
+
+    const first = await list(ownerToken, id, "?limit=4");
+    const second = await list(ownerToken, id, "?limit=4&cursor=4");
+
+    const firstIds = first.body.messages.map((m: { id: string }) => m.id);
+    const secondIds = second.body.messages.map((m: { id: string }) => m.id);
+
+    expect(firstIds).toEqual(newestFirst.slice(0, 4));
+    expect(secondIds).toEqual(newestFirst.slice(4, 8));
+    expect(firstIds.some((i: string) => secondIds.includes(i))).toBe(false);
+  });
+
+  it("treats cursor=0 as the first page", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    const ids = await seed(id, 6);
+
+    const bare = await list(ownerToken, id, "?limit=3");
+    const zero = await list(ownerToken, id, "?limit=3&cursor=0");
+
+    expect(zero.status).toBe(200);
+    expect(zero.body.messages.map((m: { id: string }) => m.id)).toEqual(
+      bare.body.messages.map((m: { id: string }) => m.id),
+    );
+    expect(zero.body.messages).toHaveLength(3);
+    expect(ids).toHaveLength(6);
+  });
+
+  it("returns 400 for a limit above the maximum", async () => {
+    const id = await createDirect(ownerToken, memberId);
+
+    const res = await list(ownerToken, id, "?limit=101");
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 for a non-numeric limit", async () => {
+    const id = await createDirect(ownerToken, memberId);
+
+    const res = await list(ownerToken, id, "?limit=abc");
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 for an invalid conversation id", async () => {
+    const res = await list(ownerToken, "not-a-uuid");
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 404 for a conversation that does not exist", async () => {
+    const res = await list(ownerToken, NONEXISTENT_ID);
+
+    expect(res.status).toBe(404);
+  });
+
+  it("does not allow a non-member to read the messages", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    await seed(id, 1);
+
+    const res = await list(tokenFor(thirdId), id);
+
+    expect(res.status).toBe(403);
+  });
+
+  it("requires authentication", async () => {
+    const id = await createDirect(ownerToken, memberId);
+
+    const res = await request(app).get(`${BASE_URL}/${id}/messages`);
+
+    expect(res.status).toBe(401);
+  });
+});

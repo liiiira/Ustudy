@@ -119,7 +119,9 @@ export async function getById(
   return conversation;
 }
 
-async function findById(conversationId: string): Promise<Conversation | null> {
+export async function findById(
+  conversationId: string,
+): Promise<Conversation | null> {
   return conversationRepository.findById(conversationId);
 }
 

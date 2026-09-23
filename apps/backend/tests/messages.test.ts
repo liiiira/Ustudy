@@ -569,6 +569,105 @@ describe("GET /api/v1/conversations/:conversationId/messages", () => {
     expect(ids).toHaveLength(6);
   });
 
+  it("returns a nextCursor pointing past the first page", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    await seed(id, 10);
+
+    const res = await list(ownerToken, id, "?limit=4");
+
+    expect(res.status).toBe(200);
+    expect(res.body.nextCursor).toBe(4);
+  });
+
+  it("advances nextCursor past each page it returns", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    await seed(id, 12);
+
+    const second = await list(ownerToken, id, "?limit=4&cursor=4");
+    expect(second.body.nextCursor).toBe(8);
+
+    const third = await list(ownerToken, id, `?limit=4&cursor=${second.body.nextCursor}`);
+    expect(third.body.nextCursor).toBe(12);
+  });
+
+  it("feeding nextCursor back does not repeat the previous page", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    await seed(id, 8);
+
+    const first = await list(ownerToken, id, "?limit=4");
+    const next = await list(ownerToken, id, `?limit=4&cursor=${first.body.nextCursor}`);
+
+    const firstIds = first.body.messages.map((m: { id: string }) => m.id);
+    const nextIds = next.body.messages.map((m: { id: string }) => m.id);
+
+    expect(nextIds).toHaveLength(4);
+    expect(firstIds.some((i: string) => nextIds.includes(i))).toBe(false);
+  });
+
+  it("returns a null nextCursor when the page is not full", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    await seed(id, 6);
+
+    const res = await list(ownerToken, id, "?limit=10");
+
+    expect(res.body.messages).toHaveLength(6);
+    expect(res.body.nextCursor).toBeNull();
+  });
+
+  it("returns a null nextCursor for a conversation with no messages", async () => {
+    const id = await createDirect(ownerToken, memberId);
+
+    const res = await list(ownerToken, id);
+
+    expect(res.body.messages).toEqual([]);
+    expect(res.body.nextCursor).toBeNull();
+  });
+
+  it("returns a null nextCursor on the last partial page", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    await seed(id, 6);
+
+    const first = await list(ownerToken, id, "?limit=4");
+    expect(first.body.nextCursor).toBe(4);
+
+    const last = await list(ownerToken, id, `?limit=4&cursor=${first.body.nextCursor}`);
+    expect(last.body.messages).toHaveLength(2);
+    expect(last.body.nextCursor).toBeNull();
+  });
+
+  it("terminates when the message count is an exact multiple of the limit", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    await seed(id, 8);
+
+    const second = await list(ownerToken, id, "?limit=4&cursor=4");
+    expect(second.body.messages).toHaveLength(4);
+    expect(second.body.nextCursor).toBe(8);
+
+    const past = await list(ownerToken, id, "?limit=4&cursor=8");
+    expect(past.body.messages).toEqual([]);
+    expect(past.body.nextCursor).toBeNull();
+  });
+
+  it("walks the whole history without repeats by following nextCursor", async () => {
+    const id = await createDirect(ownerToken, memberId);
+    const ids = await seed(id, 10);
+
+    const seen: string[] = [];
+    let cursor: number | null = 0;
+    let pages = 0;
+
+    while (cursor !== null && pages < 10) {
+      const res = await list(ownerToken, id, `?limit=3&cursor=${cursor}`);
+      seen.push(...res.body.messages.map((m: { id: string }) => m.id));
+      cursor = res.body.nextCursor;
+      pages++;
+    }
+
+    expect(cursor).toBeNull();
+    expect(seen).toEqual([...ids].reverse());
+    expect(new Set(seen).size).toBe(10);
+  });
+
   it("returns 400 for a limit above the maximum", async () => {
     const id = await createDirect(ownerToken, memberId);
 

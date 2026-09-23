@@ -44,6 +44,12 @@ export function Navbar() {
             >
               Communities
             </Link>
+            <Link
+              to="/messages"
+              className="font-light transition-colors hover:text-blue-700"
+            >
+              Messages
+            </Link>
           </div>
           <NavbarDropDownMenu imageUrl={user?.avatarUrl} logout={logout} />
         </div>

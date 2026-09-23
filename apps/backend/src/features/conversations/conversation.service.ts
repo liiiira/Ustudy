@@ -6,6 +6,7 @@ import * as messageService from "../messages/message.service.ts";
 import * as conversationRepository from "./conversation.repository.ts";
 
 import type {
+  AddMembersBody,
   Conversation,
   ConversationMember,
   ConversationUpdate,
@@ -118,9 +119,7 @@ export async function getById(
   return conversation;
 }
 
-export async function findById(
-  conversationId: string,
-): Promise<Conversation | null> {
+async function findById(conversationId: string): Promise<Conversation | null> {
   return conversationRepository.findById(conversationId);
 }
 
@@ -247,7 +246,7 @@ export async function deleteGroup(
 export async function addMembers(
   requesterId: string,
   conversationId: string,
-  { memberIds }: { memberIds: string[] },
+  { memberIds }: AddMembersBody,
 ) {
   const conversation = await findById(conversationId);
   if (!conversation) throw new AppError("Conversation not found", 404);

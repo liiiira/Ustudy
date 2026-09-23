@@ -25,7 +25,10 @@ export default function AppRoutes() {
 
         {/* protected Routes */}
         <Route element={<ProtectedRoute />}>
+          {/* Profile route*/}
           <Route path="/profile" element={<ProfilePage />} />
+
+          {/*Communities Section */}
           <Route path="/communities" element={<CommunitiesPage />} />
           <Route path="/communities/create" element={<CreateCommunityPage />} />
           <Route path="/communities/:communityId" element={<CommunityPage />} />
@@ -45,6 +48,10 @@ export default function AppRoutes() {
             path="/communities/:communityId/posts/:postId/update"
             element=<UpdatePostPage />
           />
+
+          {/* Messages Section */}
+          <Route path="/messages" 
+            element={<MessagePage />}
         </Route>
       </Route>
     </Routes>

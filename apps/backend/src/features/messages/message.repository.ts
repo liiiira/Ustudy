@@ -66,6 +66,36 @@ export async function findById(
 
   return result.rows[0] ?? null;
 }
+
+export async function findAllConversation(
+  conversationId: string,
+  limit: number,
+  cursor?: number,
+): Promise<Message[]> {
+  const result = await pool.query(
+    `
+    SELECT 
+      messages.id AS "id",
+      messages.sender_id AS "senderId",
+      users.username AS "senderUsername",
+      messages.text_content AS "textContent",
+      messages.conversation_id AS "conversationId",
+      messages.created_at AS "createdAt",
+      uploads.public_url AS "imageUrl"
+    FROM messages
+    LEFT JOIN uploads
+      ON messages.upload_id = uploads.id
+    LEFT JOIN users 
+      ON messages.sender_id = users.id
+    WHERE messages.conversation_id = $1
+    ORDER BY messages.created_at DESC, id DESC
+
+    LIMIT $2::int OFFSET $3::int`,
+    [conversationId, limit, cursor],
+  );
+
+  return result.rows;
+}
 export async function deleteById(
   conversationId: string,
   messageId: string,

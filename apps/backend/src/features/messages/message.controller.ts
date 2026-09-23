@@ -1,4 +1,8 @@
-import type { Message, MessageInput } from "./message.schema.ts";
+import type {
+  findAllMessagesQueryType,
+  Message,
+  MessageInput,
+} from "./message.schema.ts";
 import * as messageService from "./message.service.ts";
 import type { Request, Response } from "express";
 
@@ -23,6 +27,27 @@ export async function create(
   });
 }
 
+export async function findAllConversation(
+  req: Request<{ conversationId: string }>,
+  res: Response,
+) {
+  const userId = req.user!.id;
+  const { conversationId } = req.params;
+  const { limit, cursor } = req.query as unknown as findAllMessagesQueryType;
+
+  const conversationMessages: Message[] =
+    await messageService.findAllConversation(userId, {
+      conversationId,
+      limit,
+      cursor,
+    });
+
+  return res.status(200).json({
+    status: "success",
+    message: "Conversation messages found successfully",
+    messages: conversationMessages,
+  });
+}
 export async function deleteById(
   req: Request<{ conversationId: string; messageId: string }>,
   res: Response,

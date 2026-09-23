@@ -1,9 +1,16 @@
 import * as messageRepository from "./message.repository.ts";
 import * as uploadService from "../uploads/upload.service.ts";
 import * as conversationService from "../conversations/conversation.service.ts";
-import type { Message, MessageInput } from "./message.schema.ts";
+import type {
+  ConversationMessagesInput,
+  Message,
+  MessageInput,
+} from "./message.schema.ts";
 import { AppError } from "../../errors/appError.ts";
-import type { ConversationMember } from "../conversations/conversation.schema.ts";
+import type {
+  Conversation,
+  ConversationMember,
+} from "../conversations/conversation.schema.ts";
 
 export async function create(
   requesterId: string,
@@ -46,6 +53,28 @@ export async function create(
   return createdMessage;
 }
 
+export async function findById(
+  conversationId: string,
+  messageId: string,
+): Promise<Message | null> {
+  return messageRepository.findById(conversationId, messageId);
+}
+
+export async function findAllConversation(
+  requesterId: string,
+  { conversationId, limit, cursor }: ConversationMessagesInput,
+): Promise<Message[]> {
+  const conversation: Conversation | null =
+    await conversationService.findById(conversationId);
+  if (!conversation) throw new AppError("Conversation not found", 404);
+
+  const requesterMember: ConversationMember | null =
+    await conversationService.findMember(conversationId, requesterId);
+  if (!requesterMember)
+    throw new AppError("Not a member of this conversation", 403);
+
+  return messageRepository.findAllConversation(conversationId, limit, cursor);
+}
 export async function deleteById(
   requesterId: string,
   conversationId: string,
@@ -70,11 +99,4 @@ export async function deleteById(
     throw new AppError("Failed to delete message due to unexpected error", 500);
 
   return result;
-}
-
-export async function findById(
-  conversationId: string,
-  messageId: string,
-): Promise<Message | null> {
-  return messageRepository.findById(conversationId, messageId);
 }

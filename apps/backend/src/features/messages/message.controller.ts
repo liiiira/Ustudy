@@ -46,6 +46,8 @@ export async function findAllConversation(
     status: "success",
     message: "Conversation messages found successfully",
     messages: conversationMessages,
+    nextCursor:
+      limit === conversationMessages.length ? (cursor ?? 0) + limit : null,
   });
 }
 export async function deleteById(

@@ -48,7 +48,7 @@ export async function findAllCommunity(
     await postService.findAllCommunity(communityId);
 
   return res.status(200).json({
-    Message: "Community Posts Fetched Successfuly",
+    message: "Community Posts Fetched Successfuly",
     status: "success",
     posts: communityPosts,
   });

@@ -160,6 +160,15 @@ describe("GET /api/v1/communities/:communityId/posts", () => {
     postId = post.id;
   });
 
+  it("returns the envelope message under a lowercase key", async () => {
+    const res = await request(app)
+      .get(`${BASE_URL}/${communityId}/posts`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(typeof res.body.message).toBe("string");
+    expect(res.body).not.toHaveProperty("Message");
+  });
+
   it("returns all posts belonging to a community", async () => {
     const res = await request(app)
       .get(`${BASE_URL}/${communityId}/posts`)
